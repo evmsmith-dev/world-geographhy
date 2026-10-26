@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>World Geography Quiz</title>
+<meta name="description" content="Learn US states, state capitals, continents and oceans with map quizzes and flashcards.">
+<meta name="theme-color" content="#eef1f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12181d" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Geography Quiz">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preload" href="alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css?v=2026-10-26T21:57:10Z">
+<script>window.WGQ_BUILD='2026-10-26T21:57:10Z'</script>
+<script src="app.js?v=2026-10-26T21:57:10Z" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Who's playing -->
+  <section id="scrPlayers" hidden>
+    <div class="apphead" style="margin-bottom:6px">
+      <button class="icon-btn" id="playersBack" aria-label="Back" hidden>←</button>
+      <h1 id="playersTitle">Who's playing?</h1>
+    </div>
+    <p class="muted" id="playersIntro" style="margin-bottom:14px">Pick your name to keep your own scores. New here? Add yourself.</p>
+    <div class="players" id="playerGrid"></div>
+  </section>
+
+  <!-- Home -->
+  <section id="scrHome" hidden>
+    <div class="apphead">
+      <h1>World Geography Quiz</h1>
+      <button class="pchip" id="homePlayer" aria-label="Change player"></button>
+      <button class="pchip" id="homeScores"><span class="av" style="background:var(--hi)" aria-hidden="true">★</span><span>Scores</span></button>
+      <button class="icon-btn" id="homeSettings" aria-label="Settings">⚙</button>
+      <button class="icon-btn qmark" id="homeHelp" aria-label="How to play">?</button>
+    </div>
+    <p class="hello" id="hello" style="margin:10px 0 4px"></p>
+    <div id="homeGroups"></div>
+  </section>
+
+  <!-- Scores -->
+  <section id="scrScores" hidden>
+    <div class="apphead">
+      <button class="icon-btn" id="scoresBack" aria-label="Back to home">←</button>
+      <h1>Scores</h1>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Whose scores">
+      <button role="tab" id="tabMe" aria-selected="true" aria-controls="scoresBody">Me</button>
+      <button role="tab" id="tabAll" aria-selected="false" aria-controls="scoresBody">Everyone</button>
+    </div>
+    <div id="scoresBody" role="tabpanel" aria-live="polite"></div>
+  </section>
+
+  <!-- Play -->
+  <section id="scrPlay" hidden>
+    <div class="topbar">
+      <button class="icon-btn" id="backHome" aria-label="Back to home">←</button>
+      <button class="tchip" id="topicChip" aria-haspopup="dialog" aria-label="Change topic or mode"><span id="chipText"></span><span class="caret" aria-hidden="true">▼</span></button>
+      <span class="clock" id="clock" role="timer" aria-label="Time" hidden>0:00</span>
+      <button class="icon-btn qmark" id="playHelp" aria-label="How to play">?</button>
+    </div>
+    <div class="statusline" style="margin:8px 0 10px">
+      <p class="sub2" id="sub"></p>
+      <div class="tally" id="tally"></div>
+    </div>
+
+    <div class="sheetbox" id="mapSheet">
+      <div class="mapbox">
+        <svg id="map" class="map" role="group" aria-label="Map with names hidden"></svg>
+        <div class="zoom" role="group" aria-label="Map zoom">
+          <button id="zIn" aria-label="Zoom in">+</button>
+          <button id="zOut" aria-label="Zoom out" disabled>−</button>
+          <button id="zFit" aria-label="Show whole map" disabled>⤢</button>
+        </div>
+      </div>
+      <p class="zhint">Pinch or use + to zoom in. Drag to move around.</p>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <section id="flash" class="flash" hidden>
+      <div class="fdeck" id="fdeck">
+        <div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard. Press to see the answer.">
+          <div class="cardin">
+            <div class="face front">
+              <svg class="shape" id="fFront" aria-hidden="true"></svg>
+              <p class="fprompt" id="fPrompt"></p>
+              <p class="fhint">Tap the card to see the answer</p>
+            </div>
+            <div class="face back" aria-hidden="true">
+              <svg class="shape" id="fBack" aria-hidden="true"></svg>
+              <div class="backinfo">
+                <svg class="locator" id="fLoc" aria-hidden="true"></svg>
+                <div class="backtext">
+                  <p class="fanswer" id="fAnswer"></p>
+                  <p class="fsub" id="fSub"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fdone sheetbox" id="fDone" hidden>
+        <h2 id="fDoneH"></h2>
+        <p id="fDoneP"></p>
+        <div class="btnrow">
+          <button class="primary" id="fAgainDeck">Study again</button>
+          <button id="fRestart2">Start over</button>
+        </div>
+      </div>
+      <div class="bar fbar" id="fBar">
+        <p class="fprog" id="fProg"></p>
+        <span class="spacer"></span>
+        <button class="primary" id="fReveal">Show answer</button>
+        <button id="fMiss" hidden>✗ Study again</button>
+        <button class="primary" id="fGot" hidden>✓ Got it</button>
+        <button id="fRestart" aria-label="Shuffle and start over">Shuffle</button>
+        <p class="fkeys">Keyboard: Space to flip, → got it, ← study again</p>
+      </div>
+    </section>
+
+    <div class="bar" id="play">
+      <label class="label" for="answer" id="selLabel">Tap the map</label>
+      <div class="combo">
+        <input id="answer" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="opts" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
+        <button class="clear" id="clearTxt" aria-label="Clear" hidden>×</button>
+        <ul class="opts" id="opts" role="listbox" hidden></ul>
+      </div>
+      <button class="primary" id="submit" disabled>Save</button>
+      <div class="nav">
+        <button id="prev" aria-label="Previous one you haven't answered">◀ Prev</button>
+        <button id="next" aria-label="Next one you haven't answered">Next ▶</button>
+      </div>
+      <span class="spacer"></span>
+      <button id="reviewBtn">Review</button>
+      <p class="feedback" id="feedback" aria-live="polite"></p>
+    </div>
+
+    <section id="results" hidden>
+      <div class="bar rbar">
+        <p class="score" id="score"></p>
+        <span class="spacer"></span>
+        <button class="primary" id="retry">Retry missed</button>
+        <button id="restart">New game</button>
+        <p class="feedback" id="callout" aria-live="polite"></p>
+      </div>
+      <div class="review" style="margin-top:14px">
+        <div class="bad"><h2 id="badH">Missed</h2><ul id="badList"></ul></div>
+        <div class="good"><h2 id="goodH">Correct</h2><ul id="goodList"></ul></div>
+      </div>
+    </section>
+  </section>
+</div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+</body>
+</html>

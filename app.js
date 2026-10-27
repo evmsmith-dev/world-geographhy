@@ -66,7 +66,21 @@ const EU_PARTS = {
   Southern:['Albania','Andorra','Bosnia and Herzegovina','Croatia','Greece','Italy','Malta','Montenegro','North Macedonia','Portugal','San Marino','Serbia','Slovenia','Spain','Vatican City'],
   Eastern:['Belarus','Bulgaria','Czechia','Hungary','Moldova','Poland','Romania','Russia','Slovakia','Ukraine'],
 };
-const CA_CAP_ALIAS = {'Guatemala City':['guatemala'],'Panama City':['panama']};
+const NA_ALIAS = {'United States':['usa','u s a','us','u s','america','united states of america'],'Bahamas':['the bahamas'],'Saint Kitts and Nevis':['st kitts','saint kitts'],
+  'Saint Vincent and the Grenadines':['st vincent','saint vincent'],'Trinidad and Tobago':['trinidad'],'Antigua and Barbuda':['antigua']};
+const NA_CAP_ALIAS = {'Guatemala City':['guatemala'],'Panama City':['panama'],'Washington, D.C.':['washington','washington dc','dc'],'Mexico City':['mexico'],
+  'Havana':['la habana'],"St. John's":['saint johns'],"St. George's":['saint georges']};
+// North America in three parts, for shorter games
+const NA_PARTS = {
+  Northern:['Canada','United States','Mexico'],
+  Central:['Belize','Costa Rica','El Salvador','Guatemala','Honduras','Nicaragua','Panama'],
+  Caribbean:['Antigua and Barbuda','Bahamas','Barbados','Cuba','Dominica','Dominican Republic','Grenada','Haiti','Jamaica','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Trinidad and Tobago'],
+};
+// a part's name as a title ("Eastern Europe", "Middle East")
+const PART_TITLE = {'Asia|Middle East':'Middle East','North America|Northern':'Canada, US & Mexico','North America|Central':'Central America','North America|Caribbean':'Caribbean'};
+const partTitle = (region, part) => PART_TITLE[region + '|' + part] || `${part} ${region}`;
+// how a part reads in a sentence ("12 of 13 learned in the Caribbean")
+const PART_PHRASE = {'Asia|Middle East':'the Middle East','North America|Northern':'Canada, the US and Mexico','North America|Central':'Central America','North America|Caribbean':'the Caribbean'};
 const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
   'South Africa':'South Africa has three capitals: Pretoria, Cape Town and Bloemfontein.',"Côte d'Ivoire":'Abidjan is the biggest city.',
   'Tanzania':'Dar es Salaam is the biggest city.','Benin':'The government works in Cotonou.','Eswatini':'Lobamba is the royal capital.',
@@ -75,13 +89,17 @@ const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
   'Malaysia':'The government works in nearby Putrajaya.','Myanmar':'Yangon is the biggest city.','Kazakhstan':'It was called Nur-Sultan from 2019 to 2022.',
   'Nauru':'Nauru has no official capital. The government works in Yaren.','Tuvalu':'The government works on Funafuti, a ring of tiny islands.',
   'Palau':'It took over from Koror in 2006.','Australia':'Sydney is the biggest city.','New Zealand':'Auckland is the biggest city.',
+  'United States':'New York City is the biggest city.','Canada':'Toronto is the biggest city.',
   'Indonesia':'A new capital, Nusantara, is being built on the island of Borneo.','Turkey':'Istanbul is the biggest city.'};
 const MAPDATA = {}; // map files once loaded, with items indexed by name
-let FLAGURL = null, flagsLoading = null; // country name -> data: URL of its flag
-const loadFlags = () => flagsLoading || (flagsLoading = fetch('flags.json').then(r => { if(!r.ok) throw new Error('flags ' + r.status); return r.json(); })
-  .then(f => { FLAGURL = Object.fromEntries(Object.entries(f).map(([n, svg]) => [n, 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)])); })
-  .catch(e => { flagsLoading = null; throw e; }));
-const flagImg = (n, cls='') => FLAGURL && FLAGURL[n] ? `<img class="flag ${cls}" src="${FLAGURL[n]}" alt="" draggable="false">` : '';
+// country flags live in flags.json; US state flags in usflags.json, kept as "us:Georgia" so the state and the country don't mix up
+let FLAGURL = {}; const flagsLoading = {};
+const loadFlags = (map) => { const us = map === 'us', file = us ? 'usflags.json' : 'flags.json';
+  return flagsLoading[file] || (flagsLoading[file] = fetch(file).then(r => { if(!r.ok) throw new Error('flags ' + r.status); return r.json(); })
+    .then(f => { for(const [n, svg] of Object.entries(f)) FLAGURL[(us ? 'us:' : '') + n] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); })
+    .catch(e => { delete flagsLoading[file]; throw e; })); };
+const flagSrc = n => FLAGURL[(M && MAPDATA.us && M === MAPDATA.us ? 'us:' : '') + n] || '';
+const flagImg = (n, cls='') => flagSrc(n) ? `<img class="flag ${cls}" src="${flagSrc(n)}" alt="" draggable="false">` : '';
 // size rank among its kind, and one fact a kid can remember
 const WORLD_FACT = {
   'Asia':[1,'Mount Everest, the tallest mountain on Earth, is here.'],
@@ -114,6 +132,11 @@ const TOPICS = [
     tapWhat:'Tap a state, find its capital', tapHint:'Tap a state on the map',
     ask:n=>`What is the capital of ${n}?`, flashFront:n=>`${n}: what is its capital?`, card:'shape',
     back:n=>({answer:CAP[n], sub:`Capital of <b>${esc(n)}</b> ★`}) },
+  { id:'us-flags', group:'United States', tab:'Flags', name:'State Flags', blurb:'Learn the flag of every state.', map:'us', count:50, flags:true, card:'flag',
+    answer:n=>n, nouns:'flags', listWord:'states', alias:STATE_ALIAS, maxZoom:10, itemWord:'state',
+    tapWhat:'Tap a state, then pick its flag', tapHint:'Tap a state on the map',
+    ask:()=>'Which flag belongs to this state?', flashFront:()=>'Which state has this flag?',
+    back:n=>({answer:n, sub:`Capital: <b>${esc(CAP[n])}</b> ★`}) },
   { id:'world', group:'World', tab:'Continents & Oceans', name:'Continents & Oceans', blurb:'Find the 7 continents and 5 oceans.', map:'world', count:12,
     answer:n=>n, nouns:'places', listWord:'continents and oceans', alias:WORLD_ALIAS, maxZoom:5,
     tapWhat:'Tap a continent or ocean, find its name', tapHint:'Tap a continent or ocean',
@@ -123,7 +146,7 @@ const TOPICS = [
   ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
   ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, 'Find all 14 countries in Oceania.', 'Name the capital of every country in Oceania.', OC_ALIAS, OC_CAP_ALIAS),
-  ...regionTopics('ca', 'Central America', 'camerica', 7, 6, 'Find all 7 countries in Central America.', 'Name the capital of every country in Central America.', {}, CA_CAP_ALIAS),
+  ...regionTopics('na', 'North America', 'namerica', 23, 20, 'Find all 23 countries in North America.', 'Name the capital of every country in North America.', NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
   ...regionTopics('sa', 'South America', 'samerica', 12, 6, 'Find all 12 countries in South America.', 'Name the capital of every country in South America.', {}, SA_CAP_ALIAS),
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
@@ -135,7 +158,7 @@ function regionTopics(id, region, map, count, maxZoom, blurb, capBlurb, alias, c
     {...base, id:id+'-countries', tab:'Countries', name:`Countries of ${region}`, blurb, answer:n=>n, nouns:'countries', listWord:'countries', alias,
       tapWhat:'Tap a country, find its name', ask:()=>'Which country is this?', flashFront:()=>'Which country is this?',
       back:n=>({answer:n, sub:`Capital: <b>${esc(cap(n))}</b> ★${note(n)}`})},
-    {...base, id:id+'-capitals', tab:'Capitals', name:region === 'Oceania' ? 'Capitals of Oceania' : `${({'Europe':'European','Africa':'African','Asia':'Asian','South America':'South American','Central America':'Central American'})[region]} Capitals`, blurb:capBlurb, answer:cap, nouns:'capitals', listWord:'capitals', alias:capAlias, showsItem:true,
+    {...base, id:id+'-capitals', tab:'Capitals', name:region === 'Oceania' ? 'Capitals of Oceania' : `${({'Europe':'European','Africa':'African','Asia':'Asian','South America':'South American','North America':'North American'})[region]} Capitals`, blurb:capBlurb, answer:cap, nouns:'capitals', listWord:'capitals', alias:capAlias, showsItem:true,
       tapWhat:'Tap a country, find its capital', ask:n=>`What is the capital of ${n}?`, flashFront:n=>`${n}: what is its capital?`,
       back:n=>({answer:cap(n), sub:`Capital of <b>${esc(n)}</b> ★${note(n)}`})},
     {...base, id:id+'-flags', tab:'Flags', name:`Flags of ${region}`, blurb:`Learn the flag of every country in ${region}.`, flags:true, card:'flag', answer:n=>n, nouns:'flags', listWord:'countries', alias,
@@ -148,7 +171,7 @@ const REGIONS = [...new Set(TOPICS.map(t => t.group))].map(g => ({name:g, topics
 // which part of a big place (like West Africa) the player last chose; 'All' plays everything
 const getPart = r => { const v = r && r.parts ? LS.get(`part-${player ? player.id : ''}-${r.name}`) : null; return v && r.parts[v] ? v : 'All'; };
 const setPart = (r, v) => LS.set(`part-${player ? player.id : ''}-${r.name}`, v);
-const partChips = (r, cur) => r.parts ? `<div class="partrow"><span class="fieldlabel">Part:</span><div class="chips pick">${['All', ...Object.keys(r.parts)].map(v => `<button data-part="${v}" aria-pressed="${v===cur}">${v}</button>`).join('')}</div></div>` : '';
+const partChips = (r, cur, done = {}) => r.parts ? `<div class="partrow"><span class="fieldlabel">Part:</span><div class="chips pick">${['All', ...Object.keys(r.parts)].map(v => `<button data-part="${v}" aria-pressed="${v===cur}"${done[v] ? ` aria-label="${v}, badge earned"` : ''}>${v}${done[v] ? '<span class="pdone" aria-hidden="true">🏅</span>' : ''}</button>`).join('')}</div></div>` : '';
 const regionOf = tid => REGIONS.find(r => r.topics.some(t => t.id === tid));
 const lastTab = r => { const t = LS.get(`tab-${player ? player.id : ''}-${r.name}`); return r.topics.find(x => x.id === t) || r.topics[0]; };
 const rememberTab = (r, tid) => LS.set(`tab-${player ? player.id : ''}-${r.name}`, tid);
@@ -290,7 +313,8 @@ const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','
   'Kyiv':'keev','Czechia':'check-ee-uh','Brasília':'brah-zee-lee-ah','Bogotá':'boh-goh-tah','Asunción':'ah-soon-see-ohn','Tegucigalpa':'teh-goo-see-gal-pah',
   'Belmopan':'bel-moh-pan','Paramaribo':'pah-rah-mah-ree-boh','Antananarivo':'an-tah-nah-nah-ree-voh','Gaborone':'hah-boh-roh-nay','São Tomé and Príncipe':'sow toh-may and preen-see-pay',
   'São Tomé':'sow toh-may','Eswatini':'eh-swah-tee-nee','Djibouti':'jih-boo-tee','Timor-Leste':'tee-mor lesh-tay','Dili':'dee-lee','Bandar Seri Begawan':'bun-dar seh-ree beh-gah-wan',
-  'Vientiane':'vee-en-tee-ahn','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
+  'Vientiane':'vee-en-tee-ahn','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
+  'Belize':'beh-leez','Managua':'mah-nah-gwah','San José':'san ho-zay','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
   'Palikir':'pah-lee-keer','Majuro':'mah-joo-roh','Funafuti':'foo-nah-foo-tee','Tuvalu':'too-vah-loo','Nauru':'nah-oo-roo','Yaren':'yah-ren','Apia':'ah-pee-ah',
   'Vanuatu':'vah-noo-ah-too','Port Vila':'port vee-lah','Honiara':'hoh-nee-ah-rah','Phnom Penh':'puh-nom pen','Nur-Sultan':'noor sool-tahn','Astana':'ah-stah-nah'};
 let voice = null;
@@ -437,6 +461,22 @@ async function migrateOldSave(pid){
   await DB.put('games', {key:gameKey(pid,topic,old.mode), pid, topic, mode:old.mode, round:old.round||1, answers:old.answers, solved:old.solved||{}, elapsed:0, reviewed:false, scored:false});
 }
 
+// One-time: Central America became the Central part of North America; carry each player's progress over.
+async function migrateCentralAmerica(){
+  if(LS.get('migrated-na')) return;
+  try{
+    const ren = t => t.replace(/^ca-/, 'na-');
+    const items = (await DB.all('items')).filter(r => /^ca-/.test(r.topic));
+    for(const r of items){ const topic = ren(r.topic), key = `${r.pid}|${topic}|${r.item}`; await DB.put('items', {...r, key, topic}); await DB.del('items', r.key); }
+    const attempts = (await DB.all('attempts')).filter(a => /^ca-/.test(a.topic));
+    for(const a of attempts) await DB.put('attempts', {...a, topic:ren(a.topic), part:a.part || 'Central'});
+    const games = (await DB.all('games')).filter(g => /^ca-/.test(g.topic));
+    for(const g of games){ const topic = ren(g.topic), key = gameKey(g.pid, topic, g.mode + '@Central');
+      await DB.put('games', {...g, key, topic, part:'Central', only:NA_PARTS.Central}); await DB.del('games', g.key); }
+    LS.set('migrated-na', '1');
+  }catch(e){}
+}
+
 /* ===================== 7. home ===================== */
 let THUMBS = null;
 const loadThumbs = () => THUMBS ? Promise.resolve(THUMBS) : fetch('thumbs.json').then(r => r.ok ? r.json() : {}).then(t => (THUMBS = t)).catch(() => (THUMBS = {}));
@@ -487,14 +527,19 @@ async function renderRegion(){
   $('regionTabs').innerHTML = r.topics.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
   const part = getPart(r), pp = part === 'All' ? null : part, n = pp ? r.parts[pp].length : t.count;
   const st = await topicStats(player.id, t, pp);
+  const right = new Set((await DB.byPT('items', player.id, t.id)).filter(i => i.last === 'right').map(i => i.item));
+  const done = Object.fromEntries(r.parts ? Object.entries(r.parts).map(([k, names]) => [k, names.every(n => right.has(n))]) : []);
+  done.All = right.size >= t.count && NAMES_OK(t, right);
   const saved = await Promise.all(Object.keys(MODES).map(m => DB.get('games', gameKey(player.id, t.id, pp ? m + '@' + pp : m))));
   $('regionBody').innerHTML = `
     <p class="sub">${esc(t.blurb)}</p>
-    ${partChips(r, part)}
+    ${partChips(r, part, done)}
     <div class="meter" role="img" aria-label="${st.learned} of ${n} learned"><i style="width:${Math.round(100*st.learned/n)}%"></i></div>
-    <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${pp === 'Middle East' ? 'the Middle East' : esc(pp + ' ' + r.name)}` : ''}</span>${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>
+    <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(PART_PHRASE[r.name + '|' + pp] || pp + ' ' + r.name)}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>
     <div class="modelist">${modeButtons(t, saved, null, pp)}</div>`;
 }
+// every item of the topic learned (counts can't be trusted alone if old names linger)
+const NAMES_OK = (t, right) => t.parts ? Object.values(t.parts).flat().every(n => right.has(n)) : true;
 const modeButtons = (t, saved, current, part) => Object.keys(MODES).map((m,i) => `
   <button class="modebig" data-topic="${t.id}" data-mode="${m}"${part ? ` data-part="${part}"` : ''}${current===m ? ' aria-current="true"' : ''}>
     <span class="mn">${MODES[m]}</span><span class="md">${esc(modeDesc(m, t))}</span>${saved && saved[i] && !saved[i].reviewed ? '<span class="resume">Keep going</span>' : ''}
@@ -724,12 +769,12 @@ async function enterGame(topicId, mode, fromPicker, only, part){
   saveNow(); stopClock(); endExplore();
   T = TOPIC[topicId];
   if(part && !(T.parts && T.parts[part])) part = null;
-  $('chipText').innerHTML = `${esc(T.name)}<small>${part ? `${MODES[mode]} · ${esc(part)}` : only ? 'Practice the tricky ones' : MODES[mode]}</small>`;
+  $('chipText').innerHTML = `<span class="ct">${esc(T.name)}</span><small>${part ? `${MODES[mode]} · ${esc(part)}` : only ? 'Practice the tricky ones' : MODES[mode]}</small>`;
   if(!fromPicker){ returnTo = SCREENS.find(id => !$(id).hidden) || 'scrHome'; showScreen('scrPlay'); pushLayer(leaveGame); }
   const R = regionOf(topicId); if(R) rememberTab(R, topicId);
   ['mapSheet','play','results','flash'].forEach(id => $(id).hidden = true);
   $('sub').textContent = 'Loading the map…'; $('tally').textContent = '';
-  try{ M = await loadMap(T.map); if(T.flags) await loadFlags(); }
+  try{ M = await loadMap(T.map); if(T.flags) await loadFlags(T.map); }
   catch(e){ $('sub').textContent = 'The map could not load. Check your internet connection, then go back and try again.'; return; }
   drawMap();
   const gk = gameKey(player.id, T.id, part ? mode + '@' + part : mode);
@@ -778,7 +823,7 @@ function paint(){
   const named = Object.keys(G.answers).length, total = PN().filter(n => !(G.solved[n] < G.round)).length;
   const verb = G.mode==='find' ? 'done' : 'answered';
   $('tally').innerHTML = G.mode==='flash' || reviewing ? '' : (G.round===1 ? `<b>${named}</b> / ${total} ${verb}` : `Round ${G.round} · <b>${named}</b> / ${total} ${verb}`);
-  if(G.mode === 'find'){ $('selLabel').textContent = 'Find it on the map'; const t = findTarget(); if(T.flags) $('findQ').innerHTML = t ? `${flagImg(t, 'big')}<span>Find the country with this flag</span>` : ''; else { $('findQ').innerHTML = t ? `${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}` : ''; if(t && autoSay() && G.sayLast !== t){ G.sayLast = t; say(key(t)); } } return; }
+  if(G.mode === 'find'){ $('selLabel').textContent = 'Find it on the map'; const t = findTarget(); if(T.flags) $('findQ').innerHTML = t ? `${flagImg(t, 'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>` : ''; else { $('findQ').innerHTML = t ? `${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}` : ''; if(t && autoSay() && G.sayLast !== t){ G.sayLast = t; say(key(t)); } } return; }
   const label = !current ? T.tapHint
     : T.showsItem ? (isSolved(current) ? `Capital of ${current}: ${key(current)}` : T.ask(current))
     : isSolved(current) ? 'You already got this one'
@@ -824,7 +869,7 @@ function toPlay(){
 function zoomToItems(names){
   let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
   const small = names.filter(n => ITEM[n].dot || (ITEM[n].b[2]-ITEM[n].b[0]) < VW*0.4);
-  if(small.length) names = small;
+  if(small.length >= names.length / 2) names = small;
   names.forEach(n => { const b = ITEM[n].dot ? [ITEM[n].dot[0]-12, ITEM[n].dot[1]-12, ITEM[n].dot[0]+12, ITEM[n].dot[1]+12] : ITEM[n].b; x0=Math.min(x0,b[0]); y0=Math.min(y0,b[1]); x1=Math.max(x1,b[2]); y1=Math.max(y1,b[3]); });
   const pad = 0.08, w = clampW(Math.max((x1-x0)*(1+2*pad), (y1-y0)*(1+2*pad)*VW/VH));
   animateTo({x:(x0+x1)/2 - w/2, y:(y0+y1)/2 - w*VH/VW/2, w});
@@ -1030,7 +1075,7 @@ const starPts = (cx,cy,r) => Array.from({length:10}, (_,i) => { const a = -Math.
 function drawCardArt(el, n, side){
   if(T.card === 'flag' && side === 'front'){ // just the flag, in a 4:3 frame
     el.setAttribute('viewBox', '0 0 400 300');
-    el.innerHTML = `<image href="${FLAGURL[n]}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/><rect x=".5" y=".5" width="399" height="299" fill="none" class="flagframe"/>`;
+    el.innerHTML = `<image href="${flagSrc(n)}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/><rect x=".5" y=".5" width="399" height="299" fill="none" class="flagframe"/>`;
     return;
   }
   const it = ITEM[n];
@@ -1181,7 +1226,7 @@ async function renderScores(){
     const d = streakNow(player);
     body.innerHTML = `<section class="badgesec"><h2>Badges <span class="muted">${got} of ${badges.length}</span></h2>
       <p class="muted streakline">Daily 10 streak: <b>${d.streak} day${d.streak===1?'':'s'}</b> · Best: <b>${d.best} day${d.best===1?'':'s'}</b></p>
-      <div class="badges">${badges.slice().sort((a,b) => b.earned - a.earned).map(b => `<div class="badge ${b.earned?'on':'off'}"><span class="bi" aria-hidden="true">${b.icon}</span><span class="bn">${esc(b.name)}</span><span class="bd">${esc(b.desc)}</span>${b.earned?'':'<span class="sr">Not earned yet</span>'}</div>`).join('')}</div></section>
+      ${badgeGroups(badges)}</section>
       <div class="cards">${parts.map(({t, items, attempts, learned, best, bestTime}) => {
       const last = attempts.slice(-10), pct = a => Math.round(100*a.correct/a.total);
       const chart = last.length
@@ -1264,12 +1309,13 @@ function enterExplore(regionName, fromPicker){
   if(!fromPicker){ returnTo = SCREENS.find(id => !$(id).hidden) || 'scrHome'; showScreen('scrPlay'); pushLayer(leaveGame); }
   endExplore(); G = null; current = null; reviewing = false;
   EXPLORE = {R, labels: LS.get('labels') !== '0'};
+  if(R.map !== 'world') loadFacts();
   T = R.topics[0];
-  $('chipText').innerHTML = `${esc(R.name)}<small>Explore the map</small>`;
+  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>Explore the map</small>`;
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
   $('sub').textContent = 'Loading the map…'; $('tally').textContent = ''; $('clock').hidden = true;
   (async () => {
-    try{ M = await loadMap(T.map); if(R.topics.some(t => t.flags)) await loadFlags(); }
+    try{ M = await loadMap(T.map); if(R.topics.some(t => t.flags)) await loadFlags(R.map); }
     catch(e){ $('sub').textContent = 'The map could not load. Check your internet connection, then go back and try again.'; return; }
     if(!EXPLORE || EXPLORE.R !== R) return;
     drawMap();
@@ -1307,11 +1353,15 @@ function explorePaint(){
   else if(st) st.remove();
   exploreScale();
 }
-function exploreTap(n){ current = n; focusItem(n); explorePaint(); exploreInfo(n); sound('tap'); if(autoSay()){ const R = EXPLORE.R, ct = R.topics.find(t => t.showsItem), cap = ct ? ct.answer(n) : null; say(...(cap ? [n, '. Its capital is', cap] : [n])); } }
+function exploreTap(n){ current = n; focusItem(n); explorePaint(); exploreInfo(n); sound('tap'); if(autoSay()){ const R = EXPLORE.R, ct = R.topics.find(t => t.showsItem), cap = ct ? ct.answer(n) : null; const f = factFor(n, R.map); say(...(cap ? [n, '. Its capital is', cap] : [n]), ...(f ? ['.', f] : [])); } }
 function exploreStep(dir){
   const i = current ? ORDER.indexOf(current) : (dir > 0 ? -1 : 0), L = ORDER.length;
   exploreTap(ORDER[((i + dir) % L + L) % L]);
 }
+// "Did you know?" facts, loaded the first time Explore needs one
+let FACTS = null, factsLoading = null;
+const loadFacts = () => factsLoading || (factsLoading = fetch('facts.json').then(r => { if(!r.ok) throw 0; return r.json(); }).then(f => FACTS = f).catch(() => { factsLoading = null; }));
+function factFor(n, map){ if(!FACTS) return null; if(map === 'world') return null; return (map === 'us' ? FACTS.us : FACTS.country)[n] || null; }
 function exploreInfo(n){
   const box = $('exInfo');
   if(!n){ box.innerHTML = '<p class="muted">Tap any place on the map to learn about it, or press <b>Next</b>.</p>'; return; }
@@ -1321,7 +1371,9 @@ function exploreInfo(n){
   const extra = R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
   box.innerHTML = `${flags ? flagImg(n, 'exflag') : ''}<div class="exbody"><p class="exname">${esc(n)} ${sayBtn(n, cap ? [n, '. Its capital is', cap] : [n])}</p>
     ${cap ? `<p>Capital: <b>${esc(cap)}</b> <span class="exstarkey" aria-hidden="true">★</span>${CAP_NOTE[n] ? ` <span class="muted">${esc(CAP_NOTE[n])}</span>` : ''}</p>` : ''}
-    ${extra ? `<p class="muted">${extra}</p>` : ''}</div>`;
+    ${extra ? `<p class="muted">${extra}</p>` : ''}
+    ${factFor(n, R.map) ? `<p class="fact"><span class="fk">💡 Did you know? ${sayBtn('the fact', [factFor(n, R.map)])}</span>${esc(factFor(n, R.map))}</p>` : ''}</div>`;
+  if(!FACTS && R.map !== 'world') loadFacts().then(() => { if(EXPLORE && current === n && FACTS) exploreInfo(n); });
 }
 function drawLabels(){
   const old = svg.querySelector('#exLabels'); if(old) old.remove();
@@ -1393,7 +1445,7 @@ async function pickDaily(){
     if(seen.has(tid + '|' + n)) continue;
     seen.add(tid + '|' + n); qs.push({t: tid, n});
   }
-  for(const q of qs){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(); q.style = Math.random() < 0.5 ? 'find' : 'pick'; }
+  ;for(const q of qs){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); q.style = Math.random() < 0.5 ? 'find' : 'pick'; }
   return shuffle(qs);
 }
 async function startDaily(){
@@ -1418,7 +1470,7 @@ async function dailyShow(){
   if(q.style === 'find'){
     $('sub').textContent = 'Tap the right place on the map. You get 2 tries.';
     $('selLabel').textContent = 'Find it on the map';
-    if(T.flags) fq.innerHTML = `${flagImg(q.n,'big')}<span>Find the country with this flag</span>`;
+    if(T.flags) fq.innerHTML = `${flagImg(q.n,'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>`;
     else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else {
@@ -1502,8 +1554,14 @@ const BADGES = [
   {id:'streak3', icon:'🔥', name:'3-Day Streak', desc:'Do the Daily 10 three days in a row.'},
   {id:'streak7', icon:'🔥', name:'7-Day Streak', desc:'Do the Daily 10 seven days in a row.'},
   {id:'streak30', icon:'🏆', name:'30-Day Streak', desc:'Do the Daily 10 thirty days in a row.'},
-  ...TOPICS.map(t => ({id:'master-'+t.id, icon: t.flags ? '🚩' : t.showsItem ? '🏛️' : '🗺️', name:`${t.name} Master`, desc:`Learn all ${t.count} ${t.nouns === 'places' ? 'continents and oceans' : t.nouns}.`})),
+  ...TOPICS.flatMap(t => [
+    {id:'master-'+t.id, icon:badgeIcon(t), name:`${t.name} Master`, desc:`Learn all ${t.count} ${t.nouns === 'places' ? 'continents and oceans' : t.nouns}.`, group:t.group, topic:t.id, need:t.count, master:true},
+    // smaller badges, one for each part of a big place, so there's always one within reach
+    ...(t.parts ? Object.entries(t.parts).map(([part, names]) => ({id:`part-${t.id}-${part}`, icon:badgeIcon(t), name:`${partTitle(t.group, part)} ${t.tab}`,
+      desc:`Learn all ${names.length} ${t.nouns} in ${PART_PHRASE[t.group + '|' + part] || part + ' ' + t.group}.`, group:t.group, topic:t.id, part, need:names.length})) : []),
+  ]),
 ];
+function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : '🗺️'; }
 async function computeBadges(p){
   const attempts = (await DB.all('attempts')).filter(a => a.pid === p.id && TOPIC[a.topic]);
   const items = (await DB.all('items')).filter(r => r.pid === p.id);
@@ -1519,12 +1577,27 @@ async function computeBadges(p){
     streak3: (d.best||0) >= 3, streak7: (d.best||0) >= 7, streak30: (d.best||0) >= 30,
   };
   TOPICS.forEach(t => has['master-'+t.id] = learned[t.id] >= t.count);
-  return BADGES.map(b => ({...b, earned: !!has[b.id]}));
+  // progress toward each place and part badge
+  const rightSet = {}; items.forEach(r => { if(r.last === 'right') (rightSet[r.topic] = rightSet[r.topic] || new Set()).add(r.item); });
+  const have = b => { if(!b.topic) return null; const set = rightSet[b.topic] || new Set(); return b.part ? TOPIC[b.topic].parts[b.part].filter(n => set.has(n)).length : learned[b.topic]; };
+  BADGES.forEach(b => { if(b.part) has[b.id] = have(b) >= b.need; });
+  return BADGES.map(b => ({...b, earned: !!has[b.id], have: have(b)}));
+}
+const badgeCard = b => `<div class="badge ${b.earned?'on':'off'}"><span class="bi" aria-hidden="true">${b.icon}</span><span class="bn">${esc(b.name)}</span><span class="bd">${esc(b.desc)}</span>${b.earned ? '' : b.have != null && b.have > 0 ? `<span class="bp" role="img" aria-label="${b.have} of ${b.need} learned"><i style="width:${Math.round(100*b.have/b.need)}%"></i></span><span class="bd"><b>${b.have}</b> of ${b.need}</span>` : '<span class="sr">Not earned yet</span>'}</div>`;
+// one folding section per place, so the list stays short; open the ones being worked on
+function badgeGroups(badges){
+  const groups = [{name:'Getting started', list:badges.filter(b => !b.group)}, ...REGIONS.map(r => ({name:r.name, list:badges.filter(b => b.group === r.name)}))];
+  const sorted = l => l.slice().sort((a,b) => b.earned - a.earned || (b.have||0)/b.need - (a.have||0)/a.need || (a.master?1:0) - (b.master?1:0));
+  return groups.filter(g => g.list.length).map((g, i) => {
+    const got = g.list.filter(b => b.earned).length, busy = g.list.some(b => !b.earned && b.have > 0);
+    return `<details class="bgroup"${i === 0 || busy ? ' open' : ''}><summary><span class="bgn">${esc(g.name)}</span><span class="bgc">${got} of ${g.list.length}</span>${got ? `<span class="bgi" aria-hidden="true">${g.list.filter(b => b.earned).slice(0, 6).map(b => b.icon).join('')}</span>` : ''}</summary>
+      <div class="badges">${sorted(g.list).map(badgeCard).join('')}</div></details>`;
+  }).join('');
 }
 async function checkBadges(){
   if(!player) return;
   const list = await computeBadges(player), had = player.badges || {};
-  const fresh = list.filter(b => b.earned && !had[b.id]);
+  const fresh = list.filter(b => b.earned && !had[b.id]).sort((a,b) => (a.part ? 0 : a.master ? 1 : 2) - (b.part ? 0 : b.master ? 1 : 2)); // show the place badge first
   if(!fresh.length) return;
   player.badges = {...had}; fresh.forEach(b => player.badges[b.id] = Date.now());
   await DB.put('players', player);
@@ -1578,14 +1651,14 @@ $('importFile').addEventListener('change', async e => {
 function openHelp(){
   openPanel({kind:'full', title:'How to play', html:`
     <ol class="steps">
-      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, Central America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b> or <b>Flags</b>. Want a shorter game? Big places like Europe, Africa and Asia have a <b>Part</b> row, so you can play just one part, like West Africa or the Middle East.</p></li>
-      <li><h3>Look around first</h3><p>Tap <b>🔍 Explore the map</b> to look around with no quiz. Tap any place to see its name, flag and capital. Turn <b>Show names</b> off to hide the names and quiz yourself.</p></li>
+      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, North America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b> or <b>Flags</b>. Want a shorter game? Big places like Europe, Africa, Asia and North America have a <b>Part</b> row, so you can play just one part, like West Africa or the Caribbean. Learn every one in a part to earn its badge 🏅.</p></li>
+      <li><h3>Look around first</h3><p>Tap <b>🔍 Explore the map</b> to look around with no quiz. Tap any place to see its name, flag, capital and a fun fact. Turn <b>Show names</b> off to hide the names and quiz yourself.</p></li>
       <li><h3>Pick how to play</h3><p><b>Learn:</b> flashcards, one at a time.<br><b>Find it:</b> the game shows a name, and you tap it on the map. You get 3 tries.<br><b>Practice:</b> find out right away if you are right.<br><b>Test:</b> answer them all, then press <b>Review</b> to see your score.</p></li>
       <li><h3>Tap the map</h3><p>In Practice and Test, tap a place. It turns orange. Then start typing its name in the box. Pick the name from the list and press <b>Save</b> or <b>Check</b>. Don't worry about spelling. The list helps you. Don't like typing? Turn on <b>Easy answers</b> in <b>⚙ Settings</b> to pick from 4 answers instead. Flags games always let you pick from 4.</p></li>
-      <li><h3>Zoom in</h3><p>Small places are hard to tap. Pinch the map, or press <b>+</b>. Drag to move around. Press <b>⤢</b> to see the whole map again. Tiny islands have a circle you can tap. <b>Next</b> takes you to one you haven't answered.</p></li>
+      <li><h3>Zoom in</h3><p>Small places are hard to tap. Pinch the map, or press <b>+</b>. Drag to move around. Press <b>⤢</b> to see the whole map again. Very small places, like Vatican City or tiny islands, have a circle you can tap. <b>Next</b> takes you to one you haven't answered.</p></li>
       <li><h3>Check your score</h3><p>After <b>Review</b>, green means right and red means missed. Press <b>Try the missed</b> to try again. Your right answers stay green.</p></li>
       <li><h3>Learn with flashcards</h3><p>Tap the card to flip it. Press <b>Got it</b> if you knew it. Press <b>Study again</b> if you didn't, and it will come back at the end. Press <b>🔊 Say it</b> to hear the answer.</p></li>
-      <li><h3>Hear the names</h3><p>Tap <b>🔊</b> next to a name to hear how to say it. Want every name read out loud? Turn on <b>Say names out loud</b> in <b>⚙ Settings</b>.</p></li>
+      <li><h3>Hear the names</h3><p>Tap <b>🔊</b> next to a name to hear how to say it, or next to a fun fact to hear it read. Want every name read out loud? Turn on <b>Say names out loud</b> in <b>⚙ Settings</b>.</p></li>
       <li><h3>Daily 10</h3><p>Every day, tap <b>Daily 10</b> at the top of the home screen for 10 quick questions from everywhere. Play every day to grow your streak 🔥 and earn badges.</p></li>
       <li><h3>Your scores</h3><p>Each player has their own scores. Tap <b>★ Scores</b> on the home screen to see your games, your badges, the ones that need practice, and everyone's scores. Tap your name to switch players. <b>⚙ Settings</b> also turns on the stopwatch and sounds.</p></li>
     </ol>
@@ -1618,7 +1691,7 @@ async function applyUpdate(){
     if('caches' in window){
       const cache = await caches.open('wgq-v1');
       await Promise.all(CORE.map(async u => { const r = await fetch(u + (u.includes('?')?'&':'?') + 'check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(u, r); }));
-      for(const k of ['us.json','world.json','europe.json','samerica.json','camerica.json','africa.json','asia.json','oceania.json','flags.json','thumbs.json']){ const r = await fetch(k + '?check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(k, r); }
+      for(const k of ['us.json','world.json','europe.json','samerica.json','namerica.json','africa.json','asia.json','oceania.json','facts.json','flags.json','usflags.json','thumbs.json']){ const r = await fetch(k + '?check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(k, r); }
     }
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); reg && await reg.update();
   }catch(e){}
@@ -1626,6 +1699,7 @@ async function applyUpdate(){
 }
 async function start(){
   const persistent = await DB.ready();
+  await migrateCentralAmerica();
   await loadPlayers();
   player = players.find(p => p.id === LS.get('player')) || null;
   if(player){ showScreen('scrHome'); renderHome(); }

@@ -2,7 +2,7 @@
   "name": "World Geography Quiz",
   "short_name": "Geography Quiz",
   "description": "Learn US states, state capitals, continents and oceans with map quizzes and flashcards.",
-  "id": "./",
+  "id": "world-geography-quiz",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

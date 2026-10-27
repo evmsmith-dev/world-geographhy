@@ -16,9 +16,9 @@
 <meta name="apple-mobile-web-app-title" content="Geography Quiz">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preload" href="alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="app.css?v=2026-10-26T21:57:10Z">
-<script>window.WGQ_BUILD='2026-10-26T21:57:10Z'</script>
-<script src="app.js?v=2026-10-26T21:57:10Z" defer></script>
+<link rel="stylesheet" href="app.css?v=2026-10-27T01:53:50Z">
+<script>window.WGQ_BUILD='2026-10-27T01:53:50Z'</script>
+<script src="app.js?v=2026-10-27T01:53:50Z" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -44,6 +44,17 @@
     </div>
     <p class="hello" id="hello" style="margin:10px 0 4px"></p>
     <div id="homeGroups"></div>
+  </section>
+
+  <!-- A place: what to learn, then how to play -->
+  <section id="scrRegion" hidden>
+    <div class="apphead">
+      <button class="icon-btn" id="regionBack" aria-label="Back to home">←</button>
+      <h1 id="regionTitle"></h1>
+    </div>
+    <button class="explorebtn" id="exploreBtn"><span class="ei" aria-hidden="true">🔍</span><span><span class="mn">Explore the map</span><span class="md">Tap any place to see its name, capital and more. No quiz!</span></span></button>
+    <div class="tabs" id="regionTabs" role="tablist" aria-label="What to learn"></div>
+    <div id="regionBody" class="regionbody"></div>
   </section>
 
   <!-- Scores -->
@@ -121,13 +132,18 @@
         <button class="primary" id="fReveal">Show answer</button>
         <button id="fMiss" hidden>✗ Study again</button>
         <button class="primary" id="fGot" hidden>✓ Got it</button>
+        <button id="fSay" hidden>🔊 Say it</button>
         <button id="fRestart" aria-label="Shuffle and start over">Shuffle</button>
-        <p class="fkeys">Keyboard: Space to flip, → got it, ← study again</p>
+        <p class="fkeys">Keyboard: Space to flip, → got it, ← study again, S to hear it</p>
       </div>
     </section>
 
     <div class="bar" id="play">
       <label class="label" for="answer" id="selLabel">Tap the map</label>
+      <p class="findq" id="findQ" aria-live="polite" hidden></p>
+      <div class="extools" id="exTools" hidden><button id="lblBtn" aria-pressed="true">Show names</button></div>
+      <div class="exinfo" id="exInfo" aria-live="polite" hidden></div>
+      <div class="choices" id="choices" role="group" aria-label="Pick an answer" hidden></div>
       <div class="combo">
         <input id="answer" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="opts" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
         <button class="clear" id="clearTxt" aria-label="Clear" hidden>×</button>
@@ -138,10 +154,17 @@
         <button id="prev" aria-label="Previous one you haven't answered">◀ Prev</button>
         <button id="next" aria-label="Next one you haven't answered">Next ▶</button>
       </div>
+      <button id="skipBtn" hidden>Skip</button>
       <span class="spacer"></span>
       <button id="reviewBtn">Review</button>
       <p class="feedback" id="feedback" aria-live="polite"></p>
     </div>
+
+    <section id="dailyDone" class="sheetbox dailydone" hidden aria-live="polite">
+      <h2 id="dailyDoneH"></h2>
+      <p id="dailyDoneP"></p>
+      <button class="primary" id="dailyHome">Back home</button>
+    </section>
 
     <section id="results" hidden>
       <div class="bar rbar">

@@ -3,7 +3,7 @@
 // Only touches caches that start with "wgq-", so other apps on the same site are left alone.
 const CACHE = 'wgq-v1';
 const FILES = [
-  './', 'index.html', 'app.js', 'app.css', 'us.json', 'world.json', 'manifest.webmanifest',
+  './', 'index.html', 'app.js', 'app.css', 'us.json', 'world.json', 'europe.json', 'samerica.json', 'camerica.json', 'africa.json', 'asia.json', 'flags.json', 'thumbs.json', 'manifest.webmanifest',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-32.png',
   'alegreya-sans-latin-400-normal.woff2', 'alegreya-sans-latin-500-normal.woff2', 'alegreya-sans-latin-700-normal.woff2',
   'alegreya-sans-sc-latin-500-normal.woff2', 'alegreya-sans-sc-latin-800-normal.woff2'

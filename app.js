@@ -540,11 +540,26 @@ function drawMap(){
 svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if(p && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(p.dataset.n); } });
 
 const clampW = w => Math.min(VW, Math.max(MINW, w));
+// tap dots for tiny places always sit above the countries, or a big neighbor (Italy) could cover one (Vatican City)
+// the map's size on screen changes (first layout, turning the iPad, Explore), so resize the tap dots to match
+if('ResizeObserver' in window) new ResizeObserver(() => { if(DOTS && Object.keys(DOTS).length && vb && vb.w) setVB(vb); }).observe(svg);
+function raiseDots(last){ for(const k in DOTS) if(k !== last) svg.appendChild(DOTS[k]); if(last && DOTS[last]) svg.appendChild(DOTS[last]); const g = svg.querySelector('#exLabels'); if(g) svg.appendChild(g); }
+// a finger is bigger than a dot: a tap near a dot picks it, so tiny places are easy to hit
+function dotNear(cx, cy){
+  let best = null, bd = 1e9;
+  for(const k in DOTS){ const c = DOTS[k]; if(c.classList.contains('off') || c.style.display === 'none') continue;
+    const r = c.getBoundingClientRect(); if(!r.width) continue;
+    const d = Math.hypot(cx - (r.left + r.width/2), cy - (r.top + r.height/2));
+    if(d <= r.width/2 + 8 && d < bd){ bd = d; best = k; } } // the dot plus a little extra for fingers
+  return best;
+}
 function setVB(v){
   const w = clampW(v.w), h = w*VH/VW;
   const x = Math.min(VW-w, Math.max(0, v.x)), y = Math.min(VH-h, Math.max(0, v.y));
   vb = {x,y,w,h}; svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
-  const r = 8 * w / (svg.clientWidth || 600); // tap dots stay about the same size on screen at any zoom
+  // tap dots stay about the same size on screen at any zoom; a map limited by its height draws smaller, so use the real scale
+  const cw = svg.clientWidth || 600, ch = svg.clientHeight || cw*VH/VW, px = Math.min(cw / w, ch / h) || 1;
+  const r = 10 / px;
   for(const k in DOTS) DOTS[k].setAttribute('r', r.toFixed(2));
   if(EXPLORE) exploreScale();
   const full = w >= VW-0.5;
@@ -601,7 +616,8 @@ function endPointer(e){
   if(!pts.has(e.pointerId)) return;
   const tap = e.type==='pointerup' && pts.size===1 && !dragged;
   pts.delete(e.pointerId);
-  if(tap){ const el = document.elementFromPoint(e.clientX, e.clientY); const p = el && el.closest && el.closest('.st'); if(p) select(p.dataset.n); }
+  if(tap){ const near = e.pointerType === 'mouse' ? null : dotNear(e.clientX, e.clientY); const el = document.elementFromPoint(e.clientX, e.clientY); const p = el && el.closest && el.closest('.st');
+    const n = near || (p && p.dataset.n); if(n) select(n); }
   if(pts.size === 1){ const [p] = [...pts.values()]; drag = {x:p.x, y:p.y, vb:{...vb}}; pinch0 = null; }
   if(!pts.size){ drag = null; pinch0 = null; }
 }
@@ -826,7 +842,7 @@ function select(n){
       : `${right} ${a ? `You said ${esc(a)}.` : `You left it blank.`}`;
     paint(); return;
   }
-  if(ITEM[n].kind !== 'ocean'){ svg.appendChild(els[n]); if(DOTS[n]) svg.appendChild(DOTS[n]); } // bring to front so its outline shows
+  if(ITEM[n].kind !== 'ocean'){ svg.appendChild(els[n]); raiseDots(n); } // bring to front so its outline shows, but keep tap dots on top
   if(isSolved(n)) feedback(T.showsItem ? `<b>${esc(key(n))}</b>. You already got this one.` : `That's <b>${esc(n)}</b>. You already got this one.`, 'ok');
   else if(G.mode==='practice' && G.answers[n]) feedback(`You said ${esc(G.answers[n])}. ${T.showsItem ? `The capital is <b>${esc(key(n))}</b>` : `This is <b>${esc(n)}</b>`}.`, 'bad');
   else feedback('');
@@ -1282,7 +1298,7 @@ function explorePaint(){
     els[n].setAttribute('class', cls); if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
     els[n].setAttribute('aria-label', n);
   });
-  if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); if(DOTS[current]) svg.appendChild(DOTS[current]); }
+  if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); raiseDots(current); }
   // labels and the capital star stay on top
   const g = svg.querySelector('#exLabels'); if(g) svg.appendChild(g);
   let st = svg.querySelector('#exStar');
@@ -1423,7 +1439,7 @@ function dailyPaint(reveal, mark){
     else if(n === current || n === reveal) cls += ' sel';
     els[n].setAttribute('class', cls); if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
   });
-  if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); if(DOTS[current]) svg.appendChild(DOTS[current]); }
+  if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); raiseDots(current); }
 }
 function dailyAnswer(right, msg){
   const q = DAILY.qs[DAILY.i];

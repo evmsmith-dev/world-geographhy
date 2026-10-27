@@ -57,6 +57,8 @@ const AS_PARTS = {
   East:['China','Japan','Mongolia','North Korea','South Korea','Taiwan'],
   Southeast:['Brunei','Cambodia','Indonesia','Laos','Malaysia','Myanmar','Philippines','Singapore','Thailand','Timor-Leste','Vietnam'],
 };
+const OC_ALIAS = {'Micronesia':['federated states of micronesia','fsm'],'Papua New Guinea':['png'],'Solomon Islands':['solomons'],'Marshall Islands':['marshalls']};
+const OC_CAP_ALIAS = {'South Tarawa':['tarawa','bairiki'],"Nuku'alofa":['nukualofa'],'Ngerulmud':['melekeok']};
 // the four parts of Europe (UN regions), for shorter games
 const EU_PARTS = {
   Northern:['Denmark','Estonia','Finland','Iceland','Ireland','Latvia','Lithuania','Norway','Sweden','United Kingdom'],
@@ -71,6 +73,8 @@ const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
   'Burundi':'The capital moved here from Bujumbura in 2019.',
   'Israel':'Many countries keep their embassies in Tel Aviv.','Sri Lanka':'Colombo is the biggest city, and the government works in both.',
   'Malaysia':'The government works in nearby Putrajaya.','Myanmar':'Yangon is the biggest city.','Kazakhstan':'It was called Nur-Sultan from 2019 to 2022.',
+  'Nauru':'Nauru has no official capital. The government works in Yaren.','Tuvalu':'The government works on Funafuti, a ring of tiny islands.',
+  'Palau':'It took over from Koror in 2006.','Australia':'Sydney is the biggest city.','New Zealand':'Auckland is the biggest city.',
   'Indonesia':'A new capital, Nusantara, is being built on the island of Borneo.','Turkey':'Istanbul is the biggest city.'};
 const MAPDATA = {}; // map files once loaded, with items indexed by name
 let FLAGURL = null, flagsLoading = null; // country name -> data: URL of its flag
@@ -118,6 +122,7 @@ const TOPICS = [
   ...regionTopics('eu', 'Europe', 'europe', 44, 14, 'Find all 44 countries in Europe.', 'Name the capital of every country in Europe.', EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
   ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
+  ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, 'Find all 14 countries in Oceania.', 'Name the capital of every country in Oceania.', OC_ALIAS, OC_CAP_ALIAS),
   ...regionTopics('ca', 'Central America', 'camerica', 7, 6, 'Find all 7 countries in Central America.', 'Name the capital of every country in Central America.', {}, CA_CAP_ALIAS),
   ...regionTopics('sa', 'South America', 'samerica', 12, 6, 'Find all 12 countries in South America.', 'Name the capital of every country in South America.', {}, SA_CAP_ALIAS),
 ];
@@ -130,7 +135,7 @@ function regionTopics(id, region, map, count, maxZoom, blurb, capBlurb, alias, c
     {...base, id:id+'-countries', tab:'Countries', name:`Countries of ${region}`, blurb, answer:n=>n, nouns:'countries', listWord:'countries', alias,
       tapWhat:'Tap a country, find its name', ask:()=>'Which country is this?', flashFront:()=>'Which country is this?',
       back:n=>({answer:n, sub:`Capital: <b>${esc(cap(n))}</b> ★${note(n)}`})},
-    {...base, id:id+'-capitals', tab:'Capitals', name:`${({'Europe':'European','Africa':'African','Asia':'Asian','South America':'South American','Central America':'Central American'})[region]} Capitals`, blurb:capBlurb, answer:cap, nouns:'capitals', listWord:'capitals', alias:capAlias, showsItem:true,
+    {...base, id:id+'-capitals', tab:'Capitals', name:region === 'Oceania' ? 'Capitals of Oceania' : `${({'Europe':'European','Africa':'African','Asia':'Asian','South America':'South American','Central America':'Central American'})[region]} Capitals`, blurb:capBlurb, answer:cap, nouns:'capitals', listWord:'capitals', alias:capAlias, showsItem:true,
       tapWhat:'Tap a country, find its capital', ask:n=>`What is the capital of ${n}?`, flashFront:n=>`${n}: what is its capital?`,
       back:n=>({answer:cap(n), sub:`Capital of <b>${esc(n)}</b> ★${note(n)}`})},
     {...base, id:id+'-flags', tab:'Flags', name:`Flags of ${region}`, blurb:`Learn the flag of every country in ${region}.`, flags:true, card:'flag', answer:n=>n, nouns:'flags', listWord:'countries', alias,
@@ -285,7 +290,9 @@ const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','
   'Kyiv':'keev','Czechia':'check-ee-uh','Brasília':'brah-zee-lee-ah','Bogotá':'boh-goh-tah','Asunción':'ah-soon-see-ohn','Tegucigalpa':'teh-goo-see-gal-pah',
   'Belmopan':'bel-moh-pan','Paramaribo':'pah-rah-mah-ree-boh','Antananarivo':'an-tah-nah-nah-ree-voh','Gaborone':'hah-boh-roh-nay','São Tomé and Príncipe':'sow toh-may and preen-see-pay',
   'São Tomé':'sow toh-may','Eswatini':'eh-swah-tee-nee','Djibouti':'jih-boo-tee','Timor-Leste':'tee-mor lesh-tay','Dili':'dee-lee','Bandar Seri Begawan':'bun-dar seh-ree beh-gah-wan',
-  'Vientiane':'vee-en-tee-ahn','Phnom Penh':'puh-nom pen','Nur-Sultan':'noor sool-tahn','Astana':'ah-stah-nah'};
+  'Vientiane':'vee-en-tee-ahn','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
+  'Palikir':'pah-lee-keer','Majuro':'mah-joo-roh','Funafuti':'foo-nah-foo-tee','Tuvalu':'too-vah-loo','Nauru':'nah-oo-roo','Yaren':'yah-ren','Apia':'ah-pee-ah',
+  'Vanuatu':'vah-noo-ah-too','Port Vila':'port vee-lah','Honiara':'hoh-nee-ah-rah','Phnom Penh':'puh-nom pen','Nur-Sultan':'noor sool-tahn','Astana':'ah-stah-nah'};
 let voice = null;
 function pickVoice(){
   if(!CAN_SAY) return;
@@ -1555,7 +1562,7 @@ $('importFile').addEventListener('change', async e => {
 function openHelp(){
   openPanel({kind:'full', title:'How to play', html:`
     <ol class="steps">
-      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Central America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b> or <b>Flags</b>. Want a shorter game? Big places like Europe, Africa and Asia have a <b>Part</b> row, so you can play just one part, like West Africa or the Middle East.</p></li>
+      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, Central America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b> or <b>Flags</b>. Want a shorter game? Big places like Europe, Africa and Asia have a <b>Part</b> row, so you can play just one part, like West Africa or the Middle East.</p></li>
       <li><h3>Look around first</h3><p>Tap <b>🔍 Explore the map</b> to look around with no quiz. Tap any place to see its name, flag and capital. Turn <b>Show names</b> off to hide the names and quiz yourself.</p></li>
       <li><h3>Pick how to play</h3><p><b>Learn:</b> flashcards, one at a time.<br><b>Find it:</b> the game shows a name, and you tap it on the map. You get 3 tries.<br><b>Practice:</b> find out right away if you are right.<br><b>Test:</b> answer them all, then press <b>Review</b> to see your score.</p></li>
       <li><h3>Tap the map</h3><p>In Practice and Test, tap a place. It turns orange. Then start typing its name in the box. Pick the name from the list and press <b>Save</b> or <b>Check</b>. Don't worry about spelling. The list helps you. Don't like typing? Turn on <b>Easy answers</b> in <b>⚙ Settings</b> to pick from 4 answers instead. Flags games always let you pick from 4.</p></li>
@@ -1595,7 +1602,7 @@ async function applyUpdate(){
     if('caches' in window){
       const cache = await caches.open('wgq-v1');
       await Promise.all(CORE.map(async u => { const r = await fetch(u + (u.includes('?')?'&':'?') + 'check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(u, r); }));
-      for(const k of ['us.json','world.json','europe.json','samerica.json','camerica.json','africa.json','asia.json','flags.json','thumbs.json']){ const r = await fetch(k + '?check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(k, r); }
+      for(const k of ['us.json','world.json','europe.json','samerica.json','camerica.json','africa.json','asia.json','oceania.json','flags.json','thumbs.json']){ const r = await fetch(k + '?check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(k, r); }
     }
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); reg && await reg.update();
   }catch(e){}

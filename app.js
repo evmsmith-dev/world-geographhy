@@ -579,7 +579,7 @@ function drawMap(){
   DOTS = {};
   M.items.filter(i => i.dot).forEach(i => { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('cx', i.dot[0]); c.setAttribute('cy', i.dot[1]); c.dataset.n = i.n; c.setAttribute('aria-hidden','true'); svg.appendChild(c); DOTS[i.n] = c; });
   // tall maps (South America) shouldn't run off the bottom of the screen
-  svg.style.maxWidth = VH/VW > 0.7 ? `calc(max(300px, 100vh - 340px) * ${(VW/VH).toFixed(3)})` : '';
+  fitMap(true);
   setVB({x:0, y:0, w:VW});
 }
 svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if(p && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(p.dataset.n); } });
@@ -856,6 +856,34 @@ function layoutBar(){
   $('findQ').hidden = !find; $('skipBtn').hidden = !find;
   $('choices').hidden = !pick;
 }
+// The answer bar sticks to the bottom of the screen. On phones, keep the map small enough to fit between the top bar
+// and the answer bar, so no place is ever stuck underneath it (Central America under the flag choices, say).
+let barReserve = 0;
+function fitMap(reset){
+  if(reset) barReserve = 0;
+  if($('scrPlay').hidden || !VW) return;
+  const ae = document.activeElement;
+  if(!reset && ae && ae.tagName === 'INPUT') return; // the on-screen keyboard shrinks the window only for a moment
+  const shown = el => el && !el.hidden && el.offsetParent !== null;
+  const bars = [$('play'), $('results').querySelector('.bar'), $('dailyDone')].filter(shown);
+  barReserve = Math.max(barReserve, ...bars.map(b => b.offsetHeight)); // only grows during a game, so the map doesn't jump on every tap
+  const top = document.querySelector('#scrPlay .topbar').offsetHeight;
+  const avail = innerHeight - top - barReserve - 20;
+  const maxW = Math.max(240, avail) * VW / VH;
+  const want = maxW < (svg.parentElement.clientWidth || 1e9) ? Math.floor(maxW) + 'px' : '';
+  if(svg.style.maxWidth !== want){ svg.style.maxWidth = want; if(vb && vb.w) setVB(vb); }
+}
+// bring the map up under the top bar if the answer bar would cover part of it
+function showWholeMap(){
+  requestAnimationFrame(() => {
+    fitMap();
+    const ms = $('mapSheet'); if(ms.hidden) return;
+    const top = document.querySelector('#scrPlay .topbar').offsetHeight, r = svg.getBoundingClientRect();
+    if(r.bottom > innerHeight - barReserve - 4) window.scrollTo(0, Math.max(0, scrollY + ms.getBoundingClientRect().top - top - 6));
+  });
+}
+if('ResizeObserver' in window){ const ro = new ResizeObserver(() => fitMap()); ro.observe($('play')); ro.observe($('results')); }
+addEventListener('resize', () => fitMap());
 function toPlay(){
   reviewing = false; current = null;
   $('play').hidden = false; $('results').hidden = true;
@@ -864,6 +892,7 @@ function toPlay(){
   if(G.mode === 'find'){ if(!G.queue || !G.queue.length) G.queue = shuffle(PN().filter(n => isOpen(n))); G.tries = 0; G.firstWrong = null; }
   paint();
   if(G.part) zoomToItems(PN());
+  showWholeMap();
 }
 // frame a group of places (a part of a big place like West Africa)
 function zoomToItems(names){
@@ -1328,6 +1357,8 @@ function enterExplore(regionName, fromPicker){
     $('sub').textContent = 'Tap any place to learn about it. Pinch or press + to zoom in.';
     $('selLabel').textContent = 'Explore';
     feedback(''); explorePaint(); exploreInfo(null); drawLabels(); exploreScale();
+    barReserve = Math.max(barReserve, Math.min(340, innerHeight * 0.42)); // room for a place's flag, capital and fun fact, so the map doesn't shrink on the first tap
+    showWholeMap();
   })();
 }
 function endExplore(){
@@ -1475,14 +1506,14 @@ async function dailyShow(){
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else {
     $('sub').textContent = 'Look at the orange place on the map, then pick the right answer.';
-    $('selLabel').textContent = T.flags ? 'Which flag belongs to this country?' : T.showsItem ? `What is the capital of ${q.n}?` : T.ask(q.n);
+    $('selLabel').textContent = T.flags ? `Which flag belongs to this ${T.itemWord || 'country'}?` : T.showsItem ? `What is the capital of ${q.n}?` : T.ask(q.n);
     fq.hidden = true; ch.hidden = false;
     const right = key(q.n), others = shuffle(NAMES.map(key).filter(v => v !== right)).slice(0, 3), opts = shuffle([right, ...others]);
     ch.classList.toggle('flags', !!T.flags);
     ch.innerHTML = opts.map((v,i) => T.flags ? `<button data-dv="${esc(v)}" aria-label="Flag ${i+1}">${flagImg(v)}</button>` : `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
     focusItem(q.n);
   }
-  dailyPaint();
+  dailyPaint(); showWholeMap();
 }
 function dailyPaint(reveal, mark){
   NAMES.forEach(n => {

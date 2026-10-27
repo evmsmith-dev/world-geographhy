@@ -76,7 +76,7 @@ SOFTWARE.
 
 ## State flag credits
 
-US state flag artwork comes from the [us-state-flags](https://www.npmjs.com/package/us-state-flags) package by Foxsense Innovations, used under the ISC license. The lettering on the California and Illinois flags was redrawn.
+US state flag artwork comes from the [us-state-flags](https://www.npmjs.com/package/us-state-flags) package by Foxsense Innovations, used under the ISC license. The lettering on the California and Illinois flags was redrawn, and the Ohio flag was drawn by hand.
 
 ISC License
 

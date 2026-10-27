@@ -206,9 +206,9 @@ button:disabled,input:disabled{opacity:.45;cursor:not-allowed}
 
 /* ---------- play top bar ---------- */
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:8px;background:var(--bg);padding-block:4px}
-.tchip{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:6px;justify-content:flex-start;background:var(--sheet);font-family:var(--display);font-weight:800;font-size:1.05rem;letter-spacing:.03em}
+.tchip{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:6px;justify-content:flex-start;background:var(--sheet);font-family:var(--display);font-weight:800;font-size:clamp(.92rem,3.9vw,1.05rem);letter-spacing:.02em}
 .tchip #chipText{display:flex;flex-direction:column;min-width:0;text-align:left;line-height:1.15;flex:1 1 auto}
-.tchip #chipText,.tchip #chipText small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tchip #chipText,.tchip #chipText small,.tchip .ct{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tchip #chipText small{font-family:var(--body);font-weight:500;font-size:.85rem;letter-spacing:0;color:var(--muted)}
 .tchip .caret{flex:none;color:var(--muted);font-size:.8rem}
 .clock{font-family:var(--display);font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:.04em;padding:0 6px;white-space:nowrap}
@@ -407,3 +407,23 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 .review li .say{min-width:36px;min-height:36px;font-size:1em;margin:-6px 0 -6px 2px}
 .exname .say{font-size:.75em}
 .nosay .say,.nosay #fSay{display:none!important}
+
+/* badges grouped by place, with progress */
+.bgroup{border:1px solid var(--line);border-radius:12px;background:var(--sheet);margin:10px 0;padding:0 12px}
+.bgroup summary{display:flex;align-items:center;gap:10px;min-height:48px;cursor:pointer;list-style:none;font-weight:700}
+.bgroup summary::-webkit-details-marker{display:none}
+.bgroup summary::before{content:'▸';color:var(--muted);transition:transform .15s}
+.bgroup[open] summary::before{transform:rotate(90deg)}
+.bgroup .bgn{font-family:var(--display);letter-spacing:.02em}
+.bgroup .bgc{color:var(--muted);font-weight:500;font-size:.92rem}
+.bgroup .bgi{margin-left:auto;letter-spacing:2px;white-space:nowrap;overflow:hidden}
+.bgroup .badges{padding-bottom:12px}
+.badge .bp{display:block;width:80%;height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
+.badge .bp i{display:block;height:100%;background:var(--sel)}
+.pdone{margin-left:4px;font-size:.9em}
+.gotbadge{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.bgroup summary::before{transition:none}}
+
+/* Explore: fun fact */
+.exinfo .fact{margin-top:8px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--hi) 55%,var(--sheet));line-height:1.4}
+.exinfo .fact .fk{display:block;font-weight:700;font-size:.9rem;margin-bottom:2px}

@@ -443,3 +443,7 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 .review .mixtip{flex-basis:100%;font-size:.9rem;margin-top:2px}
 /* Up next */
 .upnext{border:2px solid var(--sel);background:color-mix(in srgb,var(--hi) 45%,var(--sheet));width:100%}
+
+/* short screens during a map game: the instructions line goes so the whole game fits without scrolling */
+#scrPlay.compact .statusline .sub2{display:none}
+#scrPlay.compact .statusline{margin:4px 0 6px!important}

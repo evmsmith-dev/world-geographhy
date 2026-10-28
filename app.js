@@ -224,10 +224,21 @@ const DB = (() => {
   };
 })();
 const gameKey = (pid, topic, mode) => `${pid}|${topic}|${mode}`;
-async function recordItem(pid, topic, item, right){
+// extra: more fields to store with the answer (a Test also keeps its own last result). Returns the record as it was before.
+async function recordItem(pid, topic, item, right, extra){
   const key = `${pid}|${topic}|${item}`;
   const r = (await DB.get('items', key)) || {key, pid, topic, item, seen:0, right:0, wrong:0};
+  const before = {...r};
   r.seen++; right ? r.right++ : r.wrong++; r.last = right ? 'right' : 'wrong'; r.at = Date.now();
+  if(extra) Object.assign(r, extra);
+  await DB.put('items', r);
+  return before;
+}
+// Flashcards are for studying: "Got it" is the player's own call, so it is kept apart and never counts as learned or toward badges
+async function recordStudy(pid, topic, item, knew){
+  const key = `${pid}|${topic}|${item}`;
+  const r = (await DB.get('items', key)) || {key, pid, topic, item, seen:0, right:0, wrong:0};
+  r.studied = (r.studied || 0) + 1; if(!knew) r.studyAgain = (r.studyAgain || 0) + 1; r.studiedAt = Date.now();
   await DB.put('items', r);
 }
 
@@ -1023,12 +1034,16 @@ $('choices').addEventListener('click', e => { const b = e.target.closest('[data-
 async function review(){
   G.active = true;
   if(G.mode === 'test'){
+    let comeback = false;
+    const counts = G.round === 1 && !G.scored && (!G.only || G.part); // a real Test, not a retry of the missed ones
     for(const n of PN()){
       if(isSolved(n)) continue;
       const right = G.answers[n] === key(n);
       if(right) G.solved[n] = G.round;
-      recordItem(player.id, T.id, n, right);
+      const before = await recordItem(player.id, T.id, n, right, counts ? {testLast: right ? 'right' : 'wrong'} : null);
+      if(counts && right && before.testLast === 'wrong') comeback = true; // missed it in an earlier Test, got it now
     }
+    if(comeback && !(player.feats && player.feats.comeback)){ player.feats = {...(player.feats || {}), comeback: Date.now()}; await DB.put('players', player); }
   }
   G.reviewed = true;
   let newBest = false, time = timerOn() ? G.elapsed : null;
@@ -1163,7 +1178,7 @@ function reveal(){
 function grade(knew){
   if(!flipped || fi >= deck.length) return;
   if(knew){ if(fround===1) firstKnew++; } else again.push(deck[fi]);
-  recordItem(player.id, T.id, deck[fi], knew);
+  recordStudy(player.id, T.id, deck[fi], knew);
   fi++; showCard();
 }
 function showDone(){
@@ -1174,7 +1189,7 @@ function showDone(){
     $('fAgainDeck').hidden = false; $('fAgainDeck').textContent = `Study the ${again.length} again`;
   } else {
     $('fDoneH').textContent = first ? `You knew all ${deckSize}!` : 'You learned them all!';
-    $('fDoneP').textContent = first ? 'Every card, first try. Amazing!' : `You finished in ${fround} rounds.`;
+    $('fDoneP').textContent = (first ? 'Every card, first try. Amazing!' : `You finished in ${fround} rounds.`) + ' Now show what you know in Find it, Practice or Test to earn badges.';
     $('fAgainDeck').hidden = true; confetti(); sound('done'); afterGame();
   }
   $('fRestart2').focus({preventScroll:true});
@@ -1585,6 +1600,12 @@ const BADGES = [
   {id:'streak3', icon:'🔥', name:'3-Day Streak', desc:'Do the Daily 10 three days in a row.'},
   {id:'streak7', icon:'🔥', name:'7-Day Streak', desc:'Do the Daily 10 seven days in a row.'},
   {id:'streak30', icon:'🏆', name:'30-Day Streak', desc:'Do the Daily 10 thirty days in a row.'},
+  // secret badges: shown locked with a hint until earned
+  {id:'flawless', icon:'💎', name:'Flawless', desc:'Got every answer right in a Test of one part, like West Africa.', hint:'Get every answer right in a Test of one part.', secret:true},
+  {id:'sweep', icon:'🧹', name:'Clean Sweep', desc:'Got every answer right in a Test of every part of one place.', hint:'Get a perfect Test in every part of one place.', secret:true},
+  {id:'lightning', icon:'🌩️', name:'Lightning', desc:'Got every answer right in a Test of 5 or more, with 5 seconds or less for each one, stopwatch on.', hint:'Be perfect and very fast in a Test, with the stopwatch on.', secret:true},
+  {id:'globetrotter', icon:'✈️', name:'Globe Trotter', desc:'Got every answer right in a Test in every place.', hint:'Get a perfect Test all around the world.', secret:true},
+  {id:'comeback', icon:'💪', name:'Comeback Kid', desc:'Got one right in a Test that you missed in an earlier Test.', hint:'Miss one in a Test, then get it right next time.', secret:true},
   ...TOPICS.flatMap(t => [
     {id:'master-'+t.id, icon:badgeIcon(t), name:`${t.name} Master`, desc:`Learn all ${t.count} ${t.nouns === 'places' ? 'continents and oceans' : t.nouns}.`, group:t.group, topic:t.id, need:t.count, master:true},
     // smaller badges, one for each part of a big place, so there's always one within reach
@@ -1607,6 +1628,13 @@ async function computeBadges(p){
     daily1: (d.plays||0) > 0, daily10: (d.perfect||0) > 0,
     streak3: (d.best||0) >= 3, streak7: (d.best||0) >= 7, streak30: (d.best||0) >= 30,
   };
+  // secret badges come from perfect Tests
+  const perfect = attempts.filter(a => a.mode === 'test' && a.total > 0 && a.correct === a.total);
+  has.flawless = perfect.some(a => a.part);
+  has.sweep = TOPICS.some(t => t.parts && Object.keys(t.parts).every(part => perfect.some(a => a.topic === t.id && a.part === part)));
+  has.lightning = perfect.some(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000);
+  has.globetrotter = REGIONS.every(r => perfect.some(a => TOPIC[a.topic].group === r.name));
+  has.comeback = !!(p.feats && p.feats.comeback);
   TOPICS.forEach(t => has['master-'+t.id] = learned[t.id] >= t.count);
   // progress toward each place and part badge
   const rightSet = {}; items.forEach(r => { if(r.last === 'right') (rightSet[r.topic] = rightSet[r.topic] || new Set()).add(r.item); });
@@ -1614,25 +1642,26 @@ async function computeBadges(p){
   BADGES.forEach(b => { if(b.part) has[b.id] = have(b) >= b.need; });
   return BADGES.map(b => ({...b, earned: !!has[b.id], have: have(b)}));
 }
-const badgeCard = b => `<div class="badge ${b.earned?'on':'off'}"><span class="bi" aria-hidden="true">${b.icon}</span><span class="bn">${esc(b.name)}</span><span class="bd">${esc(b.desc)}</span>${b.earned ? '' : b.have != null && b.have > 0 ? `<span class="bp" role="img" aria-label="${b.have} of ${b.need} learned"><i style="width:${Math.round(100*b.have/b.need)}%"></i></span><span class="bd"><b>${b.have}</b> of ${b.need}</span>` : '<span class="sr">Not earned yet</span>'}</div>`;
+const badgeCard = b => b.secret && !b.earned ? `<div class="badge off secret"><span class="bi" aria-hidden="true">❓</span><span class="bn">Secret badge</span><span class="bd">${esc(b.hint)}</span><span class="sr">Not earned yet</span></div>` : `<div class="badge ${b.earned?'on':'off'}${b.secret?' secret':''}"><span class="bi" aria-hidden="true">${b.icon}</span><span class="bn">${esc(b.name)}</span><span class="bd">${esc(b.desc)}</span>${b.earned ? '' : b.have != null && b.have > 0 ? `<span class="bp" role="img" aria-label="${b.have} of ${b.need} learned"><i style="width:${Math.round(100*b.have/b.need)}%"></i></span><span class="bd"><b>${b.have}</b> of ${b.need}</span>` : '<span class="sr">Not earned yet</span>'}</div>`;
 // one folding section per place, so the list stays short; open the ones being worked on
 function badgeGroups(badges){
-  const groups = [{name:'Getting started', list:badges.filter(b => !b.group)}, ...REGIONS.map(r => ({name:r.name, list:badges.filter(b => b.group === r.name)}))];
+  const groups = [{name:'Getting started', list:badges.filter(b => !b.group && !b.secret)}, {name:'Secret badges', list:badges.filter(b => b.secret)}, ...REGIONS.map(r => ({name:r.name, list:badges.filter(b => b.group === r.name)}))];
   const sorted = l => l.slice().sort((a,b) => b.earned - a.earned || (b.have||0)/b.need - (a.have||0)/a.need || (a.master?1:0) - (b.master?1:0));
   return groups.filter(g => g.list.length).map((g, i) => {
     const got = g.list.filter(b => b.earned).length, busy = g.list.some(b => !b.earned && b.have > 0);
-    return `<details class="bgroup"${i === 0 || busy ? ' open' : ''}><summary><span class="bgn">${esc(g.name)}</span><span class="bgc">${got} of ${g.list.length}</span>${got ? `<span class="bgi" aria-hidden="true">${g.list.filter(b => b.earned).slice(0, 6).map(b => b.icon).join('')}</span>` : ''}</summary>
+    return `<details class="bgroup"${i <= 1 || busy ? ' open' : ''}><summary><span class="bgn">${esc(g.name)}</span><span class="bgc">${got} of ${g.list.length}</span>${got ? `<span class="bgi" aria-hidden="true">${g.list.filter(b => b.earned).slice(0, 6).map(b => b.icon).join('')}</span>` : ''}</summary>
       <div class="badges">${sorted(g.list).map(badgeCard).join('')}</div></details>`;
   }).join('');
 }
 async function checkBadges(){
   if(!player) return;
   const list = await computeBadges(player), had = player.badges || {};
-  const fresh = list.filter(b => b.earned && !had[b.id]).sort((a,b) => (a.part ? 0 : a.master ? 1 : 2) - (b.part ? 0 : b.master ? 1 : 2)); // show the place badge first
+  const rank = b => b.secret ? 0 : b.part ? 1 : b.master ? 2 : 3;
+  const fresh = list.filter(b => b.earned && !had[b.id]).sort((a,b) => rank(a) - rank(b)); // show a secret or place badge first
   if(!fresh.length) return;
   player.badges = {...had}; fresh.forEach(b => player.badges[b.id] = Date.now());
   await DB.put('players', player);
-  toast(`${fresh[0].icon} New badge: ${fresh[0].name}!${fresh.length > 1 ? ` (and ${fresh.length-1} more)` : ''}`, [{label:'See badges', run: () => { if(!$('scrPlay').hidden) popLayer(() => openScores()); else openScores(); }}, {label:'OK', ghost:true}], 7000);
+  toast(`${fresh[0].icon} ${fresh[0].secret ? 'Secret badge unlocked' : 'New badge'}: ${fresh[0].name}!${fresh.length > 1 ? ` (and ${fresh.length-1} more)` : ''}`, [{label:'See badges', run: () => { if(!$('scrPlay').hidden) popLayer(() => openScores()); else openScores(); }}, {label:'OK', ghost:true}], 7000);
   confetti();
 }
 
@@ -1688,10 +1717,10 @@ function openHelp(){
       <li><h3>Tap the map</h3><p>In Practice and Test, tap a place. It turns orange. Then start typing its name in the box. Pick the name from the list and press <b>Save</b> or <b>Check</b>. Don't worry about spelling. The list helps you. Don't like typing? Turn on <b>Easy answers</b> in <b>⚙ Settings</b> to pick from 4 answers instead. Flags games always let you pick from 4.</p></li>
       <li><h3>Zoom in</h3><p>Small places are hard to tap. Pinch the map, or press <b>+</b>. Drag to move around. Press <b>⤢</b> to see the whole map again. Very small places, like Vatican City or tiny islands, have a circle you can tap. <b>Next</b> takes you to one you haven't answered.</p></li>
       <li><h3>Check your score</h3><p>After <b>Review</b>, green means right and red means missed. Press <b>Try the missed</b> to try again. Your right answers stay green.</p></li>
-      <li><h3>Learn with flashcards</h3><p>Tap the card to flip it. Press <b>Got it</b> if you knew it. Press <b>Study again</b> if you didn't, and it will come back at the end. Press <b>🔊 Say it</b> to hear the answer.</p></li>
+      <li><h3>Learn with flashcards</h3><p>Tap the card to flip it. Press <b>Got it</b> if you knew it. Press <b>Study again</b> if you didn't, and it will come back at the end. Press <b>🔊 Say it</b> to hear the answer. Flashcards are for studying. To count a place as learned and earn badges, get it right in <b>Find it</b>, <b>Practice</b>, <b>Test</b> or the <b>Daily 10</b>.</p></li>
       <li><h3>Hear the names</h3><p>Tap <b>🔊</b> next to a name to hear how to say it, or next to a fun fact to hear it read. Want every name read out loud? Turn on <b>Say names out loud</b> in <b>⚙ Settings</b>.</p></li>
       <li><h3>Daily 10</h3><p>Every day, tap <b>Daily 10</b> at the top of the home screen for 10 quick questions from everywhere. Play every day to grow your streak 🔥 and earn badges.</p></li>
-      <li><h3>Your scores</h3><p>Each player has their own scores. Tap <b>★ Scores</b> on the home screen to see your games, your badges, the ones that need practice, and everyone's scores. Tap your name to switch players. <b>⚙ Settings</b> also turns on the stopwatch and sounds.</p></li>
+      <li><h3>Your scores</h3><p>Each player has their own scores. Tap <b>★ Scores</b> on the home screen to see your games, your badges, the ones that need practice, and everyone's scores. Some badges are secret ❓. Get a perfect Test to find out what they are! Tap your name to switch players. <b>⚙ Settings</b> also turns on the stopwatch and sounds.</p></li>
     </ol>
     <p class="note">Your games are saved. Stop any time, and find them later under <b>Keep going</b> on the home screen.</p>
     <button class="primary" id="helpOk">Let's play!</button>`});

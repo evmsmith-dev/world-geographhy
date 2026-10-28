@@ -81,6 +81,7 @@ const PART_TITLE = {'Asia|Middle East':'Middle East','North America|Northern':'C
 const partTitle = (region, part) => PART_TITLE[region + '|' + part] || `${part} ${region}`;
 // how a part reads in a sentence ("12 of 13 learned in the Caribbean")
 const PART_PHRASE = {'Asia|Middle East':'the Middle East','North America|Northern':'Canada, the US and Mexico','North America|Central':'Central America','North America|Caribbean':'the Caribbean'};
+const partPhrase = (region, part) => PART_PHRASE[region + '|' + part] || `${part} ${region}`;
 const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
   'South Africa':'South Africa has three capitals: Pretoria, Cape Town and Bloemfontein.',"Côte d'Ivoire":'Abidjan is the biggest city.',
   'Tanzania':'Dar es Salaam is the biggest city.','Benin':'The government works in Cotonou.','Eswatini':'Lobamba is the royal capital.',
@@ -225,15 +226,20 @@ const DB = (() => {
 })();
 const gameKey = (pid, topic, mode) => `${pid}|${topic}|${mode}`;
 // extra: more fields to store with the answer (a Test also keeps its own last result). Returns the record as it was before.
-async function recordItem(pid, topic, item, right, extra){
+const ITEMQ = {};
+function withItem(key, fn){ const run = (ITEMQ[key] || Promise.resolve()).then(fn); ITEMQ[key] = run.catch(() => {}); return run; }
+function recordItem(pid, topic, item, right, extra){ return withItem(`${pid}|${topic}|${item}`, () => recordItemNow(pid, topic, item, right, extra)); }
+async function recordItemNow(pid, topic, item, right, extra){
   const key = `${pid}|${topic}|${item}`;
   const r = (await DB.get('items', key)) || {key, pid, topic, item, seen:0, right:0, wrong:0};
   const before = {...r};
   r.seen++; right ? r.right++ : r.wrong++; r.last = right ? 'right' : 'wrong'; r.at = Date.now();
+  r.streak = right ? itemStreak(before) + 1 : 0; // right answers in a row: the longer, the longer until it comes back in the Daily 10
   if(extra) Object.assign(r, extra);
   await DB.put('items', r);
   return before;
 }
+const itemStreak = r => r.streak != null ? r.streak : (r.last === 'right' ? Math.min(r.right || 0, 3) : 0); // older records had no streak
 // Flashcards are for studying: "Got it" is the player's own call, so it is kept apart and never counts as learned or toward badges
 async function recordStudy(pid, topic, item, knew){
   const key = `${pid}|${topic}|${item}`;
@@ -349,9 +355,10 @@ function say(...parts){
 }
 const autoSay = () => !!(player && player.prefs.say);
 // what to say for a place: its name, and its capital when the topic has one
-function sayParts(n, withCap = true){
-  const R = REGIONS.find(r => r.topics.some(t => t.id === T.id)) || {topics:[T]};
-  const capTopic = R.topics.find(t => t.showsItem), cap = capTopic && withCap ? capTopic.answer(n) : null;
+// a place's capital, if its place has a Capitals topic (none for continents and oceans)
+function capitalOf(R, n){ const ct = R.topics.find(t => t.showsItem); return ct ? ct.answer(n) : null; }
+function sayParts(n){
+  const R = REGIONS.find(r => r.topics.some(t => t.id === T.id)) || {topics:[T]}, cap = capitalOf(R, n);
   return cap && cap !== n ? [n, '. Its capital is', cap] : [n];
 }
 const sayBtn = (label, parts) => CAN_SAY ? `<button class="say" type="button" data-say="${esc(JSON.stringify(parts))}" aria-label="Say ${esc(label)}">🔊</button>` : '';
@@ -415,8 +422,9 @@ $('playerGrid').addEventListener('click', e => {
   const t = e.target.closest('.ptile[data-id]'); if(t) choosePlayer(t.dataset.id);
 });
 $('playerGrid').addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && e.target.matches('.ptile[data-id]')){ e.preventDefault(); choosePlayer(e.target.dataset.id); } });
-function choosePlayer(id){
-  player = players.find(p=>p.id===id); LS.set('player', id);
+async function choosePlayer(id){
+  player = (await DB.get('players', id)) || players.find(p=>p.id===id); LS.set('player', id);
+  const i = players.findIndex(p => p.id === id); if(i >= 0) players[i] = player;
   if(layers.length && !$('scrPlayers').hidden && !$('playersBack').hidden) popLayer(); // back to home
   else { showScreen('scrHome'); renderHome(); }
 }
@@ -437,11 +445,11 @@ function editPlayer(p){
     const n = name.value.trim().replace(/\s+/g,' ');
     if(!n){ panel.querySelector('#pErr').textContent = 'Type a name first.'; name.focus(); return; }
     if(players.some(x => x.name.toLowerCase()===n.toLowerCase() && (!p || x.id!==p.id))){ panel.querySelector('#pErr').textContent = 'Someone already has that name. Try another one.'; name.focus(); return; }
-    const rec = p ? {...p, name:n, avatar:pick} : {id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:n, avatar:pick, created:Date.now(), prefs:{timer:false, sound:false}};
+    const rec = p ? {...((await DB.get('players', p.id)) || p), name:n, avatar:pick} : {id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:n, avatar:pick, created:Date.now(), prefs:{timer:false, sound:false}};
     await DB.put('players', rec);
     if(isNew){ await migrateOldSave(rec.id); try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){} }
     await loadPlayers();
-    if(player && player.id===rec.id) player = rec;
+    if(player && player.id===rec.id) player = players.find(x => x.id === rec.id) || rec;
     popLayer(() => {
       if(isNew){
         player = rec; LS.set('player', rec.id);
@@ -492,6 +500,35 @@ async function migrateCentralAmerica(){
 let THUMBS = null;
 const loadThumbs = () => THUMBS ? Promise.resolve(THUMBS) : fetch('thumbs.json').then(r => r.ok ? r.json() : {}).then(t => (THUMBS = t)).catch(() => (THUMBS = {}));
 const thumbSvg = map => { const t = THUMBS && THUMBS[map]; return t ? `<svg class="rthumb" viewBox="0 0 ${t.w} ${t.h}" aria-hidden="true">${t.o ? `<path class="o" d="${t.o}"/>` : ''}<path d="${t.d}"/></svg>` : '<span class="rthumb"></span>'; };
+// Up next: one suggestion for what to play, moving each part from Learn to Find it to Practice to Test.
+async function upNext(){
+  const items = (await DB.all('items')).filter(r => r.pid === player.id && TOPIC[r.topic]);
+  const attempts = (await DB.all('attempts')).filter(a => a.pid === player.id && TOPIC[a.topic]);
+  const right = {}, studied = {};
+  items.forEach(r => { if(r.last === 'right') (right[r.topic] = right[r.topic] || new Set()).add(r.item); if(r.studied) (studied[r.topic] = studied[r.topic] || new Set()).add(r.item); });
+  const latest = [...items.map(r => [Math.max(r.at||0, r.studiedAt||0), r.topic]), ...attempts.map(a => [a.at, a.topic])].sort((a,b) => b[0] - a[0])[0];
+  const order = TOPICS.map(t => t.id), start = latest ? order.indexOf(latest[1]) : order.indexOf('world'); // newcomers start with continents and oceans
+  for(let k = 0; k < order.length; k++){
+    const t = TOPIC[order[(start + k) % order.length]], R = right[t.id] || new Set(), S = studied[t.id] || new Set();
+    let scopes = t.parts ? Object.entries(t.parts).map(([part, names]) => ({part, names})) : [{part:null, names:null}];
+    if(t.parts && k === 0){ const cur = getPart(REGIONS.find(r => r.name === t.group)), i = scopes.findIndex(x => x.part === cur); if(i > 0) scopes = [...scopes.slice(i), ...scopes.slice(0, i)]; }
+    for(const {part, names} of scopes){
+      const n = names ? names.length : t.count, L = names ? names.filter(x => R.has(x)).length : R.size, st = names ? names.filter(x => S.has(x)).length : S.size;
+      const perfect = attempts.some(a => a.topic === t.id && a.mode === 'test' && a.total && a.correct === a.total && (a.part || null) === part);
+      const mode = L === 0 && st < n / 2 ? 'flash' : L < n * 0.5 ? 'find' : L < n ? 'practice' : !perfect ? 'test' : null;
+      if(mode) return {t, part, mode, L, n};
+    }
+  }
+  return null;
+}
+async function upNextCard(){
+  if(player.prefs.upnext === false) return '';
+  const u = await upNext(); if(!u) return '';
+  const title = u.part ? `${partTitle(u.t.group, u.part)} ${u.t.tab}` : u.t.name;
+  const why = {flash:`Start with flashcards to meet all ${u.n}.`, find:`${u.L} of ${u.n} learned. Find them on the map.`, practice:`${u.L} of ${u.n} learned. Practice the rest.`, test:`All ${u.n} learned! Can you get a perfect Test?`}[u.mode];
+  return `<section class="group upnextsec"><h2>Up next</h2><button class="resumebtn upnext" data-topic="${u.t.id}" data-mode="${u.mode}"${u.part ? ` data-part="${esc(u.part)}"` : ''}>
+    <span class="rt">${MODES[u.mode]}: ${esc(title)}</span><span class="rm">${esc(why)}</span><span class="go" aria-hidden="true">▶</span></button></section>`;
+}
 async function renderHome(){
   if(!player) return;
   $('homePlayer').innerHTML = `${avatar(player)}<span>${esc(player.name)}</span>`;
@@ -504,7 +541,8 @@ async function renderHome(){
     for(const t of r.topics){ learned += (await DB.byPT('items', player.id, t.id)).filter(i => i.last==='right').length; total += t.count; }
     return {r, learned, total};
   }));
-  $('homeGroups').innerHTML = dailyCard() +
+  const upnext = await upNextCard();
+  $('homeGroups').innerHTML = dailyCard() + upnext +
     (games.length ? `<section class="group"><h2>Keep going</h2><div class="resumes">${games.map(g => { const t = TOPIC[g.topic]; return `
       <button class="resumebtn" data-topic="${g.topic}" data-mode="${g.mode}"${g.part ? ` data-part="${esc(g.part)}"` : ''}><span class="rt">${esc(t.name)}${g.part ? ` · ${esc(g.part)}` : ''}</span><span class="rm">${MODES[g.mode]} · ${Object.keys(g.answers).length} of ${g.part && t.parts ? t.parts[g.part].length : t.count} done${g.round>1 ? ` · round ${g.round}` : ''}</span><span class="go" aria-hidden="true">▶</span></button>`; }).join('')}</div></section>` : '') +
     `<section class="group"><h2>Pick a place</h2><div class="regions">${regions.map(({r, learned, total}) => `
@@ -539,18 +577,17 @@ async function renderRegion(){
   const part = getPart(r), pp = part === 'All' ? null : part, n = pp ? r.parts[pp].length : t.count;
   const st = await topicStats(player.id, t, pp);
   const right = new Set((await DB.byPT('items', player.id, t.id)).filter(i => i.last === 'right').map(i => i.item));
-  const done = Object.fromEntries(r.parts ? Object.entries(r.parts).map(([k, names]) => [k, names.every(n => right.has(n))]) : []);
-  done.All = right.size >= t.count && NAMES_OK(t, right);
+  const kept = player.badges || {}; // a badge stays once earned, even after a later miss
+  const done = Object.fromEntries(r.parts ? Object.entries(r.parts).map(([k, names]) => [k, names.every(n => right.has(n)) || !!kept[`part-${t.id}-${k}`]]) : []);
+  done.All = right.size >= t.count || !!kept['master-' + t.id];
   const saved = await Promise.all(Object.keys(MODES).map(m => DB.get('games', gameKey(player.id, t.id, pp ? m + '@' + pp : m))));
   $('regionBody').innerHTML = `
     <p class="sub">${esc(t.blurb)}</p>
     ${partChips(r, part, done)}
     <div class="meter" role="img" aria-label="${st.learned} of ${n} learned"><i style="width:${Math.round(100*st.learned/n)}%"></i></div>
-    <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(PART_PHRASE[r.name + '|' + pp] || pp + ' ' + r.name)}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>
+    <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(partPhrase(r.name, pp))}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>
     <div class="modelist">${modeButtons(t, saved, null, pp)}</div>`;
 }
-// every item of the topic learned (counts can't be trusted alone if old names linger)
-const NAMES_OK = (t, right) => t.parts ? Object.values(t.parts).flat().every(n => right.has(n)) : true;
 const modeButtons = (t, saved, current, part) => Object.keys(MODES).map((m,i) => `
   <button class="modebig" data-topic="${t.id}" data-mode="${m}"${part ? ` data-part="${part}"` : ''}${current===m ? ' aria-current="true"' : ''}>
     <span class="mn">${MODES[m]}</span><span class="md">${esc(modeDesc(m, t))}</span>${saved && saved[i] && !saved[i].reviewed ? '<span class="resume">Keep going</span>' : ''}
@@ -596,6 +633,12 @@ function drawMap(){
 svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if(p && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(p.dataset.n); } });
 
 const clampW = w => Math.min(VW, Math.max(MINW, w));
+// color a place and its tap dot; extra is the state ('sel', 'ok'…). The mixed-up place keeps its outline for a moment.
+function setPlaceClass(n, extra){
+  let cls = 'st ' + (ITEM[n].kind === 'ocean' ? 'ocean' : 'land') + (extra ? ' ' + extra.trim() : '');
+  if(MIX && MIX.n === n && Date.now() < MIX.until) cls += ' mixup';
+  els[n].setAttribute('class', cls); if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
+}
 // tap dots for tiny places always sit above the countries, or a big neighbor (Italy) could cover one (Vatican City)
 // the map's size on screen changes (first layout, turning the iPad, Explore), so resize the tap dots to match
 if('ResizeObserver' in window) new ResizeObserver(() => { if(DOTS && Object.keys(DOTS).length && vb && vb.w) setVB(vb); }).observe(svg);
@@ -777,7 +820,7 @@ const legend = items => $('legend').innerHTML = items.map(([c,t]) => `<span><i s
 function feedback(html, cls){ const f = $('feedback'); f.innerHTML = html || ''; f.className = 'feedback' + (cls ? ' '+cls : ''); }
 
 async function enterGame(topicId, mode, fromPicker, only, part){
-  saveNow(); stopClock(); endExplore();
+  saveNow(); stopClock(); endExplore(); loadMixes();
   T = TOPIC[topicId];
   if(part && !(T.parts && T.parts[part])) part = null;
   $('chipText').innerHTML = `<span class="ct">${esc(T.name)}</span><small>${part ? `${MODES[mode]} · ${esc(part)}` : only ? 'Practice the tricky ones' : MODES[mode]}</small>`;
@@ -819,7 +862,7 @@ function subText(){
 }
 function paint(){
   NAMES.forEach(n => {
-    let cls = 'st ' + (ITEM[n].kind==='ocean' ? 'ocean' : 'land');
+    let cls = '';
     if(G.mode !== 'flash'){
       if(isSolved(n)) cls += ' ok';
       else if(reviewing || (G.mode!=='test' && G.answers[n])) cls += ' bad';
@@ -827,8 +870,7 @@ function paint(){
     }
     if(n === current) cls += ' sel';
     if(!inPlay(n)) cls += ' off';
-    const el = els[n]; el.setAttribute('class', cls);
-    if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
+    setPlaceClass(n, cls); const el = els[n];
     el.setAttribute('aria-label', isSolved(n) || reviewing || T.showsItem ? `${n}${isSolved(n)?', correct':reviewing?', missed':''}` : G.answers[n] ? `Answered ${G.answers[n]}` : 'Not answered yet');
   });
   const named = Object.keys(G.answers).length, total = PN().filter(n => !(G.solved[n] < G.round)).length;
@@ -943,10 +985,10 @@ async function submit(){
     const right = v === key(current);
     if(T.flags){
       if(right){ G.solved[current] = G.round; feedback(`Yes! That's the flag of <b>${esc(current)}</b>.`, 'ok'); sound('right'); }
-      else { feedback(`Not quite. That's the flag of ${esc(v)}. Here is the flag of <b>${esc(current)}</b>: ${flagImg(current, 'tiny')}`, 'bad'); sound('wrong'); }
+      else { const w = placeOf(v); noteMix(current, w); feedback(`Not quite. That's the flag of ${esc(v)}. Here is the flag of <b>${esc(current)}</b>: ${flagImg(current, 'tiny')} ${mixTip(current, w)}`, 'bad'); flashMix(w); sound('wrong'); }
     }
     else if(right){ G.solved[current] = G.round; feedback(`Yes! ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(v)}</b>.`, 'ok'); sound('right'); }
-    else { feedback(`Not quite. ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(key(current))}</b>, not ${esc(v)}.`, 'bad'); sound('wrong'); }
+    else { const w = placeOf(v); noteMix(current, w); feedback(`Not quite. ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(key(current))}</b>, not ${esc(v)}. ${mixTip(current, w)}`, 'bad'); flashMix(w); sound('wrong'); }
     recordItem(player.id, T.id, current, right);
     setInput(); paint(); saveSoon();
     if(PN().every(n => !isOpen(n))) feedback($('feedback').innerHTML + ' That was the last one. Press <b>Review</b> to see how you did!', right ? 'ok' : 'bad');
@@ -981,6 +1023,105 @@ function findAsk(n){
   if(T.showsItem) return `Which ${T.itemWord} has the capital ${key(n)}?`;
   return ITEM[n].kind === 'ocean' ? `Find the ${n}` : `Find ${n}`;
 }
+// Mix-up help: when a kid picks the wrong place, show both and say how to tell them apart
+function placeOf(answer){ return answer ? (NAMES.find(x => key(x) === answer) || (ITEM[answer] ? answer : null)) : null; }
+// Look-alikes: pairs kids famously confuse, with a hand-written way to tell them apart.
+// 'name' pairs help in place and capital games, 'flag' pairs in flag games.
+const LOOKALIKES = [
+  ['name','Niger','Nigeria','Niger is the big desert country farther north. Nigeria is south of it, on the coast.'],
+  ['name','DR Congo','Republic of the Congo','DR Congo is the huge one. The Republic of the Congo is the smaller one just west of it.'],
+  ['name','Guinea','Guinea-Bissau','Guinea-Bissau is the small one on the coast, northwest of Guinea.'],
+  ['name','Guinea','Equatorial Guinea','Guinea is in West Africa. Equatorial Guinea is much farther east, next to Cameroon.'],
+  ['name','Guinea-Bissau','Equatorial Guinea','Guinea-Bissau is in West Africa. Equatorial Guinea is far to the east, next to Cameroon.'],
+  ['name','Gambia','Zambia','The Gambia is a thin strip inside Senegal in West Africa. Zambia is much bigger, in southern Africa.'],
+  ['name','Mali','Malawi','Mali is a big country in West Africa. Malawi is long and thin, in the southeast, beside a big lake.'],
+  ['name','Libya','Liberia','Libya is a big desert country on the Mediterranean Sea. Liberia is small, on the west coast.'],
+  ['name','Mauritania','Mauritius','Mauritania is a big desert country in West Africa. Mauritius is a tiny island in the Indian Ocean.'],
+  ['name','Slovakia','Slovenia','Slovakia is north of Hungary. Slovenia is smaller, next to Italy and the sea.'],
+  ['name','Sweden','Switzerland','Sweden is in the far north. Switzerland is small and full of mountains, in the middle of Europe.'],
+  ['name','Latvia','Lithuania','Of the three Baltic countries, Lithuania is the one at the bottom. Latvia is in the middle.'],
+  ['name','Iceland','Ireland','Iceland is far north, near the Arctic. Ireland is the island next to Great Britain.'],
+  ['name','Iran','Iraq','Iraq is the smaller one, to the west. Iran is bigger, to its east.'],
+  ['name','Bahrain','Qatar','Bahrain is the tiny island. Qatar is the bigger piece of land poking into the sea just southeast of it.'],
+  ['name','Kyrgyzstan','Tajikistan','Kyrgyzstan is the one on top. Tajikistan is just south of it.'],
+  ['name','Turkmenistan','Uzbekistan','Turkmenistan is to the southwest, along the Caspian Sea. Uzbekistan is just northeast of it.'],
+  ['name','Dominica','Dominican Republic','The Dominican Republic shares a big island with Haiti. Dominica is a tiny island far to the southeast.'],
+  ['name','Saint Lucia','Saint Vincent and the Grenadines','Saint Lucia is just north of Saint Vincent.'],
+  ['name','Paraguay','Uruguay','Uruguay is on the coast. Paraguay has no coast and is north of Argentina.'],
+  ['name','Virginia','West Virginia','West Virginia is the smaller, mountain state to the northwest. Virginia reaches the ocean.'],
+  ['name','Vermont','New Hampshire','Vermont is on the left and wide at the top. New Hampshire is on the right and wide at the bottom, like Vermont upside down.'],
+  ['name','Mississippi','Missouri','Mississippi is in the south, by the Gulf. Missouri is farther north, in the middle of the country.'],
+  ['name','Alabama','Mississippi','Mississippi is the one on the left. Alabama is just to its east.'],
+  ['name','Kansas','Nebraska','Nebraska is the one on top. Kansas is just south of it.'],
+  ['name','Arkansas','Kansas','Kansas is in the middle of the country. Arkansas is farther southeast, next to the Mississippi River.'],
+  ['flag','Belgium','Germany','Belgium’s stripes go up and down. Germany’s go across.'],
+  ['flag','Ireland','Italy','Ireland’s flag is green, white and orange. Italy’s is green, white and red.'],
+  ['flag','Netherlands','Luxembourg','Luxembourg’s blue is lighter, like the sky. The Netherlands’ blue is darker.'],
+  ['flag','Slovakia','Slovenia','Both are white, blue and red. Slovakia’s shield has a white cross. Slovenia’s shows a mountain.'],
+  ['flag','Russia','Slovakia','Russia’s flag is plain. Slovakia’s has a shield with a white cross.'],
+  ['flag','Russia','Slovenia','Russia’s flag is plain. Slovenia’s has a small shield with a mountain.'],
+  ['flag','Romania','Moldova','Moldova’s flag has an eagle in the middle. Romania’s is plain.'],
+  ['flag','Mali','Guinea','Mali’s stripes go green, yellow, red. Guinea’s go the other way: red, yellow, green.'],
+  ['flag','Mali','Senegal','Senegal’s flag has a green star in the middle. Mali’s is plain.'],
+  ['flag','Syria','Iraq','Syria’s flag has two green stars. Iraq’s has green writing.'],
+  ['flag','Syria','Yemen','Syria’s flag has two green stars. Yemen’s is plain red, white and black.'],
+  ['flag','Iraq','Yemen','Iraq’s flag has green writing. Yemen’s is plain red, white and black.'],
+  ['flag','Bahrain','Qatar','Qatar’s is a dark maroon. Bahrain’s is a brighter red with fewer points.'],
+  ['flag','Honduras','Nicaragua','Honduras has five blue stars in the middle. Nicaragua has a round emblem.'],
+  ['flag','Honduras','El Salvador','Honduras has five blue stars in the middle. El Salvador has a round emblem.'],
+  ['flag','El Salvador','Nicaragua','Both have a round emblem. El Salvador’s blue is darker.'],
+  ['flag','Colombia','Ecuador','Ecuador’s flag has a coat of arms with a condor. Colombia’s is plain.'],
+  ['flag','Colombia','Venezuela','Venezuela’s flag has white stars in an arc. Colombia’s has a wide yellow stripe and nothing else.'],
+  ['flag','Ecuador','Venezuela','Venezuela’s flag has white stars in an arc. Ecuador’s has a coat of arms.'],
+  ['flag','Australia','New Zealand','New Zealand has four red stars. Australia has white stars, plus a big one under the Union Jack.'],
+];
+const pairKey = (a, b) => a < b ? a + '|' + b : b + '|' + a;
+const LOOK = {}; LOOKALIKES.forEach(([kind, a, b, tip]) => LOOK[kind + ':' + pairKey(a, b)] = tip);
+// "North Dakota" and "South Dakota", "North Korea" and "South Korea", "Sudan" and "South Sudan"
+function northSouthTip(a, b){
+  const base = n => n.replace(/^(North|South) /, '');
+  if(a === b || base(a) !== base(b)) return '';
+  const north = /^North /.test(a) || /^South /.test(b) ? a : b, south = north === a ? b : a;
+  return `${north} is the one on top. ${south} is just south of it.`;
+}
+function lookalikeTip(a, b){ return T.flags ? LOOK['flag:' + pairKey(a, b)] : (LOOK['name:' + pairKey(a, b)] || northSouthTip(a, b)); }
+// Mix-ups this player has made, per game topic, counted both ways (so a swap counts twice)
+let MIXMEM = {};
+async function loadMixes(){
+  MIXMEM = {};
+  if(!player) return;
+  (await DB.all('items')).filter(r => r.pid === player.id && r.mix).forEach(r => {
+    for(const [w, c] of Object.entries(r.mix)){ const k = r.topic + ':' + pairKey(r.item, w); MIXMEM[k] = (MIXMEM[k] || 0) + c; }
+  });
+}
+// remember that `wrong` was given for `right`
+function noteMix(right, wrong){
+  if(!player || !T || !wrong || wrong === right || !ITEM[right] || !ITEM[wrong]) return;
+  const k = T.id + ':' + pairKey(right, wrong); MIXMEM[k] = (MIXMEM[k] || 0) + 1;
+  const pid = player.id, topic = T.id, key = `${pid}|${topic}|${right}`;
+  withItem(key, async () => { const r = (await DB.get('items', key)) || {key, pid, topic, item:right, seen:0, right:0, wrong:0}; r.mix = {...(r.mix || {}), [wrong]: ((r.mix || {})[wrong] || 0) + 1}; await DB.put('items', r); });
+}
+// A tip only for a real mix-up: a known look-alike, or a pair this player has mixed up twice (a swap counts)
+function mixTip(right, wrong){
+  const a = ITEM[right], b = ITEM[wrong]; if(!a || !b || right === wrong || a.kind === 'ocean' || b.kind === 'ocean') return '';
+  const lead = T.showsItem ? `${key(wrong)} is the capital of ${wrong}. ` : '';
+  const look = lookalikeTip(right, wrong);
+  if(look) return `<span class="mixtip">💡 ${esc(lead)}${esc(look)}</span>`;
+  if((MIXMEM[T.id + ':' + pairKey(right, wrong)] || 0) < 2) return '';
+  const dx = a.c[0] - b.c[0], dy = a.c[1] - b.c[1];
+  const dir = Math.abs(dy) > Math.abs(dx) * 0.7 ? (dy < 0 ? 'north' : 'south') : (dx < 0 ? 'west' : 'east');
+  const area = it => Math.max(1, (it.b[2]-it.b[0]) * (it.b[3]-it.b[1])), k = area(a) / area(b);
+  const size = k > 1.8 ? ' and bigger' : k < 1/1.8 ? ' and smaller' : '';
+  return `<span class="mixtip">💡 You've mixed up ${esc(right)} and ${esc(wrong)}. ${esc(lead)}${esc(right)} is ${dir} of ${esc(wrong)}${size}.</span>`;
+}
+// the mixed-up place stays marked for a few seconds, even when the map repaints
+let MIX = null;
+function flashMix(n){
+  if(!n) return;
+  MIX = {n, until: Date.now() + 2600};
+  const mark = on => [els[n], DOTS[n]].forEach(el => el && el.classList.toggle('mixup', on));
+  setTimeout(() => mark(true), 0); setTimeout(() => { if(MIX && MIX.n === n && Date.now() >= MIX.until - 50){ mark(false); MIX = null; } }, 2600);
+}
 function flashWrong(n){ [els[n], DOTS[n]].forEach(el => { if(!el) return; el.classList.add('wrongflash'); setTimeout(() => el.classList.remove('wrongflash'), 700); }); }
 function findTap(n){
   const t = findTarget(); if(!t || G.busy) return;
@@ -992,10 +1133,10 @@ function findTap(n){
     current = t; paint(); G.busy = true; setTimeout(nextFind, 900); return;
   }
   if(isSolved(n) || G.answers[n]){ feedback(`That's ${esc(n)}. You already did that one. Keep looking!`); flashWrong(n); return; }
-  G.tries++; if(!G.firstWrong) G.firstWrong = n; sound('wrong'); flashWrong(n);
+  G.tries++; if(!G.firstWrong) G.firstWrong = n; sound('wrong'); flashWrong(n); noteMix(t, n);
   const hint = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(n)}.`;
-  if(G.tries < 3) feedback(`${hint} Try again! ${3-G.tries} ${3-G.tries === 1 ? 'try' : 'tries'} left.`, 'bad');
-  else revealFind(`${hint} Here is <b>${esc(t)}</b>.`);
+  if(G.tries < 3) feedback(`${hint} Try again! ${3-G.tries} ${3-G.tries === 1 ? 'try' : 'tries'} left. ${mixTip(t, n)}`, 'bad');
+  else revealFind(`${hint} Here is <b>${esc(t)}</b>. ${mixTip(t, n)}`);
 }
 function revealFind(msg){
   const t = findTarget(); if(!t) return;
@@ -1040,10 +1181,11 @@ async function review(){
       if(isSolved(n)) continue;
       const right = G.answers[n] === key(n);
       if(right) G.solved[n] = G.round;
+      if(!right) noteMix(n, placeOf(G.answers[n]));
       const before = await recordItem(player.id, T.id, n, right, counts ? {testLast: right ? 'right' : 'wrong'} : null);
       if(counts && right && before.testLast === 'wrong') comeback = true; // missed it in an earlier Test, got it now
     }
-    if(comeback && !(player.feats && player.feats.comeback)){ player.feats = {...(player.feats || {}), comeback: Date.now()}; await DB.put('players', player); }
+    if(comeback){ const f = player.feats || {}; player.feats = {...f, comeback: f.comeback || Date.now(), comebackN: (f.comebackN || (f.comeback ? 1 : 0)) + 1}; await DB.put('players', player); }
   }
   G.reviewed = true;
   let newBest = false, time = timerOn() ? G.elapsed : null;
@@ -1073,7 +1215,7 @@ function showReview(restoring, extra={}){
   $('goodH').textContent = `Right (${good.length})`;
   const meta = n => [T.showsItem ? n : '', G.round>1 && isSolved(n) ? `round ${G.solved[n]}` : ''].filter(Boolean).join(' · ');
   if(G.mode === 'find') $('badList').innerHTML = missed.length ? missed.map(n => `<li data-n="${esc(n)}"><span class="right">${esc(T.showsItem ? `${key(n)} (${n})` : n)}</span>${sayBtn(key(n), [key(n)])}${G.answers[n] && G.answers[n] !== 'skipped' ? `<span class="rnd">you tapped ${esc(G.answers[n])}</span>` : G.answers[n]==='skipped' ? '<span class="rnd">skipped</span>' : ''}</li>`).join('') : '<li class="empty">None. Great job!</li>';
-  else $('badList').innerHTML = missed.length ? missed.map(n => `<li data-n="${esc(n)}">${T.flags ? flagImg(n, 'tiny') : ''}<span class="you">${G.answers[n] ? esc(G.answers[n]) : 'blank'}</span> <span aria-hidden="true">→</span> <span class="right">${esc(key(n))}</span>${sayBtn(key(n), [key(n)])}${meta(n) ? `<span class="rnd">${esc(meta(n))}</span>` : ''}</li>`).join('') : '<li class="empty">None. Great job!</li>';
+  else $('badList').innerHTML = missed.length ? missed.map(n => `<li data-n="${esc(n)}">${T.flags ? flagImg(n, 'tiny') : ''}<span class="you">${G.answers[n] ? esc(G.answers[n]) : 'blank'}</span> <span aria-hidden="true">→</span> <span class="right">${esc(key(n))}</span>${sayBtn(key(n), [key(n)])}${meta(n) ? `<span class="rnd">${esc(meta(n))}</span>` : ''}${mixTip(n, placeOf(G.answers[n]))}</li>`).join('') : '<li class="empty">None. Great job!</li>';
   $('goodList').innerHTML = good.length ? good.map(n => `<li data-n="${esc(n)}">${T.flags ? flagImg(n, 'tiny') : ''}<span class="right">${esc(key(n))}</span>${meta(n) ? `<span class="rnd">${esc(meta(n))}</span>` : ''}</li>`).join('') : '<li class="empty">None yet. Keep trying!</li>';
   $('retry').hidden = missed.length === 0;
   $('retry').textContent = `Try the ${missed.length} missed`;
@@ -1386,8 +1528,7 @@ function endExplore(){
 }
 function explorePaint(){
   NAMES.forEach(n => {
-    const cls = 'st ' + (ITEM[n].kind==='ocean' ? 'ocean' : 'land') + (n === current ? ' sel' : '');
-    els[n].setAttribute('class', cls); if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
+    setPlaceClass(n, n === current ? 'sel' : '');
     els[n].setAttribute('aria-label', n);
   });
   if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); raiseDots(current); }
@@ -1399,7 +1540,7 @@ function explorePaint(){
   else if(st) st.remove();
   exploreScale();
 }
-function exploreTap(n){ current = n; focusItem(n); explorePaint(); exploreInfo(n); sound('tap'); if(autoSay()){ const R = EXPLORE.R, ct = R.topics.find(t => t.showsItem), cap = ct ? ct.answer(n) : null; const f = factFor(n, R.map); say(...(cap ? [n, '. Its capital is', cap] : [n]), ...(f ? ['.', f] : [])); } }
+function exploreTap(n){ current = n; focusItem(n); explorePaint(); exploreInfo(n); sound('tap'); if(autoSay()){ const R = EXPLORE.R, cap = capitalOf(R, n), f = factFor(n, R.map); say(...(cap ? [n, '. Its capital is', cap] : [n]), ...(f ? ['.', f] : [])); } }
 function exploreStep(dir){
   const i = current ? ORDER.indexOf(current) : (dir > 0 ? -1 : 0), L = ORDER.length;
   exploreTap(ORDER[((i + dir) % L + L) % L]);
@@ -1412,7 +1553,7 @@ function exploreInfo(n){
   const box = $('exInfo');
   if(!n){ box.innerHTML = '<p class="muted">Tap any place on the map to learn about it, or press <b>Next</b>.</p>'; return; }
   const R = EXPLORE.R, it = ITEM[n];
-  const capTopic = R.topics.find(t => t.showsItem), cap = capTopic ? capTopic.answer(n) : null;
+  const cap = capitalOf(R, n);
   const flags = R.topics.some(t => t.flags);
   const extra = R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
   box.innerHTML = `${flags ? flagImg(n, 'exflag') : ''}<div class="exbody"><p class="exname">${esc(n)} ${sayBtn(n, cap ? [n, '. Its capital is', cap] : [n])}</p>
@@ -1468,7 +1609,7 @@ const yesterday = () => { const d = new Date(); d.setDate(d.getDate()-1); return
 function streakNow(p){ const d = p.daily || {}; const alive = d.last === today() || d.last === yesterday(); return {streak: alive ? (d.streak||0) : 0, best: d.best||0, doneToday: d.last === today(), lastScore: d.lastScore}; }
 function dailyCard(){
   const s = streakNow(player);
-  const status = s.doneToday ? `Done today! You got ${s.lastScore} of 10. Play again for fun.` : '10 quick questions from everywhere. New every day.';
+  const status = s.doneToday ? `Done today! You got ${s.lastScore} of 10. Play again for fun.` : '10 quick questions, picked to help you remember what you learned.';
   return `<button class="dailybtn${s.doneToday?' done':''}" id="dailyBtn">
     <span class="dt">Daily 10${s.doneToday ? ' ✓' : ''}</span><span class="dd">${esc(status)}</span>
     <span class="streak" aria-label="${s.streak} day streak"><span aria-hidden="true">🔥</span> ${s.streak}<small>day${s.streak===1?'':'s'}</small></span>
@@ -1476,14 +1617,34 @@ function dailyCard(){
 }
 
 let DAILY = null; // {qs:[{t,n,style}], i, right, tries, busy}
+// Spaced review: a mix of places missed lately, places learned a while ago that are due to come back
+// (1, 3, 7, 14, then 30 days after each right answer in a row), a few new ones, and some surprises.
+const REVIEW_DAYS = [0, 1, 3, 7, 14, 30];
 async function pickDaily(){
-  const all = (await DB.all('items')).filter(r => r.pid === player.id && TOPIC[r.topic]);
-  const tricky = shuffle(all.filter(r => r.last === 'wrong' || r.wrong > r.right)).slice(0, 4);
+  const DAY = 864e5, now = Date.now();
+  const all = (await DB.all('items')).filter(r => r.pid === player.id && TOPIC[r.topic] && r.last);
+  const missed = all.filter(r => r.last === 'wrong').sort((a,b) => (b.at||0) - (a.at||0)).slice(0, 3);
+  const due = all.filter(r => r.last === 'right').map(r => ({r, late: (now - (r.at||0)) / (REVIEW_DAYS[Math.min(itemStreak(r), 5)] * DAY || DAY)}))
+    .filter(x => x.late >= 1).sort((a,b) => b.late - a.late).slice(0, 4).map(x => x.r);
   const played = [...new Set(all.map(r => r.topic))];
-  const qs = tricky.map(r => ({t: r.topic, n: r.item}));
-  const seen = new Set(qs.map(q => q.t + '|' + q.n));
+  // pairs mixed up twice or more, until both are solid (right twice in a row)
+  const byKey = Object.fromEntries(all.map(r => [r.topic + '|' + r.item, r]));
+  const pairs = Object.entries(MIXMEM).filter(([, c]) => c >= 2).map(([k]) => { const [t, ab] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)], [a, b] = ab.split('|'); return {t, a, b}; })
+    .filter(({t, a, b}) => TOPIC[t] && [a, b].some(n => itemStreak(byKey[t + '|' + n] || {}) < 2)).slice(0, 2);
+  const pairQs = pairs.map(({t, a, b}) => [{t, n: a}, {t, n: b}]);
+  const inPair = new Set(pairs.flatMap(({t, a, b}) => [t + '|' + a, t + '|' + b]));
+  const qs = [...missed, ...due].filter(r => !inPair.has(r.topic + '|' + r.item)).map(r => ({t: r.topic, n: r.item})).slice(0, 7 - pairQs.length * 2);
+  const seen = new Set([...qs.map(q => q.t + '|' + q.n), ...inPair]), known = new Set(all.map(r => r.topic + '|' + r.item));
+  const room = 10 - pairQs.length * 2;
+  // a few new ones from places the player already plays
+  for(const tid of shuffle(played)){
+    if(qs.length >= room - 2) break;
+    const m = await loadMap(TOPIC[tid].map);
+    const fresh = shuffle(m.items.map(i => i.n).filter(n => !known.has(tid + '|' + n) && !seen.has(tid + '|' + n)));
+    if(fresh.length){ seen.add(tid + '|' + fresh[0]); qs.push({t: tid, n: fresh[0]}); }
+  }
   let guard = 0;
-  while(qs.length < 10 && guard++ < 200){
+  while(qs.length < room && guard++ < 200){
     const pool = played.length && Math.random() < 0.6 ? played : TOPICS.map(t => t.id);
     const tid = pool[Math.floor(Math.random()*pool.length)], t = TOPIC[tid];
     const m = await loadMap(t.map);
@@ -1491,15 +1652,18 @@ async function pickDaily(){
     if(seen.has(tid + '|' + n)) continue;
     seen.add(tid + '|' + n); qs.push({t: tid, n});
   }
-  ;for(const q of qs){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); q.style = Math.random() < 0.5 ? 'find' : 'pick'; }
-  return shuffle(qs);
+  // put each mixed-up pair back to back, somewhere in the list
+  const out = shuffle(qs);
+  pairQs.forEach(pq => out.splice(Math.floor(Math.random() * (out.length + 1)), 0, ...shuffle(pq)));
+  for(const q of out){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); q.style = Math.random() < 0.5 ? 'find' : 'pick'; }
+  return out;
 }
 async function startDaily(){
   returnTo = 'scrHome'; showScreen('scrPlay');
   pushLayer(() => { DAILY = null; $('dailyDone').hidden = true; $('play').querySelectorAll('[data-dhide]').forEach(el => { el.hidden = false; el.removeAttribute('data-dhide'); }); showScreen('scrHome'); renderHome(); });
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
   $('chipText').innerHTML = 'Daily 10<small>Getting your questions ready…</small>'; $('sub').textContent = ''; $('tally').textContent = ''; $('clock').hidden = true;
-  try{ DAILY = {qs: await pickDaily(), i: 0, right: 0, tries: 0, busy: false}; }
+  try{ await loadMixes(); DAILY = {qs: await pickDaily(), i: 0, right: 0, tries: 0, busy: false}; }
   catch(e){ $('sub').textContent = 'The questions could not load. Check your internet connection, then go back and try again.'; return; }
   // the Daily 10 uses its own controls
   ['.combo','#submit','.nav','#reviewBtn','#skipBtn'].forEach(sel => { const el = $('play').querySelector(sel); if(el && !el.hidden){ el.hidden = true; el.setAttribute('data-dhide',''); } });
@@ -1532,10 +1696,7 @@ async function dailyShow(){
 }
 function dailyPaint(reveal, mark){
   NAMES.forEach(n => {
-    let cls = 'st ' + (ITEM[n].kind==='ocean' ? 'ocean' : 'land');
-    if(mark && mark[n]) cls += ' ' + mark[n];
-    else if(n === current || n === reveal) cls += ' sel';
-    els[n].setAttribute('class', cls); if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
+    setPlaceClass(n, mark && mark[n] ? mark[n] : n === current || n === reveal ? 'sel' : '');
   });
   if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); raiseDots(current); }
 }
@@ -1551,11 +1712,11 @@ function dailyAnswer(right, msg){
 }
 function dailyTap(n){
   const q = DAILY && DAILY.qs[DAILY.i]; if(!q || DAILY.busy || q.style !== 'find') return;
-  const say = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(n)}.`;
+  const thatIs = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(n)}.`;
   if(n === q.n){ dailyAnswer(DAILY.tries === 0, `Yes! That's <b>${esc(n)}</b>.`); return; }
-  DAILY.tries++; flashWrong(n);
-  if(DAILY.tries < 2){ sound('wrong'); feedback(`${say} Try once more!`, 'bad'); return; }
-  dailyAnswer(false, `${say} Here is <b>${esc(q.n)}</b>.`);
+  DAILY.tries++; flashWrong(n); noteMix(q.n, n);
+  if(DAILY.tries < 2){ sound('wrong'); feedback(`${thatIs} Try once more! ${mixTip(q.n, n)}`, 'bad'); return; }
+  dailyAnswer(false, `${thatIs} Here is <b>${esc(q.n)}</b>. ${mixTip(q.n, n)}`);
 }
 $('choices').addEventListener('click', e => {
   const b = e.target.closest('[data-dv]'); if(!b || !DAILY || DAILY.busy) return;
@@ -1563,7 +1724,8 @@ $('choices').addEventListener('click', e => {
   $('choices').querySelectorAll('button').forEach(x => x.disabled = true);
   b.classList.add(right ? 'picked-ok' : 'picked-bad');
   const r = $('choices').querySelector(`[data-dv="${CSS.escape(key(q.n))}"]`); if(r && !right) r.classList.add('picked-ok');
-  dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is <b>${esc(key(q.n))}</b>`}.`);
+  const w = right ? null : placeOf(v); if(w){ flashMix(w); noteMix(q.n, w); }
+  dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is <b>${esc(key(q.n))}</b>`}. ${mixTip(q.n, w)}`);
 });
 async function dailyFinish(){
   const score = DAILY.right, first = !streakNow(player).doneToday;
@@ -1610,7 +1772,7 @@ const BADGES = [
     {id:'master-'+t.id, icon:badgeIcon(t), name:`${t.name} Master`, desc:`Learn all ${t.count} ${t.nouns === 'places' ? 'continents and oceans' : t.nouns}.`, group:t.group, topic:t.id, need:t.count, master:true},
     // smaller badges, one for each part of a big place, so there's always one within reach
     ...(t.parts ? Object.entries(t.parts).map(([part, names]) => ({id:`part-${t.id}-${part}`, icon:badgeIcon(t), name:`${partTitle(t.group, part)} ${t.tab}`,
-      desc:`Learn all ${names.length} ${t.nouns} in ${PART_PHRASE[t.group + '|' + part] || part + ' ' + t.group}.`, group:t.group, topic:t.id, part, need:names.length})) : []),
+      desc:`Learn all ${names.length} ${t.nouns} in ${partPhrase(t.group, part)}.`, group:t.group, topic:t.id, part, need:names.length})) : []),
   ]),
 ];
 function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : '🗺️'; }
@@ -1635,14 +1797,20 @@ async function computeBadges(p){
   has.lightning = perfect.some(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000);
   has.globetrotter = REGIONS.every(r => perfect.some(a => TOPIC[a.topic].group === r.name));
   has.comeback = !!(p.feats && p.feats.comeback);
+  // how many times a repeatable badge has been done, shown quietly as ×2, ×3…
+  const sweeps = TOPICS.filter(t => t.parts && Object.keys(t.parts).every(part => perfect.some(a => a.topic === t.id && a.part === part))).length;
+  const times = {perfect: perfect.length, flawless: perfect.filter(a => a.part).length, sweep: sweeps,
+    lightning: perfect.filter(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000).length,
+    comeback: (p.feats && (p.feats.comebackN || (p.feats.comeback ? 1 : 0))) || 0, daily10: d.perfect || 0};
   TOPICS.forEach(t => has['master-'+t.id] = learned[t.id] >= t.count);
   // progress toward each place and part badge
   const rightSet = {}; items.forEach(r => { if(r.last === 'right') (rightSet[r.topic] = rightSet[r.topic] || new Set()).add(r.item); });
   const have = b => { if(!b.topic) return null; const set = rightSet[b.topic] || new Set(); return b.part ? TOPIC[b.topic].parts[b.part].filter(n => set.has(n)).length : learned[b.topic]; };
   BADGES.forEach(b => { if(b.part) has[b.id] = have(b) >= b.need; });
-  return BADGES.map(b => ({...b, earned: !!has[b.id], have: have(b)}));
+  const kept = p.badges || {}; // once earned, a badge is never taken away (a later miss doesn't remove it)
+  return BADGES.map(b => ({...b, earned: !!has[b.id] || !!kept[b.id], have: have(b), times: times[b.id] || 0}));
 }
-const badgeCard = b => b.secret && !b.earned ? `<div class="badge off secret"><span class="bi" aria-hidden="true">❓</span><span class="bn">Secret badge</span><span class="bd">${esc(b.hint)}</span><span class="sr">Not earned yet</span></div>` : `<div class="badge ${b.earned?'on':'off'}${b.secret?' secret':''}"><span class="bi" aria-hidden="true">${b.icon}</span><span class="bn">${esc(b.name)}</span><span class="bd">${esc(b.desc)}</span>${b.earned ? '' : b.have != null && b.have > 0 ? `<span class="bp" role="img" aria-label="${b.have} of ${b.need} learned"><i style="width:${Math.round(100*b.have/b.need)}%"></i></span><span class="bd"><b>${b.have}</b> of ${b.need}</span>` : '<span class="sr">Not earned yet</span>'}</div>`;
+const badgeCard = b => b.secret && !b.earned ? `<div class="badge off secret"><span class="bi" aria-hidden="true">❓</span><span class="bn">Secret badge</span><span class="bd">${esc(b.hint)}</span><span class="sr">Not earned yet</span></div>` : `<div class="badge ${b.earned?'on':'off'}${b.secret?' secret':''}">${b.earned && b.times > 1 ? `<span class="btimes" aria-label="Done ${b.times} times">×${b.times}</span>` : ''}<span class="bi" aria-hidden="true">${b.icon}</span><span class="bn">${esc(b.name)}</span><span class="bd">${esc(b.desc)}</span>${b.earned ? '' : b.have != null && b.have > 0 ? `<span class="bp" role="img" aria-label="${b.have} of ${b.need} learned"><i style="width:${Math.round(100*b.have/b.need)}%"></i></span><span class="bd"><b>${b.have}</b> of ${b.need}</span>` : '<span class="sr">Not earned yet</span>'}</div>`;
 // one folding section per place, so the list stays short; open the ones being worked on
 function badgeGroups(badges){
   const groups = [{name:'Getting started', list:badges.filter(b => !b.group && !b.secret)}, {name:'Secret badges', list:badges.filter(b => b.secret)}, ...REGIONS.map(r => ({name:r.name, list:badges.filter(b => b.group === r.name)}))];
@@ -1653,9 +1821,20 @@ function badgeGroups(badges){
       <div class="badges">${sorted(g.list).map(badgeCard).join('')}</div></details>`;
   }).join('');
 }
-async function checkBadges(){
+// One check at a time, and always against the badges already saved, so a badge is celebrated exactly once,
+// even if two checks overlap or this screen's copy of the player is out of date (another tab, a backup, a switch of players).
+let badgeChain = Promise.resolve();
+function checkBadges(){ badgeChain = badgeChain.then(checkBadgesNow).catch(() => {}); return badgeChain; }
+async function checkBadgesNow(){
   if(!player) return;
+  const saved = await DB.get('players', player.id);
+  if(saved){ player.badges = {...(saved.badges || {}), ...(player.badges || {})}; player.feats = {...(saved.feats || {}), ...(player.feats || {})}; player.times = {...(saved.times || {}), ...(player.times || {})}; }
   const list = await computeBadges(player), had = player.badges || {};
+  // a badge already earned and done again: count it, and say so quietly
+  const seen = player.times || {}, again = list.filter(b => had[b.id] && seen[b.id] != null && b.times > seen[b.id]); // nothing on the first check after an update
+  if(list.some(b => b.times && b.times !== seen[b.id])){ player.times = Object.fromEntries(list.filter(b => b.times).map(b => [b.id, b.times])); await DB.put('players', player); }
+  if(again.length){ const b = again.sort((x, y) => (y.secret ? 1 : 0) - (x.secret ? 1 : 0))[0], el = $('callout'); // the rarer badge wins
+    if(el && !$('results').hidden) el.innerHTML = `<span class="again">${b.icon} ${esc(b.name.replace(/!$/, ''))} again! That's ${b.times} times.</span> ` + el.innerHTML; }
   const rank = b => b.secret ? 0 : b.part ? 1 : b.master ? 2 : 3;
   const fresh = list.filter(b => b.earned && !had[b.id]).sort((a,b) => rank(a) - rank(b)); // show a secret or place badge first
   if(!fresh.length) return;
@@ -1672,6 +1851,7 @@ function openSettings(){
     <div class="toggle"><div class="txt">Stopwatch<small>Time each Test and Practice game, and try to beat your best time.</small></div><button class="switch" role="switch" id="swTimer" aria-checked="${!!p.timer}" aria-label="Stopwatch"></button></div>
     <div class="toggle"><div class="txt">Easy answers<small>Pick from 4 answers instead of typing, in Test and Practice.</small></div><button class="switch" role="switch" id="swEasy" aria-checked="${!!p.easy}" aria-label="Easy answers"></button></div>
     ${CAN_SAY ? `<div class="toggle"><div class="txt">Say names out loud<small>Read names aloud on flashcards, in Find it and in Explore. You can always tap 🔊 to hear one.</small></div><button class="switch" role="switch" id="swSay" aria-checked="${!!p.say}" aria-label="Say names out loud"></button></div>` : ''}
+    <div class="toggle"><div class="txt">Up next suggestion<small>Show a suggestion on the home screen for what to play next.</small></div><button class="switch" role="switch" id="swUpnext" aria-checked="${p.upnext !== false}" aria-label="Up next suggestion"></button></div>
     <div class="toggle"><div class="txt">Sounds<small>Play a sound for right and wrong answers.</small></div><button class="switch" role="switch" id="swSound" aria-checked="${!!p.sound}" aria-label="Sounds"></button></div>
     <p class="muted" style="margin-top:8px;font-size:.9rem">These settings are just for ${esc(player.name)}.</p>
     <p class="sect">Backup</p>
@@ -1683,6 +1863,7 @@ function openSettings(){
   panel.querySelector('#swSound').onclick = () => flip('swSound','sound');
   panel.querySelector('#swEasy').onclick = () => flip('swEasy','easy');
   if(CAN_SAY) panel.querySelector('#swSay').onclick = () => flip('swSay','say');
+  panel.querySelector('#swUpnext').onclick = async () => { player.prefs.upnext = player.prefs.upnext === false; panel.querySelector('#swUpnext').setAttribute('aria-checked', String(player.prefs.upnext)); await DB.put('players', player); renderHome(); };
   panel.querySelector('#doExport').onclick = exportData;
   panel.querySelector('#doImport').onclick = () => $('importFile').click();
 }
@@ -1719,7 +1900,8 @@ function openHelp(){
       <li><h3>Check your score</h3><p>After <b>Review</b>, green means right and red means missed. Press <b>Try the missed</b> to try again. Your right answers stay green.</p></li>
       <li><h3>Learn with flashcards</h3><p>Tap the card to flip it. Press <b>Got it</b> if you knew it. Press <b>Study again</b> if you didn't, and it will come back at the end. Press <b>🔊 Say it</b> to hear the answer. Flashcards are for studying. To count a place as learned and earn badges, get it right in <b>Find it</b>, <b>Practice</b>, <b>Test</b> or the <b>Daily 10</b>.</p></li>
       <li><h3>Hear the names</h3><p>Tap <b>🔊</b> next to a name to hear how to say it, or next to a fun fact to hear it read. Want every name read out loud? Turn on <b>Say names out loud</b> in <b>⚙ Settings</b>.</p></li>
-      <li><h3>Daily 10</h3><p>Every day, tap <b>Daily 10</b> at the top of the home screen for 10 quick questions from everywhere. Play every day to grow your streak 🔥 and earn badges.</p></li>
+      <li><h3>Up next</h3><p>Not sure what to play? Tap <b>Up next</b> on the home screen. It picks the next step for you, from flashcards to a perfect Test. You can turn it off in <b>⚙ Settings</b>.</p></li>
+      <li><h3>Daily 10</h3><p>Every day, tap <b>Daily 10</b> at the top of the home screen for 10 quick questions. It brings back ones you missed and ones you might be forgetting, so they stick. Play every day to grow your streak 🔥 and earn badges.</p></li>
       <li><h3>Your scores</h3><p>Each player has their own scores. Tap <b>★ Scores</b> on the home screen to see your games, your badges, the ones that need practice, and everyone's scores. Some badges are secret ❓. Get a perfect Test to find out what they are! Tap your name to switch players. <b>⚙ Settings</b> also turns on the stopwatch and sounds.</p></li>
     </ol>
     <p class="note">Your games are saved. Stop any time, and find them later under <b>Keep going</b> on the home screen.</p>
@@ -1749,9 +1931,13 @@ async function applyUpdate(){
   saveNow(); toast('Updating…', [], 0);
   try{
     if('caches' in window){
-      const cache = await caches.open('wgq-v1');
-      await Promise.all(CORE.map(async u => { const r = await fetch(u + (u.includes('?')?'&':'?') + 'check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(u, r); }));
-      for(const k of ['us.json','world.json','europe.json','samerica.json','namerica.json','africa.json','asia.json','oceania.json','facts.json','flags.json','usflags.json','thumbs.json']){ const r = await fetch(k + '?check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(k, r); }
+      // the service worker keeps the one list of the game's files and fetches them all fresh
+      const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+      const done = sw ? await new Promise(res => { const ch = new MessageChannel(); ch.port1.onmessage = e => res(e.data === 'refreshed'); sw.postMessage('refresh', [ch.port2]); setTimeout(() => res(false), 20000); }) : false;
+      if(!done){ // an older service worker that can't do this yet: refresh the main files directly
+        const cache = await caches.open('wgq-v1');
+        await Promise.all(CORE.map(async u => { const r = await fetch(u + (u.includes('?')?'&':'?') + 'check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(u, r); }));
+      }
     }
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); reg && await reg.update();
   }catch(e){}

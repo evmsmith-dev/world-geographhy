@@ -627,7 +627,7 @@ function drawMap(){
   DOTS = {};
   M.items.filter(i => i.dot).forEach(i => { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('cx', i.dot[0]); c.setAttribute('cy', i.dot[1]); c.dataset.n = i.n; c.setAttribute('aria-hidden','true'); svg.appendChild(c); DOTS[i.n] = c; });
   // tall maps (South America) shouldn't run off the bottom of the screen
-  fitMap(true);
+  fitMap();
   setVB({x:0, y:0, w:VW});
 }
 svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if(p && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(p.dataset.n); } });
@@ -909,31 +909,30 @@ function layoutBar(){
   $('findQ').hidden = !find; $('skipBtn').hidden = !find;
   $('choices').hidden = !pick;
 }
-// The answer bar sticks to the bottom of the screen. On phones, keep the map small enough to fit between the top bar
-// and the answer bar, so no place is ever stuck underneath it (Central America under the flag choices, say).
+// The answer bar sticks to the bottom of the screen. Size the map so the whole game fits on the screen with no scrolling:
+// nothing is stuck under the answer bar (Central America under the flag choices, say), and the page never moves by itself.
 let barReserve = 0;
 function fitMap(reset){
   if(reset) barReserve = 0;
-  if($('scrPlay').hidden || !VW) return;
+  const scr = $('scrPlay'), ms = $('mapSheet');
+  if(scr.hidden || !VW) return;
   const ae = document.activeElement;
   if(!reset && ae && ae.tagName === 'INPUT') return; // the on-screen keyboard shrinks the window only for a moment
+  scr.classList.toggle('compact', innerHeight < 760 && !ms.hidden); // short screens: drop the instructions line, the answer bar says what to do
   const shown = el => el && !el.hidden && el.offsetParent !== null;
-  const bars = [$('play'), $('results').querySelector('.bar'), $('dailyDone')].filter(shown);
-  barReserve = Math.max(barReserve, ...bars.map(b => b.offsetHeight)); // only grows during a game, so the map doesn't jump on every tap
-  const top = document.querySelector('#scrPlay .topbar').offsetHeight;
-  const avail = innerHeight - top - barReserve - 20;
-  const maxW = Math.max(240, avail) * VW / VH;
+  const h = Math.max(0, ...[$('play'), $('results').querySelector('.bar'), $('dailyDone')].filter(shown).map(b => b.offsetHeight));
+  const sv = svg.getBoundingClientRect(), below = Math.max(0, ms.getBoundingClientRect().bottom - sv.bottom); // the legend under the map
+  // a small change in the answer bar (a tip line) only covers the legend, so the map keeps its size; a big one makes room once
+  if(h > barReserve + below + 12) barReserve = h;
+  const avail = innerHeight - (sv.top + scrollY) - below - barReserve - 24; // a little spare so the page has nothing to scroll
+  const maxW = Math.max(200, avail) * VW / VH;
   const want = maxW < (svg.parentElement.clientWidth || 1e9) ? Math.floor(maxW) + 'px' : '';
   if(svg.style.maxWidth !== want){ svg.style.maxWidth = want; if(vb && vb.w) setVB(vb); }
 }
-// bring the map up under the top bar if the answer bar would cover part of it
-function showWholeMap(){
-  requestAnimationFrame(() => {
-    fitMap();
-    const ms = $('mapSheet'); if(ms.hidden) return;
-    const top = document.querySelector('#scrPlay .topbar').offsetHeight, r = svg.getBoundingClientRect();
-    if(r.bottom > innerHeight - barReserve - 4) window.scrollTo(0, Math.max(0, scrollY + ms.getBoundingClientRect().top - top - 6));
-  });
+// a new game starts at the top of the page, with the map sized to fit
+function showWholeMap(fresh){
+  if(fresh){ barReserve = 0; window.scrollTo(0, 0); }
+  requestAnimationFrame(() => fitMap());
 }
 if('ResizeObserver' in window){ const ro = new ResizeObserver(() => fitMap()); ro.observe($('play')); ro.observe($('results')); }
 addEventListener('resize', () => fitMap());
@@ -945,7 +944,7 @@ function toPlay(){
   if(G.mode === 'find'){ if(!G.queue || !G.queue.length) G.queue = shuffle(PN().filter(n => isOpen(n))); G.tries = 0; G.firstWrong = null; }
   paint();
   if(G.part) zoomToItems(PN());
-  showWholeMap();
+  showWholeMap(true);
 }
 // frame a group of places (a part of a big place like West Africa)
 function zoomToItems(names){
@@ -1514,8 +1513,8 @@ function enterExplore(regionName, fromPicker){
     $('sub').textContent = 'Tap any place to learn about it. Pinch or press + to zoom in.';
     $('selLabel').textContent = 'Explore';
     feedback(''); explorePaint(); exploreInfo(null); drawLabels(); exploreScale();
-    barReserve = Math.max(barReserve, Math.min(340, innerHeight * 0.42)); // room for a place's flag, capital and fun fact, so the map doesn't shrink on the first tap
-    showWholeMap();
+    showWholeMap(true);
+    barReserve = Math.min(340, innerHeight * 0.42); // room for a place's flag, capital and fun fact, so the map doesn't shrink on the first tap
   })();
 }
 function endExplore(){
@@ -1692,7 +1691,7 @@ async function dailyShow(){
     ch.innerHTML = opts.map((v,i) => T.flags ? `<button data-dv="${esc(v)}" aria-label="Flag ${i+1}">${flagImg(v)}</button>` : `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
     focusItem(q.n);
   }
-  dailyPaint(); showWholeMap();
+  dailyPaint(); showWholeMap(DAILY.i === 0);
 }
 function dailyPaint(reveal, mark){
   NAMES.forEach(n => {

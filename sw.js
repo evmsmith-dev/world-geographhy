@@ -21,6 +21,15 @@ self.addEventListener('activate', e => {
   );
 });
 
+// "refresh" from the page's Update button: fetch every file fresh from the website, then say when done
+self.addEventListener('message', e => {
+  if (e.data !== 'refresh') return;
+  const port = e.ports && e.ports[0];
+  e.waitUntil(caches.open(CACHE).then(cache => Promise.all(FILES.map(f =>
+    fetch(f + (f.includes('?') ? '&' : '?') + 'check=' + Date.now(), {cache: 'no-store'}).then(r => r.ok ? cache.put(f, r) : null).catch(() => null)
+  ))).then(() => port && port.postMessage('refreshed'), () => port && port.postMessage('failed')));
+});
+
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;

@@ -447,3 +447,10 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 /* short screens during a map game: the instructions line goes so the whole game fits without scrolling */
 #scrPlay.compact .statusline .sub2{display:none}
 #scrPlay.compact .statusline{margin:4px 0 6px!important}
+
+/* the place screen is one centered column: header, Explore button, tabs and modes all line up */
+#scrRegion > *{width:100%;max-width:640px;margin-inline:auto}
+#scrRegion .explorebtn{margin:12px auto 4px}
+/* tabs fill their column, with equal parts (place screen and Scores) */
+#scrRegion .tabs,#scrScores .tabs{display:flex}
+#scrRegion .tabs button,#scrScores .tabs button{flex:1 1 0;min-width:0}

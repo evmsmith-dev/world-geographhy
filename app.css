@@ -436,3 +436,7 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
   .findq img.flag.big{height:clamp(46px,9vh,90px)}
   .exinfo img.flag.exflag{max-width:96px;height:auto}
 }
+
+/* secret badges */
+.badge.secret.off{border-style:dashed}
+.badge.secret.on{background:linear-gradient(135deg,var(--hi),color-mix(in srgb,var(--hi) 40%,var(--sheet)))}

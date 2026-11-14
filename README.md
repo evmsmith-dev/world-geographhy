@@ -36,7 +36,7 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `app.js` | The game |
 | `app.css` | The look |
 | `us.json`, `world.json`, `europe.json`, `africa.json`, `asia.json`, `oceania.json`, `namerica.json`, `samerica.json` | Map shapes for the US, the world, Europe, Africa, Asia, Oceania, North America and South America |
-| `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`, `namerica-geo.json`, `samerica-geo.json` | Mountain ranges, seas and lakes for each continent's **Mountains & Water** tab (the countries come from the continent's own map file) |
+| `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`, `namerica-geo.json`, `samerica-geo.json` | Mountain ranges, deserts, seas and lakes for each continent's **Land & Water** tab (the countries come from the continent's own map file) |
 | `flags.json` | Flags of the countries in Europe, Africa, Asia, Oceania, North America and South America |
 | `usflags.json` | Flags of the 50 US states |
 | `facts.json` | The “Did you know?” fun facts shown in Explore |

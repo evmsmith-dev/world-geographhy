@@ -57,9 +57,21 @@ async function pickDaily(){
   // put each mixed-up pair back to back, somewhere in the list
   const out = shuffle(qs);
   pairQs.forEach(pq => out.splice(Math.floor(Math.random() * (out.length + 1)), 0, ...shuffle(pq)));
-  for(const q of out){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); q.style = Math.random() < 0.5 ? 'find' : 'pick'; }
+  for(const q of out){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); q.style = runStyle(TOPIC[q.t]); }
   return out;
 }
+// find it on the map, or pick its name; a landmark can also ask which country it's in
+const runStyle = t => { const r = Math.random(); return t.landmarks ? (r < 1/3 ? 'find' : r < 2/3 ? 'pick' : 'country') : r < 0.5 ? 'find' : 'pick'; };
+// "Which country is this landmark in?": its country (one of the two, for a landmark between two countries) and 3 more
+// from the same continent, the countries of its other landmarks first
+async function countryChoices(n){
+  const it = ITEM[n], base = await loadMap(M.base), theirs = new Set(it.country);
+  const right = it.country[Math.floor(Math.random() * it.country.length)];
+  const near = shuffle([...new Set(M.items.flatMap(i => i.country))].filter(c => !theirs.has(c)));
+  const rest = shuffle(base.items.map(i => i.n).filter(c => !theirs.has(c) && !near.includes(c)));
+  return {right, opts: shuffle([right, ...[...near, ...rest].slice(0, 3)])};
+}
+const capFirst = s => s.charAt(0).toUpperCase() + s.slice(1);
 async function startDaily(){ return startRun({title:'Daily 10', pick:pickDaily, home:'scrHome'}); }
 // A run of questions, each on its own map: the Daily 10, and the World Tour (src/16-world-tour.js), which adds
 // tour, mode and save (where to keep its place, so it can be finished later), saved (a run to pick up) and finish
@@ -93,6 +105,13 @@ async function dailyShow(){
     else if(T.landmarks) fq.innerHTML = `${picImg(q.n, 'big')}<span>${esc(noThe(q.n) ? `Find ${q.n}` : `Find the ${q.n}`)}</span>`;
     else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !noThe(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
+  } else if(q.style === 'country'){
+    $('sub').textContent = 'Look at the landmark, then pick the country it is in.';
+    $('selLabel').textContent = 'Pick the country';
+    const {right, opts} = await countryChoices(q.n); DAILY.cright = right;
+    fq.innerHTML = `${picImg(q.n, 'big')}<span>Which country is ${esc(the(q.n))} in?</span>`; fq.hidden = false;
+    ch.classList.remove('flags'); ch.hidden = false;
+    ch.innerHTML = opts.map(v => `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
   } else {
     $('sub').textContent = pic ? 'Look at the picture, then pick the right answer.' : 'Look at the orange place on the map, then pick the right answer.';
     $('selLabel').textContent = T.flags ? `Which flag belongs to this ${T.itemWord || 'country'}?` : T.showsItem ? `What is the capital of ${q.n}?` : T.ask(q.n);
@@ -131,10 +150,11 @@ function dailyTap(n){
 }
 $('choices').addEventListener('click', e => {
   const b = e.target.closest('[data-dv]'); if(!b || !DAILY || DAILY.busy) return;
-  const q = DAILY.qs[DAILY.i], v = b.dataset.dv, right = v === key(q.n);
+  const q = DAILY.qs[DAILY.i], v = b.dataset.dv, cq = q.style === 'country', right = cq ? ITEM[q.n].country.includes(v) : v === key(q.n);
   $('choices').querySelectorAll('button').forEach(x => x.disabled = true);
   b.classList.add(right ? 'picked-ok' : 'picked-bad');
-  const r = $('choices').querySelector(`[data-dv="${CSS.escape(key(q.n))}"]`); if(r && !right) r.classList.add('picked-ok');
+  const r = $('choices').querySelector(`[data-dv="${CSS.escape(cq ? DAILY.cright : key(q.n))}"]`); if(r && !right) r.classList.add('picked-ok');
+  if(cq){ const where = `${esc(capFirst(the(q.n)))} is in ${right ? esc(ITEM[q.n].where) : `<b>${esc(ITEM[q.n].where)}</b>`}`; dailyAnswer(right, right ? `Yes! ${where}.` : `Not quite. ${where}.`); return; }
   const w = right ? null : placeOf(v); if(w){ flashMix(w); noteMix(q.n, w); }
   dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : T.geo ? `That's ${esc(the(v))}` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is ${T.geo ? esc(the(key(q.n))) : `<b>${esc(key(q.n))}</b>`}`}. ${mixTip(q.n, w)}`);
 });

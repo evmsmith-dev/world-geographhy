@@ -365,3 +365,35 @@ test('typing an answer: the list of names waits for typing over a landmark pictu
   await page.focus('#answer');
   await expect(page.locator('#opts')).toBeVisible();
 });
+
+test('"Which country is this landmark in?" in the Daily 10: the picture and name, four countries, then the place on the map', async ({page}) => {
+  await newPlayer(page);
+  await page.evaluate(() => { window.WGQ_TEST.dailyQuestions = [['eu-landmarks', 'Eiffel Tower', 'country'], ['af-landmarks', 'Victoria Falls', 'country'], ['na-landmarks', 'Statue of Liberty', 'country']]; });
+  await page.click('#dailyBtn');
+  await expect(page.locator('#chipText')).toContainText('Question 1 of 3');
+  await expect(page.locator('#selLabel')).toHaveText('Pick the country');
+  await expect(page.locator('#findQ')).toContainText('Which country is the Eiffel Tower in?');
+  await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', 'assets/landmarks/eiffel-tower.svg');
+  await expect(page.locator('#map path.sel'), 'the place is not shown before answering').toHaveCount(0);
+  const opts = await page.$$eval('#choices button', bs => bs.map(b => b.dataset.dv));
+  expect(opts).toHaveLength(4);
+  expect(opts.filter(c => c === 'France'), 'France is offered once').toHaveLength(1);
+  const europe = await page.evaluate(async () => (await window.WGQ_TEST.loadMap('europe')).items.map(i => i.n));
+  expect(opts.filter(c => !europe.includes(c)), 'every choice is a country in Europe').toEqual([]);
+  // a wrong answer: the right country is shown, and the landmark on the map
+  await page.click(`#choices button[data-dv="${opts.find(c => c !== 'France')}"]`);
+  await expect(page.locator('#feedback')).toContainText('Not quite. The Eiffel Tower is in France.');
+  await expect(page.locator('#choices button[data-dv="France"]')).toHaveClass(/picked-ok/);
+  await expect(page.locator('#map path.sel')).toHaveAttribute('data-n', 'Eiffel Tower');
+  // a landmark between two countries: either one is offered, and it's right
+  await expect(page.locator('#chipText')).toContainText('Question 2 of 3');
+  const two = await page.$$eval('#choices button', bs => bs.map(b => b.dataset.dv).filter(c => c === 'Zambia' || c === 'Zimbabwe'));
+  expect(two, 'one of Zambia and Zimbabwe').toHaveLength(1);
+  await page.click(`#choices button[data-dv="${two[0]}"]`);
+  await expect(page.locator('#feedback')).toContainText('Yes! Victoria Falls is in Zambia and Zimbabwe.');
+  await expect(page.locator('#map path.ok')).toHaveAttribute('data-n', 'Victoria Falls');
+  await expect(page.locator('#chipText')).toContainText('Question 3 of 3');
+  await expect(page.locator('#findQ')).toContainText('Which country is the Statue of Liberty in?');
+  await page.click('#choices button[data-dv="United States"]');
+  await expect(page.locator('#feedback')).toContainText('Yes! The Statue of Liberty is in the United States.');
+});

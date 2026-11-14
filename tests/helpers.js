@@ -160,7 +160,9 @@ export async function answerRun(page){
     const t = W.TOPICS.find(t => chip.includes(t.name));
     const pic = document.querySelector('#findQ:not([hidden]) img.lmpic'); // "Which landmark is this?" shows a picture, not the place
     const shown = pic && (await W.loadMap(t.map)).items.find(i => W.picSrc(i.n) === pic.getAttribute('src'));
-    return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: document.querySelector('#map path.sel')?.dataset.n || (shown && shown.n)};
+    const country = document.getElementById('selLabel').textContent === 'Pick the country'
+      ? [...document.querySelectorAll('#choices button')].map(b => b.dataset.dv).find(c => shown.country.includes(c)) : null; // the landmark's country
+    return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: country || document.querySelector('#map path.sel')?.dataset.n || (shown && shown.n)};
   });
   expect(info.topic, 'the question says which topic it is from').toBeTruthy();
   if(info.pick){

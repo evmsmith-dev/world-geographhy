@@ -8,6 +8,7 @@
 const TOUR_MODES = {
   find: {name:'Find it', desc: t => `We name a ${t.itemWord}, you tap it. All ${t.count}, one continent at a time.`},
   name: {name:'Name it', desc: t => `We show a ${t.itemWord}, you pick its name. All ${t.count}, one continent at a time.`},
+  country: {name:'Which country?', desc: t => `We show a ${t.itemWord}, you pick the country it's in. All ${t.count}, one continent at a time.`, only:'world-landmarks'},
   quick: {name:'World 20', desc: () => '20 from all over the world, picked to help you remember.'},
 };
 const tourKey = (t, mode) => gameKey(player.id, t.id, mode);
@@ -21,7 +22,8 @@ async function tourStats(t){
 async function renderTour(t, draw){
   const st = await tourStats(t), kept = player.badges || {};
   const done = st.learned >= t.count || !!kept['master-' + t.id];
-  const saved = await Promise.all(Object.keys(TOUR_MODES).map(m => DB.get('games', tourKey(t, m))));
+  const modes = Object.entries(TOUR_MODES).filter(([, x]) => !x.only || x.only === t.id); // "Which country?" is for landmarks
+  const saved = await Promise.all(modes.map(([m]) => DB.get('games', tourKey(t, m))));
   if(draw !== regionDraw) return; // another tab was tapped meanwhile
   $('regionBody').innerHTML = `
     <p class="sub">Find all ${t.count} ${t.nouns}${t.id === 'world-countries' ? ' of the world' : ''}, continent by continent.
@@ -30,7 +32,7 @@ async function renderTour(t, draw){
     <div class="meter" role="img" aria-label="${st.learned} of ${t.count} learned"><i style="width:${Math.round(100*st.learned/t.count)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${t.count} learned</span>${done ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(t.name)} Master</b></span>` : ''}</p>
     <ul class="tourparts">${st.per.map(p => `<li><span>${esc(TOPIC[p.f].group)}</span> <b>${p.learned}</b> of ${p.count}</li>`).join('')}</ul>
-    <div class="modelist">${Object.entries(TOUR_MODES).map(([m, x], i) => `
+    <div class="modelist">${modes.map(([m, x], i) => `
       <button class="modebig" data-tour="${t.id}" data-tmode="${m}">
         <span class="mn">${x.name}</span><span class="md">${esc(x.desc(t))}</span>${saved[i] ? `<span class="resume">Keep going: ${saved[i].i} of ${saved[i].qs.length}</span>` : ''}
       </button>`).join('')}</div>`;
@@ -42,7 +44,7 @@ async function tourQuestions(t, mode){
   const qs = [];
   for(const f of t.from){
     const m = await loadMap(TOPIC[f].map);
-    shuffle(m.items.map(i => i.n)).forEach(n => qs.push({t: f, n, style: mode === 'name' ? 'pick' : 'find'}));
+    shuffle(m.items.map(i => i.n)).forEach(n => qs.push({t: f, n, style: mode === 'name' ? 'pick' : mode === 'country' ? 'country' : 'find'}));
   }
   return qs;
 }
@@ -60,7 +62,7 @@ async function tourQuick(t){
     const q = pools[k % pools.length].find(q => !seen.has(q.t + '|' + q.n) && (!fresh || !known.has(q.t + '|' + q.n)));
     if(q){ seen.add(q.t + '|' + q.n); qs.push(q); }
   }
-  return shuffle(qs).slice(0, 20).map(q => ({...q, style: Math.random() < 0.5 ? 'find' : 'pick'}));
+  return shuffle(qs).slice(0, 20).map(q => ({...q, style: runStyle(TOPIC[q.t])}));
 }
 
 async function startTour(t, mode, only){

@@ -102,3 +102,19 @@ test('World 20 mixes places from all over, and missed ones can be practiced righ
   await page.click('#tourAgain');
   await expect(page.locator('#chipText')).toContainText('Question 1 of 2');
 });
+
+test('the All Landmarks tour has a "Which country?" way to play, and only that tour has it', async ({page}) => {
+  await newPlayer(page);
+  await openTour(page, 'world-landmarks');
+  await expect(page.locator('.modebig .mn')).toHaveText(['Find it', 'Name it', 'Which country?', 'World 20']);
+  await startTourMode(page, 'country');
+  await expect(page.locator('#chipText')).toContainText('All Landmarks: Which country?');
+  for(let i = 0; i < 3; i++){
+    await expect(page.locator('#chipText')).toContainText(`Question ${i + 1} of 52`);
+    await expect(page.locator('#selLabel')).toHaveText('Pick the country');
+    await answerRun(page);
+  }
+  await goHome(page);
+  await openTour(page, 'world-countries');
+  await expect(page.locator('.modebig .mn')).toHaveText(['Find it', 'Name it', 'World 20']);
+});

@@ -218,9 +218,11 @@ button:disabled,input:disabled{opacity:.45;cursor:not-allowed}
 .mapbox{position:relative;border-radius:4px;overflow:hidden}
 svg.map{display:block;margin:0 auto;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 svg.map.zoomed{cursor:grab} svg.map.zoomed:active{cursor:grabbing}
-.zoom{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:6px}
+/* the zoom buttons sit under the map, so they never cover a place near its edge (the Urals) */
+.zrow{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:6px}
+.zoom{display:flex;gap:6px;flex:none}
 .zoom button{width:42px;height:42px;padding:0;font-size:1.35rem;line-height:1;background:var(--sheet);box-shadow:0 1px 4px rgb(0 0 0 / .15)}
-.zhint{margin:4px 4px 0;font-size:.85rem;color:var(--muted)}
+.zhint{margin:0 4px;flex:1;font-size:.85rem;line-height:1.3;color:var(--muted)}
 @media (pointer:fine){.zhint{display:none}}
 .globe{fill:var(--globe)}
 .seabg{fill:var(--sea)}
@@ -454,6 +456,12 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 /* tabs fill their column, with equal parts (place screen and Scores) */
 #scrRegion .tabs,#scrScores .tabs{display:flex}
 #scrRegion .tabs button,#scrScores .tabs button{flex:1 1 0;min-width:0}
+/* four tabs don't fit in one row on a phone: show them as a 2×2 grid instead */
+@media (max-width:600px){
+  #scrRegion .tabs.many,.tabs.many{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+  #scrRegion .tabs.many button,.tabs.many button{background:var(--sheet);padding:9px 8px;min-width:0;white-space:nowrap}
+  #scrRegion .tabs.many button[aria-selected="true"],.tabs.many button[aria-selected="true"]{background:var(--btn)}
+}
 
 /* Mountains & Water: countries become a quiet gray background; seas and lakes are blue, mountain ranges brown */
 .bgland{fill:var(--other);stroke:color-mix(in srgb,var(--border) 70%,transparent);stroke-width:.6;vector-effect:non-scaling-stroke;pointer-events:none}

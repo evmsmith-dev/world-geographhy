@@ -88,6 +88,7 @@ export async function spotFor(page, name){
 // Tap a place on the map with a finger. If every spot of it is too close to a tiny neighbor's tap circle
 // (Switzerland next to Liechtenstein on a phone), zoom in on it first, the way a kid would.
 export async function tapPlace(page, name){
+  await mapSettled(page); // the map may still be sliding into place
   let spot = await spotFor(page, name);
   expect(spot && spot.missing, `${name} is on the map`).toBeFalsy();
   if(!spot && !(await page.isDisabled('#zFit'))){ // zoomed in somewhere else: back to the whole map first

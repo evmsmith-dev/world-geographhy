@@ -146,7 +146,8 @@ test('crowded places next to tiny countries can be tapped without zooming in', a
     await openTopic(page, region, topic);
     await page.click('#exploreBtn');
     await page.waitForFunction(() => document.querySelectorAll('#map path.st').length > 0);
-    const wholeMap = async () => { if(!(await page.isDisabled('#zFit'))){ await page.click('#zFit'); await mapSettled(page); } };
+    // Explore zooms in on what was tapped; go back to the whole map once that has happened
+    const wholeMap = async () => { await page.waitForTimeout(300); await mapSettled(page); if(!(await page.isDisabled('#zFit'))){ await page.click('#zFit'); await mapSettled(page); } };
     for(const place of places){
       await wholeMap();
       await tapPlace(page, place, {zoom: false});

@@ -2,7 +2,7 @@
 // Capitals and flags use the same maps, so for those a few questions check that the question and the tap work.
 import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, REGIONS } from './helpers.js';
 
-test.describe.configure({timeout: 300_000}); // a whole map of taps takes a while
+test.describe.configure({timeout: 600_000}); // a whole map of taps takes a while (the United States has seven)
 
 async function playFindIt(page, topicId, limit = Infinity){
   const problems = [];

@@ -7,6 +7,7 @@ test.describe.configure({timeout: 300_000}); // a whole map of taps takes a whil
 async function playFindIt(page, topicId, limit = Infinity){
   const problems = [];
   let answered = 0;
+  await expect(page.locator('#findQ')).not.toBeEmpty(); // the first question appears once the map has loaded
   while(answered < limit){
     const before = await page.evaluate(() => document.getElementById('findQ').innerHTML);
     if(!(await page.textContent('#findQ')).trim()) break; // no question left: the game is over

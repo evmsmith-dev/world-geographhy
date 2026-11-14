@@ -15,9 +15,35 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
+  # The tests run as six jobs side by side, so the whole check takes a few minutes instead of ten or more.
+  # The long "tap every place" runs are split by place; everything else is split by device.
+  # (A data check in tests/data.spec.js makes sure every place is in one of the two "tap every place" groups.)
+  tests:
+    name: tests (${{ matrix.name }})
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false # finish every job, so one failure doesn't hide another
+      matrix:
+        include:
+          - name: phone, tap every place 1
+            browser: chromium
+            args: --project=phone tap-everything --grep "United States|World|Oceania|South America"
+          - name: phone, tap every place 2
+            browser: chromium
+            args: --project=phone tap-everything --grep "Europe|Africa|Asia|North America"
+          - name: iPad, tap every place 1
+            browser: webkit
+            args: --project=ipad tap-everything --grep "United States|World|Oceania|South America"
+          - name: iPad, tap every place 2
+            browser: webkit
+            args: --project=ipad tap-everything --grep "Europe|Africa|Asia|North America"
+          - name: phone, everything else
+            browser: chromium
+            args: --project=data --project=phone --grep-invert "every place can be tapped"
+          - name: iPad, everything else
+            browser: webkit
+            args: --project=ipad --grep-invert "every place can be tapped"
     defaults:
       run:
         working-directory: tests
@@ -29,19 +55,35 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - name: Install browsers (Chromium for the phone, WebKit, the engine in Safari, for the iPad)
-        run: npx playwright install --with-deps chromium webkit
+      - name: Keep the downloaded browsers between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ matrix.browser }}-${{ hashFiles('tests/package-lock.json') }}
+      - name: Install the browser (Chromium for the phone, WebKit, the engine in Safari, for the iPad)
+        run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Run the tests
-        run: npx playwright test
+        run: npx playwright test ${{ matrix.args }}
         env:
           CI: true
       - name: Save the report when something fails
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          name: test-report-${{ strategy.job-index }}
           path: tests/playwright-report
           retention-days: 14
+
+  # One check named "test" that passes only if every job above passed (a rule that requires "test" keeps working)
+  test:
+    needs: tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every test job passed
+        run: |
+          echo "Test jobs: ${{ needs.tests.result }}"
+          test "${{ needs.tests.result }}" = "success"
 
   publish:
     # runs only for main, and only when every test passed

@@ -88,8 +88,9 @@ async function renderRegion(){
   const done = Object.fromEntries(r.parts ? Object.entries(r.parts).map(([k, names]) => [k, names.every(n => right.has(n)) || !!kept[`part-${t.id}-${k}`]]) : []);
   done.All = right.size >= t.count || !!kept['master-' + t.id];
   const saved = await Promise.all(Object.keys(MODES).map(m => DB.get('games', gameKey(player.id, t.id, pp ? m + '@' + pp : m))));
+  const blurb = t.geo ? geoBlurb(t, await loadMap(t.map)) : t.blurb;
   $('regionBody').innerHTML = `
-    <p class="sub">${esc(t.blurb)}</p>
+    <p class="sub">${esc(blurb)}</p>
     ${partChips(r, part, done)}
     <div class="meter" role="img" aria-label="${st.learned} of ${n} learned"><i style="width:${Math.round(100*st.learned/n)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(partPhrase(r.name, pp))}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>

@@ -43,8 +43,12 @@ test('a device with the old version updates to this one and keeps its progress',
     }
     await page.waitForTimeout(500);
 
-    // the new version comes out
-    fs.unlinkSync(site); fs.symlinkSync(ROOT, site);
+    // the new version comes out, with a new version stamp the way publishing gives it one
+    const newDir = path.join(tmp, 'new');
+    fs.cpSync(ROOT, newDir, {recursive: true, filter: f => !/[\\/](\.git|node_modules|test-results|playwright-report)$/.test(f)});
+    const index = path.join(newDir, 'index.html');
+    fs.writeFileSync(index, fs.readFileSync(index, 'utf8').replace(/WGQ_BUILD='[^']*'/, `WGQ_BUILD='${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}'`));
+    fs.unlinkSync(site); fs.symlinkSync(newDir, site);
 
     // the kid opens the game again: it notices the new version; they press Update
     await page.evaluate(() => localStorage.removeItem('wgq-update-check')); // don't wait for the once-an-hour check

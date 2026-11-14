@@ -160,3 +160,17 @@ test('crowded places next to tiny countries can be tapped without zooming in', a
     }
   }
 });
+
+test('each Land & Water place screen says how many of each kind of place there are, adding up to the total', async ({page}) => {
+  await newPlayer(page);
+  const regions = {eu: 'Europe', af: 'Africa', as: 'Asia', oc: 'Oceania', na: 'North America', sa: 'South America'};
+  for(const [id, region] of Object.entries(regions)){
+    await goHome(page);
+    await openTopic(page, region, id + '-geo');
+    const text = await page.locator('#regionBody .sub').first().textContent();
+    expect(text).toMatch(new RegExp(`^Find .+ in ${region}\\.`));
+    const sum = [...text.matchAll(/(\d+|\ba) [a-z]/g)].reduce((a, m) => a + (m[1] === 'a' ? 1 : +m[1]), 0);
+    const count = await page.evaluate(id => window.WGQ_TEST.TOPIC[id].count, id + '-geo');
+    expect(sum, `"${text}" adds up to ${count}`).toBe(count);
+  }
+});

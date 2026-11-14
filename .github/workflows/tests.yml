@@ -56,8 +56,17 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the version stamp below reads the history
       - name: Gather the game's files (everything except the tests and the map-building tools)
         run: rsync -a --exclude .git --exclude .github --exclude tests --exclude tools ./ _site/
+      - name: Stamp the version
+        # WGQ_BUILD in index.html becomes the time of the last change to the game itself (not to tests, tools or notes),
+        # so devices are offered an update only when the game changed
+        run: |
+          stamp=$(TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd -- . ':!tests' ':!tools' ':!.github' ':!*.md')
+          sed -i "s/WGQ_BUILD='[^']*'/WGQ_BUILD='$stamp'/" _site/index.html
+          grep -o "WGQ_BUILD='[^']*'" _site/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

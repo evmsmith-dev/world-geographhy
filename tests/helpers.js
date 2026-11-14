@@ -46,6 +46,7 @@ export async function openTopic(page, region, topicId){
   await expect(page.locator('#scrRegion')).toBeVisible();
   const tab = page.locator(`#regionTabs [data-tab="${topicId}"]`);
   if(await tab.isVisible()) await tab.click(); // places with one topic (the World) have no tabs
+  await expect(page.locator('.modebig').first()).toHaveAttribute('data-topic', topicId); // the tab has finished drawing
 }
 
 export async function startMode(page, mode){

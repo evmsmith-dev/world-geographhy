@@ -1,5 +1,5 @@
 // The World Tour: every country, or every Land & Water place, in one game, each question on its own continent's map.
-import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, answerRun } from './helpers.js';
+import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, answerRun, savedAnswers } from './helpers.js';
 
 async function openTour(page, id){
   await page.click('.rtile[data-region="World"]');
@@ -31,7 +31,7 @@ test('progress is shared both ways between the continents and the World Tour', a
   await openTopic(page, 'Oceania', 'oc-countries');
   await startMode(page, 'find');
   for(let i = 0; i < 3; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'oc-countries')); await expect(page.locator('#findQ')).not.toHaveText(before); }
-  await page.waitForTimeout(500);
+  await savedAnswers(page, 'oc-countries', 3);
   await goHome(page);
   await openTour(page, 'world-countries');
   await expect(stats(page)).toContainText('3 of 195 learned');
@@ -39,7 +39,7 @@ test('progress is shared both ways between the continents and the World Tour', a
   // answer 4 in the World Tour (they start in Europe): Europe counts them
   await startTourMode(page, 'find');
   for(let i = 0; i < 4; i++){ await expect(page.locator('#chipText')).toContainText(`Question ${i + 1} of 195`); await answerRun(page); }
-  await page.waitForTimeout(1200);
+  await savedAnswers(page, 'eu-countries', 4);
   await goHome(page);
   await openTopic(page, 'Europe', 'eu-countries');
   await expect(stats(page)).toContainText('4 of 44 learned');

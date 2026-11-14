@@ -14,3 +14,14 @@ Builds `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`
 The list of features and each continent map's projection are at the top of the script. The projections were recovered from the existing country maps, to within 0.03 pixels, so the features line up with the countries.
 
 Natural Earth has no Mojave Desert, so the script draws its outline by hand from a list of longitude/latitude points (`HAND` in the script). Edit those points to reshape it.
+
+## build-parks.mjs: the National Parks map
+
+Builds `data/maps/usparks.json`: 23 national parks on the US map, drawn over the states. Outlines come from Natural Earth's
+`ne_10m_parks_and_protected_lands_area.geojson`; Natural Earth doesn't have Arches, Acadia, Mammoth Cave or Carlsbad Caverns,
+so those are a point from the National Park Service, written in the script. To add a park, add a line to `PARKS` in the script,
+then add its fun fact to `data/facts.json` (under `geo`) and its short name to `PARK_ALIAS` in `src/02-topics.js`, and change
+the count on the `us-parks` topic.
+
+1. Download `ne_10m_parks_and_protected_lands_area.geojson` from https://github.com/nvkelso/natural-earth-vector (the `geojson` folder) into a folder.
+2. In a folder with `d3-geo` installed (`npm install d3-geo`): `node tools/build-parks.mjs <that folder> data/maps`

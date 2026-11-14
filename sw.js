@@ -10,7 +10,7 @@ const FILES = [
   'data/maps/us.json', 'data/maps/world.json', 'data/maps/europe.json', 'data/maps/africa.json', 'data/maps/asia.json',
   'data/maps/oceania.json', 'data/maps/namerica.json', 'data/maps/samerica.json',
   'data/maps/europe-geo.json', 'data/maps/africa-geo.json', 'data/maps/asia-geo.json',
-  'data/maps/oceania-geo.json', 'data/maps/namerica-geo.json', 'data/maps/samerica-geo.json',
+  'data/maps/oceania-geo.json', 'data/maps/namerica-geo.json', 'data/maps/samerica-geo.json', 'data/maps/usparks.json',
   'assets/icons/icon.svg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png',
   'assets/icons/apple-touch-icon.png', 'assets/icons/favicon-32.png',
   'assets/fonts/alegreya-sans-latin-400-normal.woff2', 'assets/fonts/alegreya-sans-latin-500-normal.woff2', 'assets/fonts/alegreya-sans-latin-700-normal.woff2',

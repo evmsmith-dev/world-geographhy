@@ -104,6 +104,12 @@ function worldSize(n, kind){
 }
 
 // Land & Water: mountain ranges, deserts, seas and lakes, on the continent's map with its countries as a gray background
+// typed answers for the National Parks: the park's name without "National Park" works too
+const PARK_ALIAS = Object.fromEntries(['Yellowstone', 'Yosemite', 'Grand Canyon', 'Zion', 'Arches', 'Rocky Mountain', 'Grand Teton', 'Glacier', 'Olympic',
+  'Mount Rainier', 'Crater Lake', 'Great Smoky Mountains', 'Everglades', 'Acadia', 'Shenandoah', 'Mammoth Cave', 'Badlands', 'Death Valley', 'Joshua Tree',
+  'Carlsbad Caverns', 'Big Bend', 'Denali', 'Hawaiʻi Volcanoes'].map(p => [`${p} National Park`, [p.toLowerCase(), p.toLowerCase().replace('ʻ', '')]]));
+PARK_ALIAS['Great Smoky Mountains National Park'].push('smoky mountains', 'smokies');
+PARK_ALIAS['Hawaiʻi Volcanoes National Park'].push('hawaii volcanoes national park');
 const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
   'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
@@ -112,11 +118,11 @@ const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains'
   'Sahara':['sahara desert'],'Kalahari Desert':['kalahari'],'Namib Desert':['namib'],'Arabian Desert':['arabian','rub al khali','empty quarter'],'Gobi Desert':['gobi'],'Taklamakan Desert':['taklamakan','taklimakan'],
   'Thar Desert':['thar','great indian desert'],'Atacama Desert':['atacama'],'Great Victoria Desert':['great victoria'],'Great Sandy Desert':['great sandy'],'Simpson Desert':['simpson'],
   'Sonoran Desert':['sonoran','sonora'],'Chihuahuan Desert':['chihuahuan','chihuahua'],'Mojave Desert':['mojave','mohave']};
-const GEO_WORD = {range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
+const GEO_WORD = {park:'national park', range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
 const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
 const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
 // "That's the Black Sea", "That's the Alps", but "That's Lake Erie", "That's Patagonia" and "That's France"
-const noThe = n => /^Lake |^Patagonia$/.test(n);
+const noThe = n => /^Lake |^Patagonia$| National Park$/.test(n);
 const the = n => T && T.geo && !noThe(n) ? 'the ' + n : n;
 const TOPICS = [
   { id:'us-states', group:'United States', tab:'States', name:'US States', blurb:'Name all 50 states on the map.', map:'us', count:50,
@@ -134,6 +140,11 @@ const TOPICS = [
     tapWhat:'Tap a state, then pick its flag', tapHint:'Tap a state on the map',
     ask:()=>'Which flag belongs to this state?', flashFront:()=>'Which state has this flag?',
     back:n=>({answer:n, sub:`Capital: <b>${esc(CAP[n])}</b> ★`}) },
+  // National Parks: drawn over the states like Land & Water (geo), each with a tap circle (tools/build-parks.mjs)
+  { id:'us-parks', group:'United States', tab:'National Parks', name:'National Parks', blurb:'Find 23 famous national parks, from Acadia in Maine to Denali in Alaska.',
+    map:'usparks', count:23, maxZoom:12, geo:true, card:'locate', answer:n=>n, nouns:'national parks', listWord:'parks', itemWord:'park', alias:PARK_ALIAS,
+    tapHint:'Tap a national park', tapWhat:'Tap a national park, find its name', ask:geoAsk, flashFront:geoAsk,
+    back:n=>({answer:n, sub:`A national park in ${esc(MAPDATA.usparks.by[n].where)}`}) },
   { id:'world', group:'World', tab:'Continents & Oceans', name:'Continents & Oceans', blurb:'Find the 7 continents and 5 oceans.', map:'world', count:12,
     answer:n=>n, nouns:'places', listWord:'continents and oceans', alias:WORLD_ALIAS, maxZoom:5,
     tapWhat:'Tap a continent or ocean, find its name', tapHint:'Tap a continent or ocean',
@@ -154,7 +165,7 @@ const TOPICS = [
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
 // The place screen's line for a Land & Water topic, worked out from its map: "Find 6 mountain ranges, 5 seas, a bay and a channel in Europe."
-const GEO_ORDER = ['range', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
+const GEO_ORDER = ['park', 'range', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
 function geoBlurb(t, m){
   const n = {}; m.items.forEach(i => { n[i.sub] = (n[i.sub] || 0) + 1; });
   const parts = GEO_ORDER.filter(s => n[s]).map(s => n[s] === 1 ? `a ${GEO_WORD[s]}` : `${n[s]} ${GEO_WORD[s]}s`);

@@ -12,7 +12,7 @@ function enterExplore(regionName, fromPicker, topicId){
   T = topicId && TOPIC[topicId] ? TOPIC[topicId] : R.topics[0];
   EXPLORE = {R, labels: LS.get('labels') !== '0', geo: !!T.geo};
   if(R.map !== 'world') loadFacts();
-  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>${T.geo ? 'Explore land & water' : 'Explore the map'}</small>`;
+  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>${T.geo ? `Explore ${esc(T.tab.toLowerCase())}` : 'Explore the map'}</small>`;
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
   $('sub').textContent = 'Loading the map…'; $('tally').textContent = ''; $('clock').hidden = true;
   (async () => {
@@ -70,7 +70,7 @@ function exploreInfo(n){
   const R = EXPLORE.R, it = ITEM[n];
   const cap = EXPLORE.geo ? null : capitalOf(R, n);
   const flags = !EXPLORE.geo && R.topics.some(t => t.flags);
-  const extra = EXPLORE.geo ? `A ${GEO_WORD[it.sub]} in ${esc(R.name)}` : R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
+  const extra = EXPLORE.geo ? `A ${GEO_WORD[it.sub]} in ${esc(it.where || R.name)}` : R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
   box.innerHTML = `${flags ? flagImg(n, 'exflag') : ''}<div class="exbody"><p class="exname">${esc(n)} ${sayBtn(n, cap ? [n, '. Its capital is', cap] : [n])}</p>
     ${cap ? `<p>Capital: <b>${esc(cap)}</b> <span class="exstarkey" aria-hidden="true">★</span>${CAP_NOTE[n] ? ` <span class="muted">${esc(CAP_NOTE[n])}</span>` : ''}</p>` : ''}
     ${extra ? `<p class="muted">${extra}</p>` : ''}

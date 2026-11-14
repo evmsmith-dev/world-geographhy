@@ -87,9 +87,9 @@ test('pronunciations and Land & Water spellings are for real places', () => {
 });
 
 test('Land & Water places each have a kind the game can name', () => {
-  const words = ['range', 'desert', 'highlands', 'region', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
+  const words = ['park', 'range', 'desert', 'highlands', 'region', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
   for(const t of D.topics.filter(t => t.geo)){
-    const bad = D.maps[t.map].filter(i => !words.includes(i.sub) || !['mountain', 'water', 'desert'].includes(i.kind)).map(i => `${i.n} (${i.kind}/${i.sub})`);
+    const bad = D.maps[t.map].filter(i => !words.includes(i.sub) || !['mountain', 'water', 'desert', 'park'].includes(i.kind)).map(i => `${i.n} (${i.kind}/${i.sub})`);
     expect(bad, `${t.id}: places with an unknown kind`).toEqual([]);
   }
 });
@@ -142,7 +142,7 @@ test('the World Tour covers every country once, and every Land & Water place onc
   expect(countries.length).toBe(tour('world-countries').count);
   expect(tour('world-countries').count, 'countries in the world').toBe(195);
   expect(new Set(geo).size, 'different Land & Water places').toBe(geo.length);
-  const allGeo = D.topics.filter(t => t.geo).reduce((sum, t) => sum + t.count, 0);
+  const allGeo = D.topics.filter(t => t.tab === 'Land & Water').reduce((sum, t) => sum + t.count, 0);
   expect(tour('world-geo').count, 'every Land & Water place').toBe(allGeo);
   const allCountries = D.topics.filter(t => /-countries$/.test(t.id)).map(t => t.id).sort();
   expect([...tour('world-countries').from].sort(), 'every continent').toEqual(allCountries);

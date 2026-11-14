@@ -30,7 +30,7 @@ export async function newPlayer(page, name = 'Ama'){
 }
 
 export const REGIONS = [
-  {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags']},
+  {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags', 'us-parks']},
   {name: 'World', topics: ['world']},
   {name: 'Europe', topics: ['eu-countries', 'eu-capitals', 'eu-flags', 'eu-geo']},
   {name: 'Africa', topics: ['af-countries', 'af-capitals', 'af-flags', 'af-geo']},
@@ -167,4 +167,14 @@ export async function answerRun(page){
   }
   await expect(page.locator('#feedback')).toContainText(/yes/i);
   return info;
+}
+
+// Wait until the game has saved this many answers for a topic on the device (saving happens a moment after each answer)
+export async function savedAnswers(page, topic, n){
+  await expect.poll(() => page.evaluate(async t => {
+    const db = await new Promise((res, rej) => { const r = indexedDB.open('world-geography-quiz'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const all = await new Promise(res => { const q = db.transaction('items').objectStore('items').getAll(); q.onsuccess = () => res(q.result); });
+    db.close();
+    return all.filter(r => r.topic === t && r.last === 'right').length;
+  }, topic), {timeout: 10_000}).toBeGreaterThanOrEqual(n);
 }

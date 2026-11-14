@@ -74,14 +74,18 @@ function openRegion(name){
 }
 $('regionBack').onclick = () => popLayer();
 $('exploreBtn').onclick = () => enterExplore(curRegion.name, false, TOPIC[curTab] && TOPIC[curTab].geo ? curTab : null);
+// Drawing a tab waits for saved progress (and sometimes a map). A newer drawing, after a quick tap on another tab,
+// replaces an older one that is still waiting, so the screen always shows the tab that was tapped last.
+let regionDraw = 0;
 async function renderRegion(){
   if(!curRegion || !player) return;
+  const draw = ++regionDraw;
   const tabs = tabsOf(curRegion);
   $('regionTitle').textContent = curRegion.name;
   $('regionTabs').hidden = tabs.length < 2;
   $('regionTabs').classList.toggle('many', tabs.length > 3);
   $('regionTabs').innerHTML = tabs.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
-  if(TOUR[curTab]) return renderTour(TOUR[curTab]); // the World Tour (src/16-world-tour.js)
+  if(TOUR[curTab]) return renderTour(TOUR[curTab], draw); // the World Tour (src/16-world-tour.js)
   const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Land & Water has no parts
   const part = getPart(r), pp = part === 'All' ? null : part, n = pp ? r.parts[pp].length : t.count;
   const st = await topicStats(player.id, t, pp);
@@ -90,7 +94,8 @@ async function renderRegion(){
   const done = Object.fromEntries(r.parts ? Object.entries(r.parts).map(([k, names]) => [k, names.every(n => right.has(n)) || !!kept[`part-${t.id}-${k}`]]) : []);
   done.All = right.size >= t.count || !!kept['master-' + t.id];
   const saved = await Promise.all(Object.keys(MODES).map(m => DB.get('games', gameKey(player.id, t.id, pp ? m + '@' + pp : m))));
-  const blurb = t.geo ? geoBlurb(t, await loadMap(t.map)) : t.blurb;
+  const blurb = t.blurb || geoBlurb(t, await loadMap(t.map)); // Land & Water lines are worked out from the map
+  if(draw !== regionDraw) return; // another tab was tapped meanwhile
   $('regionBody').innerHTML = `
     <p class="sub">${esc(blurb)}</p>
     ${partChips(r, part, done)}

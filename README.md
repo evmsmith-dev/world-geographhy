@@ -1,6 +1,6 @@
 # World Geography Quiz
 
-A map quiz for kids: US states, capitals and flags, countries, capitals and flags of Europe, Africa, Asia, Oceania, North America and South America, their major mountain ranges, deserts, seas and lakes, and the continents and oceans, plus a World Tour of all 195 countries (or all the mountains, deserts and waters) in one game. It installs as an app on phones, tablets and computers, works offline, and keeps separate scores, streaks and badges for each player on the device.
+A map quiz for kids: US states, capitals, flags and national parks, countries, capitals and flags of Europe, Africa, Asia, Oceania, North America and South America, their major mountain ranges, deserts, seas and lakes, and the continents and oceans, plus a World Tour of all 195 countries (or all the mountains, deserts and waters) in one game. It installs as an app on phones, tablets and computers, works offline, and keeps separate scores, streaks and badges for each player on the device.
 
 ## Put it on GitHub Pages
 
@@ -36,19 +36,19 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `sw.js` | Offline support: the list of files saved on the device. It stays at the top level so it can serve the whole game |
 | `manifest.webmanifest` | App name, colors and icons for installing |
 | `src/` | The game's code, in numbered files (`01-helpers.js` … `18-start.js`, see `src/README.md`), and its look (`app.css`) |
-| `data/maps/` | Map shapes: `us.json`, `world.json` and one file per continent (`europe.json`, `africa.json`, …), plus each continent's **Land & Water** places (`europe-geo.json`, …) |
+| `data/maps/` | Map shapes: `us.json`, `world.json` and one file per continent (`europe.json`, `africa.json`, …), plus each continent's **Land & Water** places (`europe-geo.json`, …) and the US **National Parks** (`usparks.json`) |
 | `data/` | `flags.json` (country flags), `usflags.json` (state flags), `facts.json` (the “Did you know?” fun facts), `thumbs.json` (small map pictures for the home screen) |
 | `assets/icons/` | App icons |
 | `assets/fonts/` | Fonts, stored locally so the game works offline |
 | `tests/` | Automatic tests that run on GitHub (see `tests/README.md`). Not part of the published game |
-| `tools/` | Scripts that build the Land & Water maps. Not part of the published game |
+| `tools/` | Scripts that build the Land & Water and National Parks maps. Not part of the published game |
 | `.github/workflows/` | Runs the tests, and publishes the game when they pass |
 
 When you add a file the game uses, add it to the list in `sw.js` too (a test checks this).
 
 ## Credits
 
-Mountain range, sea and lake shapes come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain.
+Mountain range, desert, sea, lake and national park shapes come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain. The locations of Arches, Acadia, Mammoth Cave and Carlsbad Caverns come from the US National Park Service, also public domain.
 
 Flag images come from the flag-icons project (https://github.com/lipis/flag-icons), used under the MIT License:
 

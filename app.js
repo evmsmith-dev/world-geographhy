@@ -125,12 +125,15 @@ function worldSize(n, kind){
 // Mountains & Water: mountain ranges, seas and lakes, on the continent's map with its countries as a gray background
 const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
-  'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal']};
-const GEO_WORD = {range:'mountain range', sea:'sea', gulf:'gulf', bay:'bay', lake:'lake'};
+  'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
+  'Carpathian Mountains':['carpathians','carpathian'],'Zagros Mountains':['zagros'],'Drakensberg':['drakensbergs','drakensberg mountains'],'Brazilian Highlands':['brazilian'],'Guiana Highlands':['guiana'],
+  'Río de la Plata':['rio de la plata','river plate','plata'],'Great Australian Bight':['australian bight','bight'],'Gulf of Carpentaria':['carpentaria'],'English Channel':['channel'],'Bay of Biscay':['biscay']};
+const GEO_WORD = {range:'mountain range', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
 const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
 const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
-// "That's the Black Sea", "That's the Alps", but "That's Lake Erie" and "That's France"
-const the = n => T && T.geo && !/^Lake /.test(n) ? 'the ' + n : n;
+// "That's the Black Sea", "That's the Alps", but "That's Lake Erie", "That's Patagonia" and "That's France"
+const noThe = n => /^Lake |^Patagonia$/.test(n);
+const the = n => T && T.geo && !noThe(n) ? 'the ' + n : n;
 const TOPICS = [
   { id:'us-states', group:'United States', tab:'States', name:'US States', blurb:'Name all 50 states on the map.', map:'us', count:50,
     answer:n=>n, nouns:'states', listWord:'state names', alias:STATE_ALIAS, maxZoom:10,
@@ -153,17 +156,17 @@ const TOPICS = [
     ask:()=> 'Which continent or ocean is this?', flashFront:()=> 'Which continent or ocean is this?', card:'locate',
     back:(n,item)=>({answer:n, sub:worldSize(n, item.kind)}) },
   ...regionTopics('eu', 'Europe', 'europe', 44, 14, 'Find all 44 countries in Europe.', 'Name the capital of every country in Europe.', EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
-  geoTopic('eu', 'Europe', 'europe', 11, 14, 'Find 5 mountain ranges and 6 seas in Europe.'),
+  geoTopic('eu', 'Europe', 'europe', 14, 14, 'Find 6 mountain ranges and 8 seas, bays and channels in Europe.'),
   ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
-  geoTopic('af', 'Africa', 'africa', 6, 10, 'Find 2 mountain ranges, a sea and 3 big lakes in Africa.'),
+  geoTopic('af', 'Africa', 'africa', 10, 14, 'Find 3 mountain areas, 3 seas and gulfs, and 4 lakes in Africa.'),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
-  geoTopic('as', 'Asia', 'asia', 10, 14, 'Find 3 mountain ranges, 6 seas, gulfs and bays, and Lake Baikal in Asia.'),
+  geoTopic('as', 'Asia', 'asia', 15, 14, 'Find 4 mountain ranges, 7 seas, gulfs and bays, and 4 lakes in Asia.'),
   ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, 'Find all 14 countries in Oceania.', 'Name the capital of every country in Oceania.', OC_ALIAS, OC_CAP_ALIAS),
-  geoTopic('oc', 'Oceania', 'oceania', 3, 12, 'Find a mountain range and 2 seas in Oceania.'),
+  geoTopic('oc', 'Oceania', 'oceania', 6, 12, 'Find 2 mountain ranges and 4 seas, gulfs and bays in Oceania.'),
   ...regionTopics('na', 'North America', 'namerica', 23, 20, 'Find all 23 countries in North America.', 'Name the capital of every country in North America.', NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
-  geoTopic('na', 'North America', 'namerica', 12, 20, 'Find 3 mountain ranges, 4 seas and bays, and the 5 Great Lakes in North America.'),
+  geoTopic('na', 'North America', 'namerica', 14, 20, 'Find 4 mountain ranges, 4 seas and bays, the 5 Great Lakes and the Great Salt Lake in North America.'),
   ...regionTopics('sa', 'South America', 'samerica', 12, 6, 'Find all 12 countries in South America.', 'Name the capital of every country in South America.', {}, SA_CAP_ALIAS),
-  geoTopic('sa', 'South America', 'samerica', 2, 12, 'Find the Andes and Lake Titicaca in South America.'),
+  geoTopic('sa', 'South America', 'samerica', 6, 12, 'Find the Andes, 2 highland areas, Patagonia, Lake Titicaca and the Río de la Plata in South America.'),
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
 function geoTopic(id, region, map, count, maxZoom, blurb){
@@ -352,7 +355,7 @@ const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','
   'Belmopan':'bel-moh-pan','Paramaribo':'pah-rah-mah-ree-boh','Antananarivo':'an-tah-nah-nah-ree-voh','Gaborone':'hah-boh-roh-nay','São Tomé and Príncipe':'sow toh-may and preen-see-pay',
   'São Tomé':'sow toh-may','Eswatini':'eh-swah-tee-nee','Djibouti':'jih-boo-tee','Timor-Leste':'tee-mor lesh-tay','Dili':'dee-lee','Bandar Seri Begawan':'bun-dar seh-ree beh-gah-wan',
   'Vientiane':'vee-en-tee-ahn','Lake Titicaca':'lake tee-tee-kah-kah','Lake Baikal':'lake by-kahl','Lake Tanganyika':'lake tan-gan-yee-kah','Aegean Sea':'ih-jee-un sea',
-  'Tian Shan':'tee-en shahn','Pyrenees':'peer-uh-neez','Caucasus Mountains':'kaw-kuh-sus mountains','Sierra Madre':'see-air-uh mah-dray','Hindu Kush':'hin-doo koosh','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
+  'Tian Shan':'tee-en shahn','Pyrenees':'peer-uh-neez','Caucasus Mountains':'kaw-kuh-sus mountains','Sierra Madre':'see-air-uh mah-dray','Hindu Kush':'hin-doo koosh','Drakensberg':'drah-kenz-berg','Zagros Mountains':'zag-ross mountains','Carpathian Mountains':'kar-pay-thee-un mountains','Río de la Plata':'ree-oh day lah plah-tah','Guiana Highlands':'ghee-ah-nah highlands','Gulf of Carpentaria':'gulf of kar-pen-tair-ee-uh','Great Australian Bight':'great australian bite','Patagonia':'pat-uh-go-nee-uh','Aral Sea':'air-ul sea','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
   'Belize':'beh-leez','Managua':'mah-nah-gwah','San José':'san ho-zay','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
   'Palikir':'pah-lee-keer','Majuro':'mah-joo-roh','Funafuti':'foo-nah-foo-tee','Tuvalu':'too-vah-loo','Nauru':'nah-oo-roo','Yaren':'yah-ren','Apia':'ah-pee-ah',
   'Vanuatu':'vah-noo-ah-too','Port Vila':'port vee-lah','Honiara':'hoh-nee-ah-rah','Phnom Penh':'puh-nom pen','Nur-Sultan':'noor sool-tahn','Astana':'ah-stah-nah'};
@@ -1054,7 +1057,7 @@ $('prev').onclick = () => EXPLORE ? exploreStep(-1) : step(-1);
 const findTarget = () => G.queue && G.queue[0];
 function findAsk(n){
   if(T.showsItem) return `Which ${T.itemWord} has the capital ${key(n)}?`;
-  return ITEM[n].kind === 'ocean' || (T.geo && !/^Lake /.test(n)) ? `Find the ${n}` : `Find ${n}`;
+  return ITEM[n].kind === 'ocean' || (T.geo && !noThe(n)) ? `Find the ${n}` : `Find ${n}`;
 }
 // Mix-up help: when a kid picks the wrong place, show both and say how to tell them apart
 function placeOf(answer){ return answer ? (NAMES.find(x => key(x) === answer) || (ITEM[answer] ? answer : null)) : null; }
@@ -1094,6 +1097,12 @@ const LOOKALIKES = [
   ['name','Coral Sea','Tasman Sea','The Coral Sea is the northern one, by the Great Barrier Reef. The Tasman Sea is south, between Australia and New Zealand.'],
   ['name','Himalayas','Hindu Kush','The Himalayas are the long range to the east, along Nepal. The Hindu Kush is to the west, in Afghanistan.'],
   ['name','Rocky Mountains','Appalachian Mountains','The Rocky Mountains are in the west. The Appalachian Mountains are in the east.'],
+  ['name','Sierra Nevada','Sierra Madre','The Sierra Nevada is in California, in the United States. The Sierra Madre is farther south, in Mexico.'],
+  ['name','Yellow Sea','East China Sea','The Yellow Sea is the northern one, between China and Korea. The East China Sea is south of it.'],
+  ['name','Aral Sea','Caspian Sea','The Caspian Sea is the huge one farther west. The Aral Sea is the small one to its east.'],
+  ['name','Gulf of Guinea','Gulf of Aden','The Gulf of Guinea is on Africa’s west coast. The Gulf of Aden is on the east, by the Horn of Africa.'],
+  ['name','Brazilian Highlands','Guiana Highlands','The Brazilian Highlands are the big area in eastern Brazil. The Guiana Highlands are the smaller area farther north.'],
+  ['name','Gulf of Carpentaria','Great Australian Bight','The Gulf of Carpentaria is in the north of Australia. The Great Australian Bight is the big curve in the south.'],
   ['name','Arkansas','Kansas','Kansas is in the middle of the country. Arkansas is farther southeast, next to the Mississippi River.'],
   ['flag','Belgium','Germany','Belgium’s stripes go up and down. Germany’s go across.'],
   ['flag','Ireland','Italy','Ireland’s flag is green, white and orange. Italy’s is green, white and red.'],
@@ -1730,7 +1739,7 @@ async function dailyShow(){
     $('sub').textContent = 'Tap the right place on the map. You get 2 tries.';
     $('selLabel').textContent = 'Find it on the map';
     if(T.flags) fq.innerHTML = `${flagImg(q.n,'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>`;
-    else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !/^Lake /.test(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
+    else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !noThe(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else {
     $('sub').textContent = 'Look at the orange place on the map, then pick the right answer.';

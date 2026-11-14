@@ -107,9 +107,13 @@ function worldSize(n, kind){
 // typed answers for the National Parks: the park's name without "National Park" works too
 const PARK_ALIAS = Object.fromEntries(['Yellowstone', 'Yosemite', 'Grand Canyon', 'Zion', 'Arches', 'Rocky Mountain', 'Grand Teton', 'Glacier', 'Olympic',
   'Mount Rainier', 'Crater Lake', 'Great Smoky Mountains', 'Everglades', 'Acadia', 'Shenandoah', 'Mammoth Cave', 'Badlands', 'Death Valley', 'Joshua Tree',
-  'Carlsbad Caverns', 'Big Bend', 'Denali', 'Hawaiʻi Volcanoes'].map(p => [`${p} National Park`, [p.toLowerCase(), p.toLowerCase().replace('ʻ', '')]]));
+  'Carlsbad Caverns', 'Big Bend', 'Denali', 'Hawaiʻi Volcanoes', 'Bryce Canyon', 'Canyonlands', 'Sequoia', 'Redwood', 'North Cascades', 'Petrified Forest',
+  'Saguaro', 'Mesa Verde', 'Great Sand Dunes', 'White Sands', 'Theodore Roosevelt', 'Voyageurs', 'Isle Royale', 'Indiana Dunes', 'Cuyahoga Valley', 'Gateway Arch',
+  'Hot Springs', 'New River Gorge', 'Congaree', 'Glacier Bay', 'Wrangell–St. Elias', 'Haleakalā'].map(p => [`${p} National Park`, [p.toLowerCase(), p.toLowerCase().replace('ʻ', '')]]));
 PARK_ALIAS['Great Smoky Mountains National Park'].push('smoky mountains', 'smokies');
 PARK_ALIAS['Hawaiʻi Volcanoes National Park'].push('hawaii volcanoes national park');
+PARK_ALIAS['Wrangell–St. Elias National Park'].push('wrangell-st. elias', 'wrangell st elias', 'wrangell');
+PARK_ALIAS['Haleakalā National Park'].push('haleakala');
 const REGION_ALIAS = {Northeast:['north east','the northeast'], Southeast:['south east','the southeast'], Midwest:['mid west','the midwest'], Southwest:['south west','the southwest'], West:['the west']};
 const CITY_ALIAS = {'New York':['new york city','nyc'], 'Los Angeles':['la','l.a.'], 'Philadelphia':['philly'], 'Washington, D.C.':['washington dc','washington d.c.','dc','d.c.','washington'],
   'St. Louis':['st louis','saint louis'], 'San Francisco':['sf'], 'Portland':['portland oregon']};
@@ -155,8 +159,8 @@ const TOPICS = [
     tapHint:'Tap a city', tapWhat:'Tap a city, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A city in ${esc(MAPDATA.uscities.by[n].where)}`}) },
   // National Parks: drawn over the states like Land & Water (geo), each with a tap circle (tools/build-parks.mjs)
-  { id:'us-parks', group:'United States', tab:'National Parks', name:'National Parks', blurb:'Find 23 famous national parks, from Acadia in Maine to Denali in Alaska.',
-    map:'usparks', count:23, maxZoom:12, geo:true, card:'locate', answer:n=>n, nouns:'national parks', listWord:'parks', itemWord:'park', alias:PARK_ALIAS,
+  { id:'us-parks', group:'United States', tab:'National Parks', name:'National Parks', blurb:'Find 45 national parks, from Acadia in Maine to Haleakalā in Hawaii.',
+    map:'usparks', count:45, maxZoom:12, geo:true, card:'locate', answer:n=>n, nouns:'national parks', listWord:'parks', itemWord:'park', alias:PARK_ALIAS,
     tapHint:'Tap a national park', tapWhat:'Tap a national park, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A national park in ${esc(MAPDATA.usparks.by[n].where)}`}) },
   geoTopic('us', 'United States', 'us', 31, 12),

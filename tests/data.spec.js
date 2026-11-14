@@ -147,3 +147,14 @@ test('the World Tour covers every country once, and every Land & Water place onc
   const allCountries = D.topics.filter(t => /-countries$/.test(t.id)).map(t => t.id).sort();
   expect([...tour('world-countries').from].sort(), 'every continent').toEqual(allCountries);
 });
+
+test('every national park and city is placed inside its own state', () => {
+  const us = Object.fromEntries(JSON.parse(read('data/maps/us.json')).items.map(i => [i.n, i.d]));
+  const inside = (d, x, y) => { let r = false; for(const ring of d.split('Z').filter(Boolean)){ const p = ring.slice(1).split('L').map(q => q.split(',').map(Number));
+    for(let i = 0, j = p.length - 1; i < p.length; j = i++) if((p[i][1] > y) !== (p[j][1] > y) && x < p[i][0] + (y - p[i][1]) * (p[j][0] - p[i][0]) / (p[j][1] - p[i][1])) r = !r; } return r; };
+  for(const f of ['usparks', 'uscities']){
+    const wrong = JSON.parse(read(`data/maps/${f}.json`)).items.filter(i => !/District of Columbia/.test(i.where))
+      .filter(i => !i.where.split(/, | and /).some(s => us[s] && inside(us[s], i.dot[0], i.dot[1]))).map(i => `${i.n} (${i.where})`);
+    expect(wrong, `${f}: places outside the state they say`).toEqual([]);
+  }
+});

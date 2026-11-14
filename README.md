@@ -48,7 +48,7 @@ When you add a file the game uses, add it to the list in `sw.js` too (a test che
 
 ## Credits
 
-Mountain range, plain, desert, sea, lake and national park shapes and city locations come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain. The locations of Arches, Acadia, Mammoth Cave and Carlsbad Caverns come from the US National Park Service, also public domain.
+Mountain range, plain, desert, sea, lake and national park shapes and city locations come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain. Parks that Natural Earth doesn't include are placed by hand at the park (Arches, Acadia, Mammoth Cave and Carlsbad Caverns from the US National Park Service's coordinates, also public domain).
 
 Flag images come from the flag-icons project (https://github.com/lipis/flag-icons), used under the MIT License:
 

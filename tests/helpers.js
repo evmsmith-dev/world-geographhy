@@ -60,7 +60,7 @@ export async function goHome(page){
 }
 
 // A spot on the screen where a finger tap lands on this place: its tap circle if it has one, otherwise a point
-// inside it that nothing covers and that is clear of other places' tap circles (a tap near a circle picks the circle, as it should)
+// inside it that nothing covers and that is clear of other places' tap circles (a tap right next to a circle picks the circle, as it should)
 export async function spotFor(page, name){
   return page.evaluate(n => {
     const S = document.getElementById('map').getBoundingClientRect();
@@ -70,12 +70,12 @@ export async function spotFor(page, name){
     if(mine) return {x: mine.r.left + mine.r.width/2, y: mine.r.top + mine.r.height/2};
     const el = [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n);
     if(!el) return {missing: true};
-    const clear = (x, y) => Math.min(Infinity, ...dots.map(d => Math.hypot(x - (d.r.left + d.r.width/2), y - (d.r.top + d.r.height/2)) - d.r.width/2 - 8));
+    const clear = (x, y) => Math.min(Infinity, ...dots.map(d => Math.hypot(x - (d.r.left + d.r.width/2), y - (d.r.top + d.r.height/2)) - 5)); // a circle only takes a tap on another place's land near its middle (DOT_CORE in src/08-map.js)
     const R = el.getBoundingClientRect();
     const x0 = Math.max(R.left, S.left), x1 = Math.min(R.right, S.right), y0 = Math.max(R.top, S.top), y1 = Math.min(R.bottom, S.bottom);
     // whole pixels, like real touch events, and a few pixels of the same place all around (a finger is not a pin point)
     let best = null;
-    const hits = (x, y) => { const h = document.elementFromPoint(x, y); return h && h.dataset && h.dataset.n === n; };
+    const hits = (x, y) => { const h = document.elementsFromPoint(x, y).find(e => e.tagName !== 'circle'); return h && h.dataset && h.dataset.n === n; }; // looking through circles, as the game does
     const roomy = (x, y) => [[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4]].every(([dx, dy]) => hits(x + dx, y + dy));
     const tryAt = (x, y) => { x = Math.round(x); y = Math.round(y); if(!hits(x, y)) return; const c = clear(x, y) + (roomy(x, y) ? 1000 : 0); if(c > 2 && (!best || c > best.c)) best = {x, y, c}; };
     // a grid first (the same spots every run), then random points for odd shapes
@@ -87,10 +87,11 @@ export async function spotFor(page, name){
 
 // Tap a place on the map with a finger. If every spot of it is too close to a tiny neighbor's tap circle
 // (Switzerland next to Liechtenstein on a phone), zoom in on it first, the way a kid would.
-export async function tapPlace(page, name){
+export async function tapPlace(page, name, {zoom = true} = {}){
   await mapSettled(page); // the map may still be sliding into place
   let spot = await spotFor(page, name);
   expect(spot && spot.missing, `${name} is on the map`).toBeFalsy();
+  if(!zoom){ expect(spot, `a spot where a finger can tap ${name} without zooming`).toBeTruthy(); await page.touchscreen.tap(spot.x, spot.y); return spot; }
   if(!spot && !(await page.isDisabled('#zFit'))){ // zoomed in somewhere else: back to the whole map first
     await page.click('#zFit'); await mapSettled(page);
     spot = await spotFor(page, name);

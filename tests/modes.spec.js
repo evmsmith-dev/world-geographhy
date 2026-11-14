@@ -138,3 +138,25 @@ test('How to play opens and covers Land & Water', async ({page}) => {
   await page.click('#homeHelp');
   await expect(page.locator('.steps')).toContainText('Land & Water');
 });
+
+test('crowded places next to tiny countries can be tapped without zooming in', async ({page}) => {
+  await newPlayer(page);
+  for(const [region, topic, places] of [['Europe', 'eu-countries', ['Switzerland', 'Italy', 'Austria']], ['Asia', 'as-countries', ['Qatar', 'United Arab Emirates', 'Malaysia']]]){
+    await goHome(page);
+    await openTopic(page, region, topic);
+    await page.click('#exploreBtn');
+    await page.waitForFunction(() => document.querySelectorAll('#map path.st').length > 0);
+    const wholeMap = async () => { if(!(await page.isDisabled('#zFit'))){ await page.click('#zFit'); await mapSettled(page); } };
+    for(const place of places){
+      await wholeMap();
+      await tapPlace(page, place, {zoom: false});
+      await expect(page.locator('#exInfo')).toContainText(place);
+    }
+    // and the tiny neighbors' circles still work
+    for(const tiny of region === 'Europe' ? ['Liechtenstein', 'San Marino'] : ['Bahrain', 'Singapore']){
+      await wholeMap();
+      await tapPlace(page, tiny, {zoom: false});
+      await expect(page.locator('#exInfo')).toContainText(tiny);
+    }
+  }
+});

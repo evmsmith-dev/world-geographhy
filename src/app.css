@@ -486,3 +486,7 @@ svg.shape path.geowater{fill:color-mix(in srgb,#2f7fc8 40%,var(--sea));stroke:no
 svg.shape path.geomtn{fill:color-mix(in srgb,#9a6b3f 45%,var(--land));stroke:none}
 svg.shape path.geodesert{fill:color-mix(in srgb,#e6c25a 50%,var(--land));stroke:none}
 svg.shape rect.dimsea{fill:var(--sea);stroke:none}
+/* World Tour: how much of each continent is learned */
+.tourparts{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tourparts b{color:var(--ink)}
+.dailydone #tourAgain{display:block;margin:14px 0 4px}

@@ -19,7 +19,7 @@ async function gameData(page){
     for(const k in maps){ mapW[k] = maps[k].w; maps[k] = maps[k].items; }
     return {
       topics: W.TOPICS.map(t => ({id: t.id, map: t.map, count: t.count, tab: t.tab, name: t.name, flags: !!t.flags, geo: !!t.geo, parts: t.parts || null})),
-      maps, mapW, flags, facts: await W.facts(), lookalikes: W.LOOKALIKES, say: W.SAY, geoAlias: W.GEO_ALIAS, worldFact: W.WORLD_FACT, cap: W.CAP, capNote: W.CAP_NOTE,
+      maps, mapW, flags, facts: await W.facts(), lookalikes: W.LOOKALIKES, say: W.SAY, geoAlias: W.GEO_ALIAS, worldFact: W.WORLD_FACT, tours: W.TOURS.map(t => ({id: t.id, count: t.count, from: t.from})), cap: W.CAP, capNote: W.CAP_NOTE,
     };
   });
 }
@@ -132,4 +132,18 @@ test('places too small for a finger on a phone have a tap circle', () => {
     const tiny = items.filter(i => i.b && !i.dot && Math.max(i.b[2] - i.b[0], i.b[3] - i.b[1]) * px < 8).map(i => i.n);
     expect(tiny, `${t.map}: tiny places with no tap circle`).toEqual([]);
   }
+});
+
+test('the World Tour covers every country once, and every Land & Water place once', () => {
+  const tour = id => D.tours.find(t => t.id === id);
+  const names = t => t.from.flatMap(f => D.maps[D.topics.find(x => x.id === f).map].map(i => i.n));
+  const countries = names(tour('world-countries')), geo = names(tour('world-geo'));
+  expect(new Set(countries).size, 'different countries').toBe(countries.length);
+  expect(countries.length).toBe(tour('world-countries').count);
+  expect(tour('world-countries').count, 'countries in the world').toBe(195);
+  expect(new Set(geo).size, 'different Land & Water places').toBe(geo.length);
+  const allGeo = D.topics.filter(t => t.geo).reduce((sum, t) => sum + t.count, 0);
+  expect(tour('world-geo').count, 'every Land & Water place').toBe(allGeo);
+  const allCountries = D.topics.filter(t => /-countries$/.test(t.id)).map(t => t.id).sort();
+  expect([...tour('world-countries').from].sort(), 'every continent').toEqual(allCountries);
 });

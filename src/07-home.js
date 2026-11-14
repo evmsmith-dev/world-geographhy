@@ -68,7 +68,7 @@ $('homeGroups').addEventListener('click', e => {
 // ---- a place: tabs for what to learn, then how to play ----
 let curRegion = null, curTab = null;
 function openRegion(name){
-  curRegion = REGIONS.find(r => r.name === name); curTab = lastTab(curRegion).id;
+  curRegion = REGIONS.find(r => r.name === name); curTab = lastTab(curRegion, true).id;
   showScreen('scrRegion'); pushLayer(() => { showScreen('scrHome'); renderHome(); });
   renderRegion();
 }
@@ -76,11 +76,13 @@ $('regionBack').onclick = () => popLayer();
 $('exploreBtn').onclick = () => enterExplore(curRegion.name, false, TOPIC[curTab] && TOPIC[curTab].geo ? curTab : null);
 async function renderRegion(){
   if(!curRegion || !player) return;
+  const tabs = tabsOf(curRegion);
+  $('regionTitle').textContent = curRegion.name;
+  $('regionTabs').hidden = tabs.length < 2;
+  $('regionTabs').classList.toggle('many', tabs.length > 3);
+  $('regionTabs').innerHTML = tabs.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
+  if(TOUR[curTab]) return renderTour(TOUR[curTab]); // the World Tour (src/16-world-tour.js)
   const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Land & Water has no parts
-  $('regionTitle').textContent = r.name;
-  $('regionTabs').hidden = r.topics.length < 2;
-  $('regionTabs').classList.toggle('many', r.topics.length > 3);
-  $('regionTabs').innerHTML = r.topics.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
   const part = getPart(r), pp = part === 'All' ? null : part, n = pp ? r.parts[pp].length : t.count;
   const st = await topicStats(player.id, t, pp);
   const right = new Set((await DB.byPT('items', player.id, t.id)).filter(i => i.last === 'right').map(i => i.item));

@@ -60,14 +60,20 @@ async function pickDaily(){
   for(const q of out){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); q.style = Math.random() < 0.5 ? 'find' : 'pick'; }
   return out;
 }
-async function startDaily(){
-  returnTo = 'scrHome'; showScreen('scrPlay');
-  pushLayer(() => { DAILY = null; $('dailyDone').hidden = true; $('play').querySelectorAll('[data-dhide]').forEach(el => { el.hidden = false; el.removeAttribute('data-dhide'); }); showScreen('scrHome'); renderHome(); });
+async function startDaily(){ return startRun({title:'Daily 10', pick:pickDaily, home:'scrHome'}); }
+// A run of questions, each on its own map: the Daily 10, and the World Tour (src/16-world-tour.js), which adds
+// tour, mode and save (where to keep its place, so it can be finished later), saved (a run to pick up) and finish
+async function startRun(run){
+  returnTo = run.home; showScreen('scrPlay');
+  pushLayer(() => { DAILY = null; $('dailyDone').hidden = true; $('play').querySelectorAll('[data-dhide]').forEach(el => { el.hidden = false; el.removeAttribute('data-dhide'); });
+    showScreen(run.home); if(run.home === 'scrRegion') renderRegion(); else renderHome(); });
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
-  $('chipText').innerHTML = 'Daily 10<small>Getting your questions ready…</small>'; $('sub').textContent = ''; $('tally').textContent = ''; $('clock').hidden = true;
-  try{ await loadMixes(); DAILY = {qs: await pickDaily(), i: 0, right: 0, tries: 0, busy: false}; }
+  $('chipText').innerHTML = `${esc(run.title)}<small>Getting your questions ready…</small>`; $('sub').textContent = ''; $('tally').textContent = ''; $('clock').hidden = true;
+  $('dailyHome').textContent = run.home === 'scrRegion' ? 'Back' : 'Back home';
+  try{ await loadMixes(); const was = run.saved;
+    DAILY = {...run, qs: was ? was.qs : await run.pick(), i: was ? was.i : 0, right: was ? was.right : 0, missed: was ? was.missed : [], tries: 0, busy: false}; }
   catch(e){ $('sub').textContent = 'The questions could not load. Check your internet connection, then go back and try again.'; return; }
-  // the Daily 10 uses its own controls
+  // runs use their own controls
   ['.combo','#submit','.nav','#reviewBtn','#skipBtn'].forEach(sel => { const el = $('play').querySelector(sel); if(el && !el.hidden){ el.hidden = true; el.setAttribute('data-dhide',''); } });
   $('mapSheet').hidden = false; $('play').hidden = false; $('legend').innerHTML = '';
   dailyShow();
@@ -75,7 +81,7 @@ async function startDaily(){
 async function dailyShow(){
   const q = DAILY.qs[DAILY.i]; T = TOPIC[q.t]; M = await loadMap(T.map); drawMap();
   DAILY.tries = 0; DAILY.busy = false; current = q.style === 'pick' ? q.n : null;
-  $('chipText').innerHTML = `Daily 10<small>Question ${DAILY.i+1} of 10 · ${esc(T.name)}</small>`;
+  $('chipText').innerHTML = `${esc(DAILY.title)}<small>Question ${DAILY.i+1} of ${DAILY.qs.length} · ${esc(T.name)}</small>`;
   $('tally').innerHTML = `<b>${DAILY.right}</b> right`;
   feedback('');
   const fq = $('findQ'), ch = $('choices');
@@ -94,7 +100,7 @@ async function dailyShow(){
     ch.innerHTML = opts.map((v,i) => T.flags ? `<button data-dv="${esc(v)}" aria-label="Flag ${i+1}">${flagImg(v)}</button>` : `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
     focusItem(q.n);
   }
-  dailyPaint(); showWholeMap(DAILY.i === 0);
+  dailyPaint(); showWholeMap(DAILY.i === 0 || T !== DAILY.lastT); DAILY.lastT = T;
 }
 function dailyPaint(reveal, mark){
   NAMES.forEach(n => {
@@ -104,13 +110,14 @@ function dailyPaint(reveal, mark){
 }
 function dailyAnswer(right, msg){
   const q = DAILY.qs[DAILY.i];
-  DAILY.busy = true; if(right) DAILY.right++;
+  DAILY.busy = true; if(right) DAILY.right++; else DAILY.missed.push(q);
   recordItem(player.id, q.t, q.n, right);
+  if(DAILY.save) DB.put('games', {key: DAILY.save, pid: player.id, topic: DAILY.tour, mode: DAILY.mode, qs: DAILY.qs, i: DAILY.i + 1, right: DAILY.right, missed: DAILY.missed, updated: Date.now()}); // pick up here next time
   sound(right ? 'right' : 'wrong');
   feedback(msg, right ? 'ok' : 'bad');
   $('tally').innerHTML = `<b>${DAILY.right}</b> right`;
   current = q.n; dailyPaint(null, {[q.n]: right ? 'ok' : 'sel'}); if(!right) focusItem(q.n);
-  setTimeout(() => { if(!DAILY) return; DAILY.i++; if(DAILY.i < DAILY.qs.length) dailyShow(); else dailyFinish(); }, right ? 1000 : 2200);
+  setTimeout(() => { if(!DAILY) return; DAILY.i++; if(DAILY.i < DAILY.qs.length) dailyShow(); else (DAILY.finish || dailyFinish)(); }, right ? 1000 : 2200);
 }
 function dailyTap(n){
   const q = DAILY && DAILY.qs[DAILY.i]; if(!q || DAILY.busy || q.style !== 'find') return;
@@ -176,6 +183,9 @@ const BADGES = [
     ...(t.parts ? Object.entries(t.parts).map(([part, names]) => ({id:`part-${t.id}-${part}`, icon:badgeIcon(t), name:`${partTitle(t.group, part)} ${t.tab}`,
       desc:`Learn all ${names.length} ${t.nouns} in ${partPhrase(t.group, part)}.`, group:t.group, topic:t.id, part, need:names.length})) : []),
   ]),
+  // the World Tour: learn everything on every continent (learned anywhere counts)
+  ...TOURS.map(t => ({id:'master-'+t.id, icon:t.icon, name:`${t.name} Master`, desc:`Learn all ${t.count} ${t.nouns} in the world.`, group:t.group, tour:t.id, need:t.count, master:true})),
+  {id:'worldtour', icon:'🌐', name:'Around the World', desc:'Found all 195 countries in one World Tour without a single miss.', hint:'Find every country in the world in one go, without a miss.', secret:true},
 ];
 function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : t.geo ? '🏞️' : '🗺️'; }
 async function computeBadges(p){
@@ -199,15 +209,17 @@ async function computeBadges(p){
   has.lightning = perfect.some(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000);
   has.globetrotter = REGIONS.every(r => perfect.some(a => TOPIC[a.topic].group === r.name));
   has.comeback = !!(p.feats && p.feats.comeback);
+  has.worldtour = !!(p.feats && p.feats.worldtour);
   // how many times a repeatable badge has been done, shown quietly as ×2, ×3…
   const sweeps = TOPICS.filter(t => t.parts && Object.keys(t.parts).every(part => perfect.some(a => a.topic === t.id && a.part === part))).length;
   const times = {perfect: perfect.length, flawless: perfect.filter(a => a.part).length, sweep: sweeps,
     lightning: perfect.filter(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000).length,
-    comeback: (p.feats && (p.feats.comebackN || (p.feats.comeback ? 1 : 0))) || 0, daily10: d.perfect || 0};
+    comeback: (p.feats && (p.feats.comebackN || (p.feats.comeback ? 1 : 0))) || 0, daily10: d.perfect || 0, worldtour: (p.feats && p.feats.worldtourN) || 0};
   TOPICS.forEach(t => has['master-'+t.id] = learned[t.id] >= t.count);
+  TOURS.forEach(t => has['master-'+t.id] = t.from.every(f => learned[f] >= TOPIC[f].count));
   // progress toward each place and part badge
   const rightSet = {}; items.forEach(r => { if(r.last === 'right') (rightSet[r.topic] = rightSet[r.topic] || new Set()).add(r.item); });
-  const have = b => { if(!b.topic) return null; const set = rightSet[b.topic] || new Set(); return b.part ? TOPIC[b.topic].parts[b.part].filter(n => set.has(n)).length : learned[b.topic]; };
+  const have = b => { if(b.tour) return TOUR[b.tour].from.reduce((sum, f) => sum + learned[f], 0); if(!b.topic) return null; const set = rightSet[b.topic] || new Set(); return b.part ? TOPIC[b.topic].parts[b.part].filter(n => set.has(n)).length : learned[b.topic]; };
   BADGES.forEach(b => { if(b.part) has[b.id] = have(b) >= b.need; });
   const kept = p.badges || {}; // once earned, a badge is never taken away (a later miss doesn't remove it)
   return BADGES.map(b => ({...b, earned: !!has[b.id] || !!kept[b.id], have: have(b), times: times[b.id] || 0}));

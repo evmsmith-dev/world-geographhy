@@ -1,5 +1,5 @@
 // Each way to play works: Test (and its badge), Practice, flashcards, Explore and the Daily 10.
-import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, mapSettled, answer } from './helpers.js';
+import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, mapSettled, answer, answerRun } from './helpers.js';
 
 test('a perfect Test earns the Master badge', async ({page}) => {
   await newPlayer(page);
@@ -58,33 +58,11 @@ test('Explore shows a name, details and a fun fact for each kind of place', asyn
   }
 });
 
-// Answer one Daily 10 question correctly, whatever kind it is
-async function answerDaily(page){
-  const info = await page.evaluate(() => {
-    const chip = document.getElementById('chipText').textContent, W = window.WGQ_TEST;
-    const t = W.TOPICS.find(t => chip.includes(t.name));
-    return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: document.querySelector('#map path.sel')?.dataset.n};
-  });
-  expect(info.topic, 'the question says which topic it is from').toBeTruthy();
-  if(info.pick){
-    const right = await page.evaluate(async ({topic, sel}) => {
-      const W = window.WGQ_TEST, t = W.TOPIC[topic];
-      if(/-capitals$/.test(topic)){ const m = await W.loadMap(t.map); const it = m.items.find(i => i.n === sel); return it.cap || W.CAP[sel]; }
-      return sel;
-    }, info);
-    await page.click(`#choices button[data-dv="${right.replace(/"/g, '\\"')}"]`);
-  } else {
-    await tapPlace(page, await findTarget(page, info.topic));
-  }
-  await expect(page.locator('#feedback')).toContainText(/yes/i);
-  return info;
-}
-
 async function playDaily(page){
   await page.click('#dailyBtn');
   for(let i = 1; i <= 10; i++){
     await expect(page.locator('#chipText')).toContainText(`Question ${i} of 10`);
-    await answerDaily(page);
+    await answerRun(page);
     const next = page.locator('#dailyNext');
     if(await next.isVisible()) await next.click();
   }
@@ -114,7 +92,7 @@ test('the Daily 10 works with Land & Water questions, and offers choices of the 
       const same = kinds.offered.filter(s => s === kinds.want).length;
       expect(same, `choices of the same kind (${kinds.want})`).toBe(Math.min(4, kinds.have));
     }
-    await answerDaily(page);
+    await answerRun(page);
     const next = page.locator('#dailyNext');
     if(await next.isVisible()) await next.click();
   }

@@ -153,3 +153,36 @@ test('each Land & Water place screen says how many of each kind of place there a
     expect(sum, `"${text}" adds up to ${count}`).toBe(count);
   }
 });
+
+test('National Parks: Explore says which state each park is in, and flashcards show it', async ({page}) => {
+  await newPlayer(page);
+  await openTopic(page, 'United States', 'us-parks');
+  await expect(page.locator('#regionBody .stats')).toContainText('0 of 23 learned');
+  await page.click('#exploreBtn');
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 23);
+  await expect(page.locator('#chipText')).toContainText('Explore national parks');
+  await mapSettled(page);
+  await tapPlace(page, 'Yellowstone National Park');
+  await expect(page.locator('#exInfo')).toContainText('A national park in Wyoming, Montana and Idaho');
+  await expect(page.locator('#exInfo')).toContainText('Old Faithful');
+  await goHome(page);
+  await openTopic(page, 'United States', 'us-parks');
+  await startMode(page, 'flash');
+  await page.click('#fReveal');
+  await expect(page.locator('#fAnswer')).toContainText('National Park');
+  await expect(page.locator('#fSub')).toContainText('A national park in ');
+});
+
+test.describe(() => {
+  test.use({serviceWorkers: 'block'}); // so the slow connection below isn't skipped by the offline copy
+  test('tapping tabs quickly always shows the last tab tapped', async ({page}) => {
+  await newPlayer(page);
+  // a slow connection: the Land & Water map takes a moment, so its tab finishes drawing after the next one
+  await page.route(/europe-geo\.json/, async route => { await new Promise(r => setTimeout(r, 1200)); await route.continue(); });
+  await page.click('.rtile[data-region="Europe"]');
+  for(const id of ['eu-geo', 'eu-capitals']) await page.click(`#regionTabs [data-tab="${id}"]`);
+  await page.waitForTimeout(2500);
+  await expect(page.locator('.modebig').first()).toHaveAttribute('data-topic', 'eu-capitals');
+  await expect(page.locator('#regionTabs [aria-selected="true"]')).toHaveText('Capitals');
+});
+});

@@ -18,10 +18,11 @@ async function tourStats(t){
   return {per, learned: per.reduce((sum, p) => sum + p.learned, 0)};
 }
 
-async function renderTour(t){
+async function renderTour(t, draw){
   const st = await tourStats(t), kept = player.badges || {};
   const done = st.learned >= t.count || !!kept['master-' + t.id];
   const saved = await Promise.all(Object.keys(TOUR_MODES).map(m => DB.get('games', tourKey(t, m))));
+  if(draw !== regionDraw) return; // another tab was tapped meanwhile
   $('regionBody').innerHTML = `
     <p class="sub">${t.id === 'world-geo' ? `Find all ${t.count} mountains, deserts, seas and lakes` : `Find all ${t.count} countries of the world`}, continent by continent.
       What you learn here counts for each continent too.</p>

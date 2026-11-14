@@ -25,7 +25,8 @@ function drawCardArt(el, n, side){
     el.innerHTML = `<rect class="dim dimsea" x="${cx-w}" y="${cy-h}" width="${w*2}" height="${h*2}"/>` +
       M.items.filter(sinks).map(i => `<path class="${cls(i)}" d="${i.d}"/>`).join('') +
       (M.other ? `<path class="dim" d="${M.other}" style="fill:var(--other)"/>` : '') + `<path class="dim" d="${M.bgland}"/>` +
-      M.items.filter(i => !sinks(i)).map(i => `<path class="${cls(i)}" d="${i.d}"/>`).join('');
+      M.items.filter(i => !sinks(i)).map(i => `<path class="${cls(i)}" d="${i.d}"/>`).join('') +
+      (it.dot ? `<circle class="hi" cx="${it.dot[0]}" cy="${it.dot[1]}" r="${w/45}"/>` : ''); // a small place also gets its tap circle, so it can be seen
   } else { // the whole world, with this place lit up
     el.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
     el.innerHTML = (M.sphere ? `<path class="dim" d="${M.sphere}" style="fill:var(--globe);stroke:none"/>` : '') +

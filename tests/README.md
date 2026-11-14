@@ -12,7 +12,7 @@ The game itself doesn't use anything in this folder.
 |---|---|
 | `data.spec.js` | The game's lists agree with each other and with its files: every place has a fun fact and every fun fact has a place, every topic's count matches its map, every flag game has every flag, mix-up tips and pronunciations name real places, the offline list in `sw.js` has every file, all JSON is valid. |
 | `tap-everything.spec.js` | A whole game of Find it on every map, answered by tapping with a finger, so every place can be tapped (zooming in where a kid would have to). A few questions of each Capitals and Flags game. |
-| `modes.spec.js` | Test (and its Master badge), Practice with mix-up tips, flashcards, Explore, the Daily 10 (including Land & Water questions and same-kind choices), Up next, Scores and How to play. |
+| `modes.spec.js` | Test (and its Master badge), Practice with mix-up tips, flashcards, Explore (including the National Parks), the Daily 10 (including Land & Water questions and same-kind choices), Up next, Scores, How to play, and tabs tapped quickly. |
 | `tour.spec.js` | The World Tour: its tabs, progress shared both ways with the continents, stopping and picking up later, a whole Land & Water tour tapped place by place (with its badges), and World 20 with practice of missed ones. |
 | `saved.spec.js` | Progress survives closing the game; a backup made by an older version still loads with every player, score and badge; a backup saved now loads on another device; old Central America progress moves to North America. |
 | `layout.spec.js` | Tabs aren't cut off, the place screen is centered, the zoom buttons don't cover the map, and the game fits on the screen without scrolling. |

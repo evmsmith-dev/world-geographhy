@@ -490,3 +490,12 @@ svg.shape rect.dimsea{fill:var(--sea);stroke:none}
 .tourparts{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .tourparts b{color:var(--ink)}
 .dailydone #tourAgain{display:block;margin:14px 0 4px}
+
+/* National Parks: the Park Service brown, over the gray states (green would look like "found") */
+.map .st.park{fill:color-mix(in srgb,#7a5230 60%,var(--land));stroke:color-mix(in srgb,#5a3a1e 75%,var(--ink));stroke-width:.8}
+@media (hover:hover){.map .st.park:hover{fill:color-mix(in srgb,#7a5230 50%,var(--sel) 40%)}}
+.map .st.park.done{fill:var(--answered)} .map .st.park.ok{fill:var(--ok)} .map .st.park.bad{fill:var(--bad)} .map .st.park.sel{fill:var(--sel)}
+.map .st.park.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.park.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.park.wrongflash{fill:var(--bad)}
+svg.shape path.geopark{fill:color-mix(in srgb,#7a5230 45%,var(--land));stroke:none}
+svg.shape circle.hi{fill:var(--sel);stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}

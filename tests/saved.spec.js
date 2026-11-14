@@ -1,6 +1,6 @@
 // Kids' progress is never lost: it survives a reload, backups save and load, and backups made by older versions still work.
 import path from 'node:path';
-import { test, expect, newPlayer, openGame, goHome, openTopic, startMode, tapPlace, findTarget } from './helpers.js';
+import { test, expect, newPlayer, openGame, goHome, openTopic, startMode, tapPlace, findTarget, savedAnswers } from './helpers.js';
 
 // Made with the game as it was in November 2026: Ama has a perfect Test of Europe's Land & Water and some Africa
 // practice (one wrong answer); Kofi has learned 5 US states. Never re-make this file: it stands for kids' real saved data.
@@ -18,7 +18,7 @@ test('progress is still there after closing and opening the game', async ({page}
   await openTopic(page, 'Oceania', 'oc-countries');
   await startMode(page, 'find');
   for(let i = 0; i < 3; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'oc-countries')); await expect(page.locator('#findQ')).not.toHaveText(before); }
-  await page.waitForTimeout(500); // let the last answer save
+  await savedAnswers(page, 'oc-countries', 3);
   await goHome(page); // a fresh page load
   await expect(page.locator('#homePlayer')).toContainText('Ama');
   await openTopic(page, 'Oceania', 'oc-countries');
@@ -50,7 +50,7 @@ test('a backup saved now loads back on another device', async ({page, browser}, 
   await openTopic(page, 'World', 'world');
   await startMode(page, 'find');
   for(let i = 0; i < 4; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'world')); await expect(page.locator('#findQ')).not.toHaveText(before); }
-  await page.waitForTimeout(500);
+  await savedAnswers(page, 'world', 4);
   await goHome(page);
   await page.click('#homeSettings');
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#doExport')]);

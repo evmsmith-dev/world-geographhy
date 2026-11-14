@@ -111,13 +111,13 @@ export async function tapPlace(page, name, {zoom = true} = {}){
   return spot;
 }
 
-// Wait until the map stops moving (zoom animations)
+// Wait until the map stops moving: zoom animations, and the map resizing when a panel opens or closes below it
 export async function mapSettled(page){
   let last = null;
   for(let i = 0; i < 40; i++){
-    const vb = await page.getAttribute('#map', 'viewBox');
-    if(vb === last) return;
-    last = vb; await page.waitForTimeout(120);
+    const now = await page.evaluate(() => { const m = document.getElementById('map'), r = m.getBoundingClientRect(); return [m.getAttribute('viewBox'), r.top, r.width, r.height].join(' '); });
+    if(now === last) return;
+    last = now; await page.waitForTimeout(150);
   }
 }
 

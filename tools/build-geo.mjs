@@ -22,22 +22,29 @@ const PROJ = {
   samerica: {c:[-59.99, -20.05],s:1177.09, t:[462.78, 675.62], w:1000, h:1422},
 };
 // [name in the game, kind, source, names in the data]. Natural Earth splits some seas into smaller named parts
-// (the Adriatic and Aegean in the Mediterranean, the Gulf of Bothnia in the Baltic...), so those parts are joined back in. Seas sit under the land; lakes and mountains sit on top of it.
+// (the Tyrrhenian and Ionian in the Mediterranean, the Gulf of Bothnia in the Baltic...), so those parts are joined back in. Seas sit under the land; lakes and mountains sit on top of it.
 const FEATURES = {
   namerica: [['Rocky Mountains','range','mtn',['ROCKY MOUNTAINS']], ['Appalachian Mountains','range','mtn',['APPALACHIAN MTS.']],
     ['Sierra Madre','range','mtn',['SIERRA MADRE OCCIDENTAL','SIERRA MADRE ORIENTAL','Sierra Madre del Sur']],
     ['Gulf of Mexico','gulf','sea',['Gulf of Mexico','Bahía de Campeche']], ['Hudson Bay','bay','sea',['Hudson Bay','James Bay']], ['Caribbean Sea','sea','sea',['Caribbean Sea','Gulf of Honduras']], ['Bering Sea','sea','sea',['Bering Sea']],
-    ['Lake Superior','lake','lake',['Lake Superior']], ['Lake Michigan','lake','lake',['Lake Michigan']], ['Lake Huron','lake','lake',['Lake Huron']], ['Lake Erie','lake','lake',['Lake Erie']], ['Lake Ontario','lake','lake',['Lake Ontario']]],
-  samerica: [['Andes','range','mtn',['ANDES']], ['Lake Titicaca','lake','lake',['Lago Titicaca']]],
+    ['Lake Superior','lake','lake',['Lake Superior']], ['Lake Michigan','lake','lake',['Lake Michigan']], ['Lake Huron','lake','lake',['Lake Huron']], ['Lake Erie','lake','lake',['Lake Erie']], ['Lake Ontario','lake','lake',['Lake Ontario']],
+    ['Sierra Nevada','range','mtn',['SIERRA NEVADA']], ['Great Salt Lake','lake','lake',['Great Salt Lake']]],
+  // big land regions come first, so they draw under the mountain ranges they touch (Patagonia under the Andes)
+  samerica: [['Patagonia','region','mtn',['PATAGONIA']], ['Brazilian Highlands','highlands','mtn',['BRAZILIAN HIGHLANDS']], ['Guiana Highlands','highlands','mtn',['GUIANA HIGHLANDS']],
+    ['Andes','range','mtn',['ANDES']], ['Lake Titicaca','lake','lake',['Lago Titicaca']], ['Río de la Plata','estuary','sea',['Río de la Plata']]],
   europe: [['Alps','range','mtn',['ALPS']], ['Pyrenees','range','mtn',['PYRENEES']], ['Ural Mountains','range','mtn',['URAL MOUNTAINS']], ['Caucasus Mountains','range','mtn',['CAUCASUS MTS.','Lesser Caucasus']],
     ['Scandinavian Mountains','range','mtn',['KJØLEN MOUNTAINS']],
-    ['Mediterranean Sea','sea','sea',['Mediterranean Sea','Adriatic Sea','Aegean Sea','Alboran Sea','Balearic Sea','Golfe du Lion','Gulf of Gabès','Gulf of Sidra','Ionian Sea','Ligurian Sea','Sea of Crete','Tyrrhenian Sea']], ['Black Sea','sea','sea',['Black Sea']], ['Baltic Sea','sea','sea',['Baltic Sea','Gulf of Bothnia','Gulf of Finland','Gulf of Riga','Mecklenburger Bucht']], ['North Sea','sea','sea',['North Sea','Skagerrak']]],
-  africa: [['Atlas Mountains','range','mtn',['ATLAS MOUNTAINS','HAUT ATLAS','ATLAS SAHARIEN','Anti Atlas','Moyen Atlas','Atlas Tellien']], ['Ethiopian Highlands','range','mtn',['ETHIOPIAN HIGHLANDS']],
-    ['Red Sea','sea','sea',['Red Sea']], ['Lake Victoria','lake','lake',['Lake Victoria']], ['Lake Tanganyika','lake','lake',['Lake Tanganyika']], ['Lake Malawi','lake','lake',['Lake Malawi']]],
+    ['Mediterranean Sea','sea','sea',['Mediterranean Sea','Alboran Sea','Balearic Sea','Golfe du Lion','Gulf of Gabès','Gulf of Sidra','Ionian Sea','Ligurian Sea','Tyrrhenian Sea']], ['Adriatic Sea','sea','sea',['Adriatic Sea']], ['Aegean Sea','sea','sea',['Aegean Sea','Sea of Crete']], ['Black Sea','sea','sea',['Black Sea']], ['Baltic Sea','sea','sea',['Baltic Sea','Gulf of Bothnia','Gulf of Finland','Gulf of Riga','Mecklenburger Bucht']], ['North Sea','sea','sea',['North Sea','Skagerrak']],
+    ['Carpathian Mountains','range','mtn',['CARPATHIAN MOUNTAINS']], ['Bay of Biscay','bay','sea',['Bay of Biscay']], ['English Channel','channel','sea',['English Channel']]],
+  africa: [['Atlas Mountains','range','mtn',['ATLAS MOUNTAINS','HAUT ATLAS','ATLAS SAHARIEN','Anti Atlas','Moyen Atlas','Atlas Tellien']], ['Ethiopian Highlands','highlands','mtn',['ETHIOPIAN HIGHLANDS']],
+    ['Red Sea','sea','sea',['Red Sea']], ['Lake Victoria','lake','lake',['Lake Victoria']], ['Lake Tanganyika','lake','lake',['Lake Tanganyika']], ['Lake Malawi','lake','lake',['Lake Malawi']],
+    ['Drakensberg','range','mtn',['DRAKENSBERG']], ['Gulf of Guinea','gulf','sea',['Gulf of Guinea','Bight of Benin','Bight of Biafra']], ['Gulf of Aden','gulf','sea',['Gulf of Aden']], ['Lake Chad','lake','lake',['Lake Chad']]],
   asia: [['Himalayas','range','mtn',['HIMALAYAS']], ['Hindu Kush','range','mtn',['HINDU KUSH']], ['Tian Shan','range','mtn',['TIAN SHAN']],
     ['Caspian Sea','lake','sea',['Caspian Sea']], ['Arabian Sea','sea','sea',['Arabian Sea']], ['Persian Gulf','gulf','sea',['Persian Gulf']], ['Bay of Bengal','bay','sea',['Bay of Bengal']],
-    ['South China Sea','sea','sea',['South China Sea','Gulf of Tonkin']], ['Sea of Japan','sea','sea',['Sea of Japan']], ['Lake Baikal','lake','lake',['Lake Baikal']]],
-  oceania: [['Great Dividing Range','range','mtn',['GREAT DIVIDING RANGE']], ['Coral Sea','sea','sea',['Coral Sea']], ['Tasman Sea','sea','sea',['Tasman Sea']]],
+    ['South China Sea','sea','sea',['South China Sea','Gulf of Tonkin']], ['Sea of Japan','sea','sea',['Sea of Japan']], ['Lake Baikal','lake','lake',['Lake Baikal']],
+    ['Zagros Mountains','range','mtn',['ZAGROS MOUNTAINS']], ['Yellow Sea','sea','sea',['Yellow Sea','Bo Hai']], ['East China Sea','sea','sea',['East China Sea']], ['Aral Sea','lake','lake',['South Aral Sea','North Aral Sea']], ['Dead Sea','lake','lake',['Dead Sea']]],
+  oceania: [['Great Dividing Range','range','mtn',['GREAT DIVIDING RANGE']], ['Coral Sea','sea','sea',['Coral Sea']], ['Tasman Sea','sea','sea',['Tasman Sea']],
+    ['Southern Alps','range','mtn',['SOUTHERN ALPS']], ['Gulf of Carpentaria','gulf','sea',['Gulf of Carpentaria']], ['Great Australian Bight','bay','sea',['Great Australian Bight']]],
 };
 const SRC = {sea: load('ne_10m_geography_marine_polys'), lake: load('ne_50m_lakes'), mtn: load('ne_10m_geography_regions_polys')};
 const nameOf = f => f.properties.name || f.properties.NAME;
@@ -82,7 +89,7 @@ for(const [region, list] of Object.entries(FEATURES)){
     // several features (the sub-ranges of the Atlas, the parts of the Mediterranean) overlap or touch: join them
     let shape = parts.length > 1 ? pc.union(...parts) : (parts[0] || []);
     shape = pc.intersection(shape, box);               // only what is on this map
-    const tol = sub === 'range' ? 1.2 : 0.6;
+    const tol = src === 'mtn' ? 1.2 : 0.6;
     shape = shape.map(poly => poly.map(r => simplifyRing(r, tol)).filter(r => r.length >= 3 && Math.abs(area(r)) > 0.8)).filter(p => p.length);
     if(!shape.length){ console.log(`  ${region}: ${n} is off this map, skipped`); continue; }
     const d = shape.map(poly => poly.map(r => 'M' + r.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L') + 'Z').join('')).join('');
@@ -90,7 +97,7 @@ for(const [region, list] of Object.entries(FEATURES)){
     const b = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map(v => +v.toFixed(1));
     const big = shape.map(p => p[0]).sort((u, v) => Math.abs(area(v)) - Math.abs(area(u)))[0];
     let c = centroid(big).map(v => +v.toFixed(1));
-    const item = {n, kind: sub === 'range' ? 'mountain' : 'water', sub, layer: (sub === 'lake' || sub === 'range') ? 'over' : 'under', d, b, c};
+    const item = {n, kind: src === 'mtn' ? 'mountain' : 'water', sub, layer: (sub === 'lake' || src === 'mtn') ? 'over' : 'under', d, b, c};
     if(Math.max(b[2]-b[0], b[3]-b[1]) < (sub === 'lake' ? 32 : 14)) item.dot = c; // too small to tap: give it a tap circle (lakes sit inside land and mountains, so a bit more generous)
     items.push(item);
   }

@@ -595,6 +595,7 @@ async function renderRegion(){
   const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Mountains & Water has no parts
   $('regionTitle').textContent = r.name;
   $('regionTabs').hidden = r.topics.length < 2;
+  $('regionTabs').classList.toggle('many', r.topics.length > 3);
   $('regionTabs').innerHTML = r.topics.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
   const part = getPart(r), pp = part === 'All' ? null : part, n = pp ? r.parts[pp].length : t.count;
   const st = await topicStats(player.id, t, pp);
@@ -1411,7 +1412,7 @@ $('topicChip').onclick = () => {
   const draw = () => {
     const t = TOPIC[tid];
     body.innerHTML = `<p class="sect">Place</p><div class="chips pick">${REGIONS.map(x => `<button data-r="${esc(x.name)}" aria-pressed="${x===r}">${esc(x.name)}</button>`).join('')}</div>
-      ${r.topics.length > 1 ? `<p class="sect">Learn about</p><div class="tabs">${r.topics.map(x => `<button data-tab="${x.id}" aria-selected="${x.id===tid}">${esc(x.tab)}</button>`).join('')}</div>` : ''}
+      ${r.topics.length > 1 ? `<p class="sect">Learn about</p><div class="tabs${r.topics.length > 3 ? ' many' : ''}">${r.topics.map(x => `<button data-tab="${x.id}" aria-selected="${x.id===tid}">${esc(x.tab)}</button>`).join('')}</div>` : ''}
       ${r.parts && t.parts ? `<p class="sect">Part</p>${partChips(r, part)}` : ''}
       <p class="sect">How to play</p><div class="modelist">${modeButtons(t, null, t.id===T.id && G && (G.part || 'All') === part ? G.mode : null, part === 'All' || !t.parts ? null : part)}
         <button class="modebig" data-explore="${esc(r.name)}"${t.geo ? ` data-etopic="${t.id}"` : ''}${EXPLORE && EXPLORE.R===r ? ' aria-current="true"' : ''}><span class="mn">Explore</span><span class="md">A map to look around, no quiz</span></button></div>`;

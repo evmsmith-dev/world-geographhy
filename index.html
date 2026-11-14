@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preload" href="alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="app.css?v=2026-10-28T11:27:27Z">
-<script>window.WGQ_BUILD='2026-11-14T03:56:17Z'</script>
+<script>window.WGQ_BUILD='2026-11-14T04:09:40Z'</script>
 <script src="app.js?v=2026-10-28T11:27:27Z" defer></script>
 </head>
 <body>
@@ -86,13 +86,15 @@
     <div class="sheetbox" id="mapSheet">
       <div class="mapbox">
         <svg id="map" class="map" role="group" aria-label="Map with names hidden"></svg>
+      </div>
+      <div class="zrow">
+        <p class="zhint">Pinch or press + to zoom in. Drag to move around.</p>
         <div class="zoom" role="group" aria-label="Map zoom">
-          <button id="zIn" aria-label="Zoom in">+</button>
           <button id="zOut" aria-label="Zoom out" disabled>−</button>
           <button id="zFit" aria-label="Show whole map" disabled>⤢</button>
+          <button id="zIn" aria-label="Zoom in">+</button>
         </div>
       </div>
-      <p class="zhint">Pinch or use + to zoom in. Drag to move around.</p>
       <div class="legend" id="legend"></div>
     </div>
 

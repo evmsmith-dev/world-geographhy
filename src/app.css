@@ -460,6 +460,7 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 @media (max-width:600px){
   #scrRegion .tabs.many,.tabs.many{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
   #scrRegion .tabs.many button,.tabs.many button{background:var(--sheet);padding:9px 8px;min-width:0;white-space:nowrap}
+  #scrRegion .tabs.many button:last-child:nth-child(odd),.tabs.many button:last-child:nth-child(odd){grid-column:span 2} /* an odd tab out fills the last row */
   #scrRegion .tabs.many button[aria-selected="true"],.tabs.many button[aria-selected="true"]{background:var(--btn)}
 }
 
@@ -499,3 +500,21 @@ svg.shape rect.dimsea{fill:var(--sea);stroke:none}
 .map .st.park.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.park.wrongflash{fill:var(--bad)}
 svg.shape path.geopark{fill:color-mix(in srgb,#7a5230 45%,var(--land));stroke:none}
 svg.shape circle.hi{fill:var(--sel);stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}
+/* US regions: each region its own soft color (the found/missed/selected colors still win, they're more specific) */
+.map .st.usregion{stroke:var(--border);stroke-width:1.5}
+.map .tone1{fill:color-mix(in srgb,#5b8fd1 45%,var(--land))} .map .tone2{fill:color-mix(in srgb,#5fae6e 45%,var(--land))}
+.map .tone3{fill:color-mix(in srgb,#e0b24a 50%,var(--land))} .map .tone4{fill:color-mix(in srgb,#d9774f 45%,var(--land))} .map .tone5{fill:color-mix(in srgb,#9b7cc9 45%,var(--land))}
+@media (hover:hover){.map .st.usregion:hover{fill:color-mix(in srgb,var(--land) 50%,var(--sel) 50%)}}
+.map .st.usregion.done{fill:var(--answered)} .map .st.usregion.ok{fill:var(--ok)} .map .st.usregion.bad{fill:var(--bad)} .map .st.usregion.sel{fill:var(--sel)}
+.map .st.usregion.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.usregion.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.usregion.wrongflash{fill:var(--bad)}
+svg.shape path.geousregion{fill:color-mix(in srgb,var(--ink) 12%,var(--land));stroke:var(--border)}
+/* US cities: dark dots; US plains, plateaus, basins and valleys: a soft olive under the mountains */
+.map .st.city{fill:color-mix(in srgb,#3b4a59 75%,var(--land));stroke:var(--ink);stroke-width:.8}
+.map .st.plain{fill:color-mix(in srgb,#a3b06a 55%,var(--land));stroke:color-mix(in srgb,#7d8a45 75%,var(--ink));stroke-width:.8}
+@media (hover:hover){.map .st.city:hover,.map .st.plain:hover{fill:color-mix(in srgb,var(--land) 50%,var(--sel) 50%)}}
+.map .st.city.done,.map .st.plain.done{fill:var(--answered)} .map .st.city.ok,.map .st.plain.ok{fill:var(--ok)} .map .st.city.bad,.map .st.plain.bad{fill:var(--bad)} .map .st.city.sel,.map .st.plain.sel{fill:var(--sel)}
+.map .st.city.off,.map .st.plain.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.city.mixup,.map .st.plain.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.city.wrongflash,.map .st.plain.wrongflash{fill:var(--bad)}
+svg.shape path.geocity{fill:color-mix(in srgb,#3b4a59 50%,var(--land));stroke:none}
+svg.shape path.geoplain{fill:color-mix(in srgb,#a3b06a 45%,var(--land));stroke:none}

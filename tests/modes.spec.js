@@ -186,3 +186,23 @@ test.describe(() => {
   await expect(page.locator('#regionTabs [aria-selected="true"]')).toHaveText('Capitals');
 });
 });
+
+test('the United States tabs: Regions, Cities and Land & Water work in Explore, and every tab name fits', async ({page}) => {
+  await newPlayer(page);
+  await page.click('.rtile[data-region="United States"]');
+  await expect(page.locator('#regionTabs button')).toHaveText(['States', 'Capitals', 'Flags', 'Regions', 'Cities', 'National Parks', 'Land & Water']);
+  const cut = await page.$$eval('#regionTabs button', bs => bs.filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
+  expect(cut, 'tab names that are cut off').toEqual([]);
+  for(const [topic, count, place, detail] of [['us-regions', 5, 'Southwest', '4 states: Arizona, New Mexico, Texas and Oklahoma'], ['us-cities', 25, 'Houston', 'A city in Texas'], ['us-geo', 26, 'Great Plains', 'A plain in the United States']]){
+    await goHome(page);
+    await openTopic(page, 'United States', topic);
+    await expect(page.locator('#regionBody .stats')).toContainText(`0 of ${count} learned`);
+    if(topic === 'us-geo') await expect(page.locator('#regionBody .sub').first()).toContainText('in the United States.');
+    await page.click('#exploreBtn');
+    await page.waitForFunction(n => document.querySelectorAll('#map path.st').length === n, count);
+    await mapSettled(page);
+    await tapPlace(page, place);
+    await expect(page.locator('#exInfo')).toContainText(detail);
+    await expect(page.locator('#exInfo')).toContainText('Did you know?');
+  }
+});

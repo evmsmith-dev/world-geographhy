@@ -30,7 +30,7 @@ export async function newPlayer(page, name = 'Ama'){
 }
 
 export const REGIONS = [
-  {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags', 'us-parks']},
+  {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags', 'us-regions', 'us-cities', 'us-parks', 'us-geo']},
   {name: 'World', topics: ['world']},
   {name: 'Europe', topics: ['eu-countries', 'eu-capitals', 'eu-flags', 'eu-geo']},
   {name: 'Africa', topics: ['af-countries', 'af-capitals', 'af-flags', 'af-geo']},

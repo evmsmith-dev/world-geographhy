@@ -2,7 +2,7 @@
 
 These scripts build the game's map files. The game doesn't use them; they're here so the maps can be rebuilt.
 
-## build-geo.mjs: Land & Water maps
+## build-geo.mjs: Land & Water maps (the six continents and the United States)
 
 Builds `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`, `namerica-geo.json` and `samerica-geo.json` in `data/maps/`.
 
@@ -25,3 +25,15 @@ the count on the `us-parks` topic.
 
 1. Download `ne_10m_parks_and_protected_lands_area.geojson` from https://github.com/nvkelso/natural-earth-vector (the `geojson` folder) into a folder.
 2. In a folder with `d3-geo` installed (`npm install d3-geo`): `node tools/build-parks.mjs <that folder> data/maps`
+
+The United States' Land & Water (`us-geo.json`) uses the US map's own projection, and its mountains, plains and deserts are
+cut to the lower 48 states so they don't spill into Canada or Mexico. It needs `data/maps/us.json` in the output folder.
+
+## build-us.mjs: US Regions and Cities
+
+Builds `data/maps/usregions.json` (the 5 regions taught in school, each made from its states in `data/maps/us.json`) and
+`data/maps/uscities.json` (25 cities, located from Natural Earth's `ne_10m_populated_places_simple.geojson`). The states in each
+region and the list of cities are at the top of the script.
+
+1. Download `ne_10m_populated_places_simple.geojson` from https://github.com/nvkelso/natural-earth-vector (the `geojson` folder) into a folder.
+2. In a folder with `d3-geo` and `polygon-clipping` installed: `node tools/build-us.mjs <that folder> data/maps`

@@ -70,7 +70,7 @@ function exploreInfo(n){
   const R = EXPLORE.R, it = ITEM[n];
   const cap = EXPLORE.geo ? null : capitalOf(R, n);
   const flags = !EXPLORE.geo && R.topics.some(t => t.flags);
-  const extra = EXPLORE.geo ? `A ${GEO_WORD[it.sub]} in ${esc(it.where || R.name)}` : R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
+  const extra = EXPLORE.geo ? (it.sub === 'usregion' ? `${it.states} states: ${esc(it.where)}` : `A ${GEO_WORD[it.sub]} in ${esc(it.where || inPlace(R.name))}`) : R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
   box.innerHTML = `${flags ? flagImg(n, 'exflag') : ''}<div class="exbody"><p class="exname">${esc(n)} ${sayBtn(n, cap ? [n, '. Its capital is', cap] : [n])}</p>
     ${cap ? `<p>Capital: <b>${esc(cap)}</b> <span class="exstarkey" aria-hidden="true">★</span>${CAP_NOTE[n] ? ` <span class="muted">${esc(CAP_NOTE[n])}</span>` : ''}</p>` : ''}
     ${extra ? `<p class="muted">${extra}</p>` : ''}

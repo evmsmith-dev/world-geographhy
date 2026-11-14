@@ -231,3 +231,23 @@ test('National Parks have part chips, and a part plays just its parks and has it
   await openTopic(page, 'United States', 'us-states');
   await expect(page.locator('.partrow')).toHaveCount(0);
 });
+
+test('Landmarks: each continent has a tab, Explore says the country, and questions read right', async ({page}) => {
+  await newPlayer(page);
+  await openTopic(page, 'Europe', 'eu-landmarks');
+  await expect(page.locator('#regionTabs [aria-selected="true"]')).toHaveText('Landmarks');
+  await expect(page.locator('#regionBody .sub').first()).toHaveText('Find 10 famous landmarks in Europe.');
+  await page.click('#exploreBtn');
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 10);
+  await mapSettled(page);
+  await tapPlace(page, 'Eiffel Tower');
+  await expect(page.locator('#exInfo')).toContainText('A landmark in France');
+  await expect(page.locator('#exInfo')).toContainText('1889');
+  // "Find the Eiffel Tower" but "Find Machu Picchu"
+  await goHome(page);
+  await openTopic(page, 'South America', 'sa-landmarks');
+  await startMode(page, 'find');
+  const q = await page.textContent('#findQ');
+  expect(q).toMatch(/^Find /);
+  expect(q, 'no "the" before Machu Picchu, Angel Falls, Salar de Uyuni…').not.toMatch(/^Find the (Machu Picchu|Christ the Redeemer|Iguazu Falls|Angel Falls|Mitad del Mundo|Salar de Uyuni)/);
+});

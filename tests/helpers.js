@@ -33,12 +33,12 @@ export async function newPlayer(page, name = 'Ama'){
 export const REGIONS = [
   {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags', 'us-regions', 'us-cities', 'us-parks', 'us-geo']},
   {name: 'World', topics: ['world']},
-  {name: 'Europe', topics: ['eu-countries', 'eu-capitals', 'eu-flags', 'eu-geo']},
-  {name: 'Africa', topics: ['af-countries', 'af-capitals', 'af-flags', 'af-geo']},
-  {name: 'Asia', topics: ['as-countries', 'as-capitals', 'as-flags', 'as-geo']},
-  {name: 'Oceania', topics: ['oc-countries', 'oc-capitals', 'oc-flags', 'oc-geo']},
-  {name: 'North America', topics: ['na-countries', 'na-capitals', 'na-flags', 'na-geo']},
-  {name: 'South America', topics: ['sa-countries', 'sa-capitals', 'sa-flags', 'sa-geo']},
+  {name: 'Europe', topics: ['eu-countries', 'eu-capitals', 'eu-flags', 'eu-geo', 'eu-landmarks']},
+  {name: 'Africa', topics: ['af-countries', 'af-capitals', 'af-flags', 'af-geo', 'af-landmarks']},
+  {name: 'Asia', topics: ['as-countries', 'as-capitals', 'as-flags', 'as-geo', 'as-landmarks']},
+  {name: 'Oceania', topics: ['oc-countries', 'oc-capitals', 'oc-flags', 'oc-geo', 'oc-landmarks']},
+  {name: 'North America', topics: ['na-countries', 'na-capitals', 'na-flags', 'na-geo', 'na-landmarks']},
+  {name: 'South America', topics: ['sa-countries', 'sa-capitals', 'sa-flags', 'sa-geo', 'sa-landmarks']},
 ];
 
 // From the home screen: open a place and pick a tab

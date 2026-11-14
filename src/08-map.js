@@ -42,7 +42,7 @@ svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if
 
 const clampW = w => Math.min(VW, Math.max(MINW, w));
 // how a place is drawn: land, ocean, water (seas and lakes), mountain range or desert
-const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : i.kind === 'desert' ? 'desert' : i.kind === 'park' ? 'park' : i.kind === 'city' ? 'city' : i.kind === 'plain' ? 'plain' : i.kind === 'river' ? 'river' : i.kind === 'usregion' ? `usregion tone${i.tone}` : 'land';
+const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : i.kind === 'desert' ? 'desert' : i.kind === 'park' ? 'park' : i.kind === 'city' ? 'city' : i.kind === 'plain' ? 'plain' : i.kind === 'river' ? 'river' : i.kind === 'landmark' ? 'landmark' : i.kind === 'usregion' ? `usregion tone${i.tone}` : 'land';
 // oceans and seas lie under the land, so they are never brought to the front over it
 const sinks = i => i.kind === 'ocean' || i.layer === 'under';
 // color a place and its tap dot; extra is the state ('sel', 'ok'…). The mixed-up place keeps its outline for a moment.

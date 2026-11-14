@@ -1,10 +1,11 @@
 // World Geography Quiz: offline support.
 // Serves the saved copy right away, then refreshes it from the website in the background.
 // Only touches caches that start with "wgq-", so other apps on the same site are left alone.
-// Change the version when files move, so devices drop the old copies (v2: files moved into folders).
-const CACHE = 'wgq-v2';
+// Change the version when files move, so devices drop the old copies (v2: files moved into folders; v3: app.js split into numbered files).
+const CACHE = 'wgq-v3';
 const FILES = [
-  './', 'index.html', 'manifest.webmanifest', 'src/app.js', 'src/app.css',
+  './', 'index.html', 'manifest.webmanifest', 'src/app.css',
+  'src/01-helpers.js', 'src/02-topics.js', 'src/03-storage.js', 'src/04-screens.js', 'src/05-sound.js', 'src/06-players.js', 'src/07-home.js', 'src/08-map.js', 'src/09-game.js', 'src/10-find-it.js', 'src/11-easy-answers.js', 'src/12-flashcards.js', 'src/13-scores.js', 'src/14-explore.js', 'src/15-daily.js', 'src/16-settings.js', 'src/17-start.js',
   'data/facts.json', 'data/flags.json', 'data/usflags.json', 'data/thumbs.json',
   'data/maps/us.json', 'data/maps/world.json', 'data/maps/europe.json', 'data/maps/africa.json', 'data/maps/asia.json',
   'data/maps/oceania.json', 'data/maps/namerica.json', 'data/maps/samerica.json',

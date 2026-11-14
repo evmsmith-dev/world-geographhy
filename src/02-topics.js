@@ -59,9 +59,14 @@ const NA_PARTS = {
 };
 // a part's name as a title ("Eastern Europe", "Middle East")
 const PART_TITLE = {'Asia|Middle East':'Middle East','North America|Northern':'Canada, US & Mexico','North America|Central':'Central America','North America|Caribbean':'Caribbean'};
+// the National Parks' parts (their own, not the whole country's): groups of states, each with a handful of parks
+Object.assign(PART_TITLE, {'United States|Pacific':'Pacific Coast', 'United States|Rockies':'Rocky Mountain', 'United States|Southwest':'Southwest',
+  'United States|Midwest':'Midwest', 'United States|East':'Eastern', 'United States|Alaska & Hawaii':'Alaska & Hawaii'});
 const partTitle = (region, part) => PART_TITLE[region + '|' + part] || `${part} ${region}`;
 // how a part reads in a sentence ("12 of 13 learned in the Caribbean")
 const PART_PHRASE = {'Asia|Middle East':'the Middle East','North America|Northern':'Canada, the US and Mexico','North America|Central':'Central America','North America|Caribbean':'the Caribbean'};
+Object.assign(PART_PHRASE, {'United States|Pacific':'the Pacific states', 'United States|Rockies':'the Rocky Mountain states', 'United States|Southwest':'the Southwest',
+  'United States|Midwest':'the Midwest', 'United States|East':'the East', 'United States|Alaska & Hawaii':'Alaska and Hawaii'});
 const partPhrase = (region, part) => PART_PHRASE[region + '|' + part] || `${part} ${region}`;
 const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
   'South Africa':'South Africa has three capitals: Pretoria, Cape Town and Bloemfontein.',"Côte d'Ivoire":'Abidjan is the biggest city.',
@@ -117,6 +122,14 @@ PARK_ALIAS['Haleakalā National Park'].push('haleakala');
 const REGION_ALIAS = {Northeast:['north east','the northeast'], Southeast:['south east','the southeast'], Midwest:['mid west','the midwest'], Southwest:['south west','the southwest'], West:['the west']};
 const CITY_ALIAS = {'New York':['new york city','nyc'], 'Los Angeles':['la','l.a.'], 'Philadelphia':['philly'], 'Washington, D.C.':['washington dc','washington d.c.','dc','d.c.','washington'],
   'St. Louis':['st louis','saint louis'], 'San Francisco':['sf'], 'Portland':['portland oregon']};
+const PARK_PARTS = Object.fromEntries(Object.entries({
+  'Pacific': ['Yosemite', 'Olympic', 'Mount Rainier', 'Crater Lake', 'Death Valley', 'Joshua Tree', 'Sequoia', 'Redwood', 'North Cascades'],
+  'Rockies': ['Yellowstone', 'Rocky Mountain', 'Grand Teton', 'Glacier', 'Mesa Verde', 'Great Sand Dunes'],
+  'Southwest': ['Grand Canyon', 'Zion', 'Arches', 'Carlsbad Caverns', 'Big Bend', 'Bryce Canyon', 'Canyonlands', 'Petrified Forest', 'Saguaro', 'White Sands'],
+  'Midwest': ['Badlands', 'Theodore Roosevelt', 'Voyageurs', 'Isle Royale', 'Indiana Dunes', 'Cuyahoga Valley', 'Gateway Arch'],
+  'East': ['Great Smoky Mountains', 'Everglades', 'Acadia', 'Shenandoah', 'Mammoth Cave', 'Hot Springs', 'New River Gorge', 'Congaree'],
+  'Alaska & Hawaii': ['Denali', 'Hawaiʻi Volcanoes', 'Glacier Bay', 'Wrangell–St. Elias', 'Haleakalā'],
+}).map(([part, parks]) => [part, parks.map(p => p + ' National Park')]));
 const GEO_ALIAS = {'Mississippi River':['mississippi'],'Missouri River':['missouri'],'Ohio River':['ohio'],'Colorado River':['colorado'],'Rio Grande':['rio grande river','the rio grande'],'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
   'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
@@ -160,7 +173,7 @@ const TOPICS = [
     back:n=>({answer:n, sub:`A city in ${esc(MAPDATA.uscities.by[n].where)}`}) },
   // National Parks: drawn over the states like Land & Water (geo), each with a tap circle (tools/build-parks.mjs)
   { id:'us-parks', group:'United States', tab:'National Parks', name:'National Parks', blurb:'Find 45 national parks, from Acadia in Maine to Haleakalā in Hawaii.',
-    map:'usparks', count:45, maxZoom:12, geo:true, card:'locate', answer:n=>n, nouns:'national parks', listWord:'parks', itemWord:'park', alias:PARK_ALIAS,
+    map:'usparks', count:45, maxZoom:12, geo:true, parts:PARK_PARTS, card:'locate', answer:n=>n, nouns:'national parks', listWord:'parks', itemWord:'park', alias:PARK_ALIAS,
     tapHint:'Tap a national park', tapWhat:'Tap a national park, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A national park in ${esc(MAPDATA.usparks.by[n].where)}`}) },
   geoTopic('us', 'United States', 'us', 31, 12),
@@ -217,6 +230,8 @@ function regionTopics(id, region, map, count, maxZoom, alias, capAlias, parts){
 const TOPIC = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
 const REGIONS = [...new Set(TOPICS.map(t => t.group))].map(g => ({name:g, topics:TOPICS.filter(t => t.group === g), map:TOPICS.find(t => t.group === g).map, parts:TOPICS.find(t => t.group === g).parts}));
 // which part of a big place (like West Africa) the player last chose; 'All' plays everything
+// a place's parts for one topic: most topics share their place's parts (Europe's), the National Parks have their own
+const withParts = (r, t) => ({...r, parts: t && t.parts || null});
 const getPart = r => { const v = r && r.parts ? LS.get(`part-${player ? player.id : ''}-${r.name}`) : null; return v && r.parts[v] ? v : 'All'; };
 const setPart = (r, v) => LS.set(`part-${player ? player.id : ''}-${r.name}`, v);
 const partChips = (r, cur, done = {}) => r.parts ? `<div class="partrow"><span class="fieldlabel">Part:</span><div class="chips pick">${['All', ...Object.keys(r.parts)].map(v => `<button data-part="${v}" aria-pressed="${v===cur}"${done[v] ? ` aria-label="${v}, badge earned"` : ''}>${v}${done[v] ? '<span class="pdone" aria-hidden="true">🏅</span>' : ''}</button>`).join('')}</div></div>` : '';

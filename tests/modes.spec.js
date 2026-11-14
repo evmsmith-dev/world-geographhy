@@ -206,3 +206,28 @@ test('the United States tabs: Regions, Cities and Land & Water work in Explore, 
     await expect(page.locator('#exInfo')).toContainText('Did you know?');
   }
 });
+
+test('National Parks have part chips, and a part plays just its parks and has its own badge', async ({page}) => {
+  await newPlayer(page);
+  await openTopic(page, 'United States', 'us-parks');
+  await expect(page.locator('.partrow button')).toHaveText(['All', 'Pacific', 'Rockies', 'Southwest', 'Midwest', 'East', 'Alaska & Hawaii']);
+  await page.click('.partrow [data-part="Rockies"]');
+  await expect(page.locator('#regionBody .stats')).toContainText('0 of 6 learned in the Rocky Mountain states');
+  // a perfect Test of the part: its 6 parks, then the part badge
+  await page.click('.modebig[data-mode="test"]');
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 45);
+  const names = await page.evaluate(() => [...document.querySelectorAll('#map path.st')].filter(p => !p.classList.contains('off')).map(p => p.dataset.n));
+  expect(names.length).toBe(6);
+  for(const n of names) await answer(page, n);
+  await page.click('#reviewBtn');
+  if(await page.isVisible('#dlgYes')) await page.click('#dlgYes');
+  await expect(page.locator('#score')).toContainText('6 out of 6');
+  await expect(page.locator('.toast')).toContainText('badge'); // (a secret badge for a perfect part may be shown first)
+  await page.click('#backHome');
+  await expect(page.locator('#regionBody .stats')).toContainText('6 of 6 learned in the Rocky Mountain states');
+  await expect(page.locator('#regionBody .stats')).toContainText('Badge earned: Rocky Mountain National Parks');
+  // other US tabs have no part chips
+  await goHome(page);
+  await openTopic(page, 'United States', 'us-states');
+  await expect(page.locator('.partrow')).toHaveCount(0);
+});

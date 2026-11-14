@@ -158,3 +158,11 @@ test('every national park and city is placed inside its own state', () => {
     expect(wrong, `${f}: places outside the state they say`).toEqual([]);
   }
 });
+
+test('a topic with parts puts every one of its places in exactly one part', () => {
+  for(const t of D.topics.filter(t => t.parts)){
+    const names = D.maps[t.map].map(i => i.n), inParts = Object.values(t.parts).flat();
+    expect(inParts.filter(n => !names.includes(n)), `${t.id}: names in a part that aren't on the map`).toEqual([]);
+    expect(names.filter(n => inParts.filter(m => m === n).length !== 1), `${t.id}: places in no part, or in two`).toEqual([]);
+  }
+});

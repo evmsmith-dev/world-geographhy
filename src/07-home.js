@@ -17,7 +17,7 @@ async function upNext(){
   for(let k = 0; k < order.length; k++){
     const t = TOPIC[order[(start + k) % order.length]], R = right[t.id] || new Set(), S = studied[t.id] || new Set();
     let scopes = t.parts ? Object.entries(t.parts).map(([part, names]) => ({part, names})) : [{part:null, names:null}];
-    if(t.parts && k === 0){ const cur = getPart(REGIONS.find(r => r.name === t.group)), i = scopes.findIndex(x => x.part === cur); if(i > 0) scopes = [...scopes.slice(i), ...scopes.slice(0, i)]; }
+    if(t.parts && k === 0){ const cur = getPart(withParts(REGIONS.find(r => r.name === t.group), t)), i = scopes.findIndex(x => x.part === cur); if(i > 0) scopes = [...scopes.slice(i), ...scopes.slice(0, i)]; }
     for(const {part, names} of scopes){
       const n = names ? names.length : t.count, L = names ? names.filter(x => R.has(x)).length : R.size, st = names ? names.filter(x => S.has(x)).length : S.size;
       const perfect = attempts.some(a => a.topic === t.id && a.mode === 'test' && a.total && a.correct === a.total && (a.part || null) === part);
@@ -86,7 +86,7 @@ async function renderRegion(){
   $('regionTabs').classList.toggle('many', tabs.length > 3);
   $('regionTabs').innerHTML = tabs.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
   if(TOUR[curTab]) return renderTour(TOUR[curTab], draw); // the World Tour (src/16-world-tour.js)
-  const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Land & Water has no parts
+  const t = TOPIC[curTab], r = withParts(curRegion, t); // the parts for this tab (Land & Water has none)
   const part = getPart(r), pp = part === 'All' ? null : part, n = pp ? r.parts[pp].length : t.count;
   const st = await topicStats(player.id, t, pp);
   const right = new Set((await DB.byPT('items', player.id, t.id)).filter(i => i.last === 'right').map(i => i.item));

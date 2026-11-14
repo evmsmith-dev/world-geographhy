@@ -130,6 +130,11 @@ const PARK_PARTS = Object.fromEntries(Object.entries({
   'East': ['Great Smoky Mountains', 'Everglades', 'Acadia', 'Shenandoah', 'Mammoth Cave', 'Hot Springs', 'New River Gorge', 'Congaree'],
   'Alaska & Hawaii': ['Denali', 'Hawaiʻi Volcanoes', 'Glacier Bay', 'Wrangell–St. Elias', 'Haleakalā'],
 }).map(([part, parks]) => [part, parks.map(p => p + ' National Park')]));
+const LANDMARK_ALIAS = {'Eiffel Tower':['eiffel'], 'Colosseum':['coliseum'], 'Leaning Tower of Pisa':['tower of pisa','pisa'], 'Sagrada Família':['sagrada familia'],
+  'Neuschwanstein Castle':['neuschwanstein'], 'Pyramids of Giza':['pyramids','great pyramid','giza'], 'Mount Kilimanjaro':['kilimanjaro'], 'Great Mosque of Djenné':['djenne','great mosque of djenne'],
+  'Rock Churches of Lalibela':['lalibela'], 'Great Wall of China':['great wall'], 'Mount Everest':['everest'], 'Mount Fuji':['fuji'], 'Chichén Itzá':['chichen itza'],
+  'Christ the Redeemer':['cristo redentor'], 'Iguazu Falls':['iguazu','iguacu falls'], 'Mitad del Mundo':['middle of the world'], 'Hollywood Sign':['hollywood'],
+  'Waitomo Glowworm Caves':['waitomo','glowworm caves'], 'Twelve Apostles':['12 apostles']};
 const GEO_ALIAS = {'Mississippi River':['mississippi'],'Missouri River':['missouri'],'Ohio River':['ohio'],'Colorado River':['colorado'],'Rio Grande':['rio grande river','the rio grande'],'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
   'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
@@ -138,11 +143,11 @@ const GEO_ALIAS = {'Mississippi River':['mississippi'],'Missouri River':['missou
   'Sahara':['sahara desert'],'Kalahari Desert':['kalahari'],'Namib Desert':['namib'],'Arabian Desert':['arabian','rub al khali','empty quarter'],'Gobi Desert':['gobi'],'Taklamakan Desert':['taklamakan','taklimakan'],
   'Thar Desert':['thar','great indian desert'],'Atacama Desert':['atacama'],'Great Victoria Desert':['great victoria'],'Great Sandy Desert':['great sandy'],'Simpson Desert':['simpson'],
   'Sonoran Desert':['sonoran','sonora'],'Chihuahuan Desert':['chihuahuan','chihuahua'],'Mojave Desert':['mojave','mohave']};
-const GEO_WORD = {river:'river', usregion:'region', city:'city', park:'national park', plain:'plain', plateau:'plateau', basin:'basin', valley:'valley', range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
+const GEO_WORD = {landmark:'landmark', river:'river', usregion:'region', city:'city', park:'national park', plain:'plain', plateau:'plateau', basin:'basin', valley:'valley', range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
 const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
 const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
 // "That's the Black Sea", "That's the Alps", but "That's Lake Erie", "That's Patagonia" and "That's France"
-const noThe = n => /^Lake |^Patagonia$| National Park$/.test(n) || (typeof ITEM !== 'undefined' && ITEM[n] && ITEM[n].kind === 'city'); // "Find Chicago", not "the Chicago"
+const noThe = n => /^Lake |^Patagonia$| National Park$/.test(n) || (typeof ITEM !== 'undefined' && ITEM[n] && (ITEM[n].kind === 'city' || ITEM[n].noThe)); // "Find Chicago", not "the Chicago"
 // "in the United States", "in Europe"
 const inPlace = g => g === 'United States' ? 'the United States' : g;
 const the = n => T && T.geo && !noThe(n) ? 'the ' + n : n;
@@ -184,20 +189,26 @@ const TOPICS = [
     back:(n,item)=>({answer:n, sub:worldSize(n, item.kind)}) },
   ...regionTopics('eu', 'Europe', 'europe', 44, 14, EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
   geoTopic('eu', 'Europe', 'europe', 14, 14, '(Europe has no big deserts!)'),
+  landmarkTopic('eu', 'Europe', 'europe', 10, 14),
   ...regionTopics('af', 'Africa', 'africa', 54, 10, AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
   geoTopic('af', 'Africa', 'africa', 13, 14),
+  landmarkTopic('af', 'Africa', 'africa', 8, 14),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
   geoTopic('as', 'Asia', 'asia', 19, 14),
+  landmarkTopic('as', 'Asia', 'asia', 10, 14),
   ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, OC_ALIAS, OC_CAP_ALIAS),
   geoTopic('oc', 'Oceania', 'oceania', 9, 12),
+  landmarkTopic('oc', 'Oceania', 'oceania', 6, 12),
   ...regionTopics('na', 'North America', 'namerica', 23, 20, NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
   geoTopic('na', 'North America', 'namerica', 17, 20),
+  landmarkTopic('na', 'North America', 'namerica', 10, 20),
   ...regionTopics('sa', 'South America', 'samerica', 12, 6, {}, SA_CAP_ALIAS),
   geoTopic('sa', 'South America', 'samerica', 7, 12),
+  landmarkTopic('sa', 'South America', 'samerica', 8, 12),
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
 // The place screen's line for a Land & Water topic, worked out from its map: "Find 6 mountain ranges, 5 seas, a bay and a channel in Europe."
-const GEO_ORDER = ['usregion', 'city', 'park', 'range', 'plain', 'plateau', 'basin', 'valley', 'river', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
+const GEO_ORDER = ['landmark', 'usregion', 'city', 'park', 'range', 'plain', 'plateau', 'basin', 'valley', 'river', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
 function geoBlurb(t, m){
   const n = {}; m.items.forEach(i => { n[i.sub] = (n[i.sub] || 0) + 1; });
   const parts = GEO_ORDER.filter(s => n[s]).map(s => n[s] === 1 ? `a ${GEO_WORD[s]}` : `${n[s]} ${GEO_WORD[s]}s`);
@@ -209,6 +220,13 @@ function geoTopic(id, region, map, count, maxZoom, note){
     answer:n=>n, nouns:'mountains, deserts, seas and lakes', listWord:'places', itemWord:'place', alias:GEO_ALIAS,
     tapHint:'Tap a mountain, desert, sea or lake', tapWhat:'Tap a mountain, desert, sea or lake, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A ${GEO_WORD[geoSub(n)]} in ${esc(inPlace(region))}`})};
+}
+// Landmarks: famous places on a continent's map, each a tap circle (tools/build-landmarks.mjs)
+function landmarkTopic(id, region, map, count, maxZoom){
+  return {id:id+'-landmarks', group:region, map:map+'-landmarks', count, maxZoom, geo:true, landmarks:true, card:'locate', tab:'Landmarks', name:`Landmarks of ${region}`,
+    blurb:`Find ${count} famous landmarks in ${inPlace(region)}.`, answer:n=>n, nouns:'landmarks', listWord:'landmarks', itemWord:'landmark', alias:LANDMARK_ALIAS,
+    tapHint:'Tap a landmark', tapWhat:'Tap a landmark, find its name', ask:geoAsk, flashFront:geoAsk,
+    back:n=>({answer:n, sub:`A landmark in ${esc(MAPDATA[map+'-landmarks'].by[n].where)}`})};
 }
 function regionTopics(id, region, map, count, maxZoom, alias, capAlias, parts){
   const blurb = `Find all ${count} countries in ${region}.`, capBlurb = `Name the capital of every country in ${region}.`;
@@ -238,10 +256,12 @@ const partChips = (r, cur, done = {}) => r.parts ? `<div class="partrow"><span c
 // World Tour: every country (or every Land & Water place) in one game, each question on its own continent's map.
 // Answers count for the continent topics they come from, so what's learned in one place counts in the other.
 const TOURS = [
-  {id:'world-countries', group:'World', tab:'All Countries', name:'Countries of the World', nouns:'countries', icon:'🌍',
+  {id:'world-countries', group:'World', tab:'All Countries', name:'Countries of the World', nouns:'countries', itemWord:'country', icon:'🌍',
     from:['eu-countries', 'af-countries', 'as-countries', 'oc-countries', 'na-countries', 'sa-countries']},
-  {id:'world-geo', group:'World', tab:'All Land & Water', name:'Land & Water of the World', nouns:'mountains, deserts, seas and lakes', icon:'🏞️',
+  {id:'world-geo', group:'World', tab:'All Land & Water', name:'Land & Water of the World', nouns:'mountains, deserts, seas and lakes', itemWord:'place', icon:'🏞️',
     from:['eu-geo', 'af-geo', 'as-geo', 'oc-geo', 'na-geo', 'sa-geo']},
+  {id:'world-landmarks', group:'World', tab:'All Landmarks', name:'Landmarks of the World', nouns:'landmarks', itemWord:'landmark', icon:'🗽',
+    from:['eu-landmarks', 'af-landmarks', 'as-landmarks', 'oc-landmarks', 'na-landmarks', 'sa-landmarks']},
 ].map(t => ({...t, tour:true, count:t.from.reduce((sum, f) => sum + TOPIC[f].count, 0)}));
 const TOUR = Object.fromEntries(TOURS.map(t => [t.id, t]));
 const tabsOf = r => r.name === 'World' ? [...r.topics, ...TOURS] : r.topics; // the place screen's tabs

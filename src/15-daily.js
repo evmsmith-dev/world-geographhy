@@ -187,7 +187,7 @@ const BADGES = [
   ...TOURS.map(t => ({id:'master-'+t.id, icon:t.icon, name:`${t.name} Master`, desc:`Learn all ${t.count} ${t.nouns} in the world.`, group:t.group, tour:t.id, need:t.count, master:true})),
   {id:'worldtour', icon:'🌐', name:'Around the World', desc:'Found all 195 countries in one World Tour without a single miss.', hint:'Find every country in the world in one go, without a miss.', secret:true},
 ];
-function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : t.geo ? '🏞️' : '🗺️'; }
+function badgeIcon(t){ return t.landmarks ? '🗽' : t.flags ? '🚩' : t.showsItem ? '🏛️' : t.geo ? '🏞️' : '🗺️'; }
 async function computeBadges(p){
   const attempts = (await DB.all('attempts')).filter(a => a.pid === p.id && TOPIC[a.topic]);
   const items = (await DB.all('items')).filter(r => r.pid === p.id);

@@ -528,3 +528,11 @@ svg.shape path.geoplain{fill:color-mix(in srgb,#a3b06a 45%,var(--land));stroke:n
 .map .st.river.mixup{fill:none;stroke:color-mix(in srgb,var(--bad) 50%,var(--sheet))} .map .st.river.wrongflash{fill:none;stroke:var(--bad)}
 svg.shape path.rline{fill:none;stroke:#3f86c9;stroke-width:2.5;vector-effect:non-scaling-stroke}
 svg.shape path.rline.hi{stroke:var(--sel);stroke-width:5}
+
+/* Landmarks: purple tap circles over the gray countries */
+.map .st.landmark{fill:color-mix(in srgb,#7b4fa0 70%,var(--land));stroke:var(--ink);stroke-width:.8}
+@media (hover:hover){.map .st.landmark:hover{fill:color-mix(in srgb,var(--land) 50%,var(--sel) 50%)}}
+.map .st.landmark.done{fill:var(--answered)} .map .st.landmark.ok{fill:var(--ok)} .map .st.landmark.bad{fill:var(--bad)} .map .st.landmark.sel{fill:var(--sel)}
+.map .st.landmark.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.landmark.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.landmark.wrongflash{fill:var(--bad)}
+svg.shape path.geolandmark{fill:color-mix(in srgb,#7b4fa0 50%,var(--land));stroke:none}

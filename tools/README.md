@@ -37,3 +37,13 @@ region and the list of cities are at the top of the script.
 
 1. Download `ne_10m_populated_places_simple.geojson` from https://github.com/nvkelso/natural-earth-vector (the `geojson` folder) into a folder.
 2. In a folder with `d3-geo` and `polygon-clipping` installed: `node tools/build-us.mjs <that folder> data/maps`
+
+## build-landmarks.mjs: Landmarks
+
+Builds `data/maps/<continent>-landmarks.json`: famous landmarks on each continent's map, each a tap circle. Each landmark is a
+longitude/latitude written in the script, with the country it's in; the script checks that it lands inside that country on the map
+(a few in the water, like the Statue of Liberty, are placed on the shore next to them). The map projections are shared with
+`build-geo.mjs` in `projections.mjs`. To add a landmark, add a line to `LANDMARKS`, then its fun fact to `data/facts.json` (under
+`geo`), and change the count on its continent's `landmarkTopic` line in `src/02-topics.js`.
+
+In a folder with `d3-geo` installed: `node tools/build-landmarks.mjs data/maps`

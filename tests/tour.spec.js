@@ -15,7 +15,7 @@ const stats = page => page.locator('#regionBody .stats');
 test('the World has tabs for all the countries and all the Land & Water places', async ({page}) => {
   await newPlayer(page);
   await page.click('.rtile[data-region="World"]');
-  await expect(page.locator('#regionTabs button')).toHaveText(['Continents & Oceans', 'All Countries', 'All Land & Water']);
+  await expect(page.locator('#regionTabs button')).toHaveText(['Continents & Oceans', 'All Countries', 'All Land & Water', 'All Landmarks']);
   const cut = await page.$$eval('#regionTabs button', bs => bs.filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
   expect(cut, 'tab names that are cut off').toEqual([]);
   await page.click('#regionTabs [data-tab="world-countries"]');

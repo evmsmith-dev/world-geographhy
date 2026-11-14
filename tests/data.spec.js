@@ -87,9 +87,9 @@ test('pronunciations and Land & Water spellings are for real places', () => {
 });
 
 test('Land & Water places each have a kind the game can name', () => {
-  const words = ['river', 'usregion', 'city', 'park', 'range', 'plain', 'plateau', 'basin', 'valley', 'desert', 'highlands', 'region', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
+  const words = ['landmark', 'river', 'usregion', 'city', 'park', 'range', 'plain', 'plateau', 'basin', 'valley', 'desert', 'highlands', 'region', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
   for(const t of D.topics.filter(t => t.geo)){
-    const bad = D.maps[t.map].filter(i => !words.includes(i.sub) || !['mountain', 'water', 'desert', 'park', 'city', 'plain', 'usregion', 'river'].includes(i.kind)).map(i => `${i.n} (${i.kind}/${i.sub})`);
+    const bad = D.maps[t.map].filter(i => !words.includes(i.sub) || !['mountain', 'water', 'desert', 'park', 'city', 'plain', 'usregion', 'river', 'landmark'].includes(i.kind)).map(i => `${i.n} (${i.kind}/${i.sub})`);
     expect(bad, `${t.id}: places with an unknown kind`).toEqual([]);
   }
 });
@@ -165,4 +165,17 @@ test('a topic with parts puts every one of its places in exactly one part', () =
     expect(inParts.filter(n => !names.includes(n)), `${t.id}: names in a part that aren't on the map`).toEqual([]);
     expect(names.filter(n => inParts.filter(m => m === n).length !== 1), `${t.id}: places in no part, or in two`).toEqual([]);
   }
+});
+
+test('every landmark is placed inside its country (or in the sea off it), and the landmarks tour has them all', () => {
+  const inside = (d, x, y) => { let r = false; for(const ring of d.split('Z').filter(Boolean)){ const p = ring.slice(1).split('L').map(q => q.split(',').map(Number));
+    for(let i = 0, j = p.length - 1; i < p.length; j = i++) if((p[i][1] > y) !== (p[j][1] > y) && x < p[i][0] + (y - p[i][1]) * (p[j][0] - p[i][0]) / (p[j][1] - p[i][1])) r = !r; } return r; };
+  let all = 0;
+  for(const m of ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica']){
+    const countries = Object.fromEntries(JSON.parse(read(`data/maps/${m}.json`)).items.map(i => [i.n, i.d]));
+    const items = JSON.parse(read(`data/maps/${m}-landmarks.json`)).items; all += items.length;
+    const wrong = items.filter(i => !i.sea && !i.country.some(c => countries[c] && inside(countries[c], i.dot[0], i.dot[1]))).map(i => `${i.n} (${i.country.join(', ')})`);
+    expect(wrong, `${m}: landmarks outside their country`).toEqual([]);
+  }
+  expect(D.tours.find(t => t.id === 'world-landmarks').count, 'landmarks in the World Tour').toBe(all);
 });

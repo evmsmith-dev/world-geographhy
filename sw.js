@@ -11,6 +11,7 @@ const FILES = [
   'data/maps/oceania.json', 'data/maps/namerica.json', 'data/maps/samerica.json',
   'data/maps/europe-geo.json', 'data/maps/africa-geo.json', 'data/maps/asia-geo.json',
   'data/maps/oceania-geo.json', 'data/maps/namerica-geo.json', 'data/maps/samerica-geo.json', 'data/maps/usparks.json', 'data/maps/usregions.json', 'data/maps/uscities.json', 'data/maps/us-geo.json',
+  'data/maps/europe-landmarks.json', 'data/maps/africa-landmarks.json', 'data/maps/asia-landmarks.json', 'data/maps/oceania-landmarks.json', 'data/maps/namerica-landmarks.json', 'data/maps/samerica-landmarks.json',
   'assets/icons/icon.svg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png',
   'assets/icons/apple-touch-icon.png', 'assets/icons/favicon-32.png',
   'assets/fonts/alegreya-sans-latin-400-normal.woff2', 'assets/fonts/alegreya-sans-latin-500-normal.woff2', 'assets/fonts/alegreya-sans-latin-700-normal.woff2',

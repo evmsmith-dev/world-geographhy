@@ -6,8 +6,8 @@
 // The tours are listed in 02-topics.js (TOURS). Each question is shown on its own continent's map and runs on the
 // Daily 10's engine (startRun in 15-daily.js). Answers are saved under the continent topics, so progress is shared.
 const TOUR_MODES = {
-  find: {name:'Find it', desc: t => `We name ${t.id === 'world-geo' ? 'a place' : 'a country'}, you tap it. All ${t.count}, one continent at a time.`},
-  name: {name:'Name it', desc: t => `We show ${t.id === 'world-geo' ? 'a place' : 'a country'}, you pick its name. All ${t.count}, one continent at a time.`},
+  find: {name:'Find it', desc: t => `We name a ${t.itemWord}, you tap it. All ${t.count}, one continent at a time.`},
+  name: {name:'Name it', desc: t => `We show a ${t.itemWord}, you pick its name. All ${t.count}, one continent at a time.`},
   quick: {name:'World 20', desc: () => '20 from all over the world, picked to help you remember.'},
 };
 const tourKey = (t, mode) => gameKey(player.id, t.id, mode);
@@ -24,7 +24,7 @@ async function renderTour(t, draw){
   const saved = await Promise.all(Object.keys(TOUR_MODES).map(m => DB.get('games', tourKey(t, m))));
   if(draw !== regionDraw) return; // another tab was tapped meanwhile
   $('regionBody').innerHTML = `
-    <p class="sub">${t.id === 'world-geo' ? `Find all ${t.count} mountains, deserts, seas and lakes` : `Find all ${t.count} countries of the world`}, continent by continent.
+    <p class="sub">Find all ${t.count} ${t.nouns}${t.id === 'world-countries' ? ' of the world' : ''}, continent by continent.
       What you learn here counts for each continent too.</p>
     <div class="meter" role="img" aria-label="${st.learned} of ${t.count} learned"><i style="width:${Math.round(100*st.learned/t.count)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${t.count} learned</span>${done ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(t.name)} Master</b></span>` : ''}</p>

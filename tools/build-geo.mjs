@@ -12,18 +12,7 @@ const d3 = require('d3-geo'), pc = require('polygon-clipping');
 const [NE, OUT] = [process.argv[2], process.argv[3] || '.'];
 const load = f => JSON.parse(fs.readFileSync(path.join(NE, f + '.geojson'))).features;
 
-// Each continent map's projection (azimuthal equal-area), recovered to within 0.03 px of the existing country maps.
-const PROJ = {
-  europe:   {c:[12, 52.95],     s:1345.53, t:[434.24, 466.53], w:1000, h:901},
-  africa:   {c:[16.99, 2.01],   s:690.51,  t:[505.13, 438.8],  w:1000, h:892},
-  asia:     {c:[86, 27.01],     s:562.64,  t:[451.74, 332.3],  w:1000, h:703},
-  oceania:  {c:[158, -18],      s:622.86,  t:[482.03, 358.5],  w:1000, h:700},
-  namerica: {c:[-96, 44],       s:794.25,  t:[484.85, 552.98], w:1000, h:1056},
-  samerica: {c:[-59.99, -20.05],s:1177.09, t:[462.78, 675.62], w:1000, h:1422},
-  // the United States map (us-atlas, 975 × 610) is Albers USA; its lower 48 part is this Albers projection.
-  // Places on land are cut to the lower 48 states, so a range doesn't spill into Canada or Mexico.
-  us:       {make: () => d3.geoAlbers().scale(1300).translate([487.5, 305]), w:975, h:610, landOnly:true},
-};
+import { PROJ, projectionFor } from './projections.mjs'; // each map's projection, shared with build-landmarks.mjs
 // [name in the game, kind, source, names in the data]. Natural Earth splits some seas into smaller named parts
 // (the Tyrrhenian and Ionian in the Mediterranean, the Gulf of Bothnia in the Baltic...), so those parts are joined back in. Seas sit under the land; lakes and mountains sit on top of it.
 const FEATURES = {
@@ -118,7 +107,7 @@ function riverItem(n, feats, proj, P, opt){
 
 for(const [region, list] of Object.entries(FEATURES)){
   const P = PROJ[region];
-  const proj = P.make ? P.make() : d3.geoAzimuthalEqualArea().rotate([-P.c[0], -P.c[1]]).scale(P.s).translate(P.t).clipAngle(90).precision(0.1);
+  const proj = projectionFor(P);
   const box = [[[0,0],[P.w,0],[P.w,P.h],[0,P.h],[0,0]]];
   // the land of this map's own places (the lower 48 states), read from its map file
   const land = P.landOnly ? pc.union(...JSON.parse(fs.readFileSync(path.join(OUT, `${region}.json`), 'utf8')).items.filter(i => !['Alaska', 'Hawaii'].includes(i.n))

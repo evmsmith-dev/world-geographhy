@@ -1,11 +1,18 @@
-# Runs the game's automatic checks (the tests folder) on every pull request and every change to main.
+# Runs the game's automatic checks (the tests folder) on every pull request and every change to main,
+# and publishes the game to GitHub Pages only after every check on main has passed.
 # A green check on the pull request means they all passed; a red X means something broke. Click "Details" to see what.
-name: Tests
+# For publishing to work, Settings → Pages → Source must be set to "GitHub Actions".
+name: Tests and publish
 on:
   pull_request:
   push:
     branches: [main]
   workflow_dispatch:
+
+# only one publish at a time; a newer change on main replaces one that is still waiting
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -33,3 +40,25 @@ jobs:
           name: test-report
           path: tests/playwright-report
           retention-days: 14
+
+  publish:
+    # runs only for main, and only when every test passed
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gather the game's files (everything except the tests and the map-building tools)
+        run: rsync -a --exclude .git --exclude .github --exclude tests --exclude tools ./ _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

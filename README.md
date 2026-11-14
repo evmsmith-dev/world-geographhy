@@ -6,9 +6,9 @@ A map quiz for kids: US states, capitals and flags, countries, capitals and flag
 
 1. On github.com, create a new **public** repository, for example `world-geography-quiz`.
 2. On the empty repository page, click **uploading an existing file**.
-3. Click **choose your files**, select **all 29 files** (Ctrl+A on Windows, Cmd+A on Mac), and click **Open**. Then click **Commit changes**.
-4. Go to **Settings → Pages**. Under *Build and deployment*, set **Source** to *Deploy from a branch*, choose **main** and **/ (root)**, and click **Save**.
-5. After a minute or two the page shows your link: `https://YOUR-USERNAME.github.io/world-geography-quiz/`
+3. Click **choose your files**, select all the files and folders (Ctrl+A on Windows, Cmd+A on Mac), and click **Open**. Then click **Commit changes**.
+4. Go to **Settings → Pages**. Under *Build and deployment*, set **Source** to **GitHub Actions**.
+5. Go to **Actions**, open **Tests and publish**, and click **Run workflow**. When the tests pass (about 5 minutes), it publishes the game and shows your link: `https://YOUR-USERNAME.github.io/world-geography-quiz/`
 
 ## Install it
 
@@ -18,10 +18,10 @@ A map quiz for kids: US states, capitals and flags, countries, capitals and flag
 
 ## Updating
 
-Changes now arrive as pull requests on GitHub: review one, then click **Merge**, and GitHub Pages publishes it. Each release has its own version stamp.
+Changes now arrive as pull requests on GitHub. Each one runs the automatic tests (see `tests/README.md`): a green check means they passed, a red X means something broke. Review a pull request, then click **Merge**. The tests run again on main, and only if they all pass is the game published to GitHub Pages, about 5 minutes after merging. If they fail, the site keeps the last good version. Each release has its own version stamp.
 The app checks for a new version when it opens or comes back on screen (at most once an hour) and shows **A new version is ready** with an **Update** button.
 
-GitHub can take up to about 10 minutes after an upload before the new files are live.
+After it's published, GitHub can take a few more minutes before every device sees the new files.
 
 ## Scores and backups
 

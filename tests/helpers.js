@@ -73,8 +73,11 @@ export async function spotFor(page, name){
     const clear = (x, y) => Math.min(Infinity, ...dots.map(d => Math.hypot(x - (d.r.left + d.r.width/2), y - (d.r.top + d.r.height/2)) - d.r.width/2 - 8));
     const R = el.getBoundingClientRect();
     const x0 = Math.max(R.left, S.left), x1 = Math.min(R.right, S.right), y0 = Math.max(R.top, S.top), y1 = Math.min(R.bottom, S.bottom);
+    // whole pixels, like real touch events, and a few pixels of the same place all around (a finger is not a pin point)
     let best = null;
-    const tryAt = (x, y) => { const h = document.elementFromPoint(x, y); if(h && h.dataset && h.dataset.n === n){ const c = clear(x, y); if(c > 2 && (!best || c > best.c)) best = {x, y, c}; } };
+    const hits = (x, y) => { const h = document.elementFromPoint(x, y); return h && h.dataset && h.dataset.n === n; };
+    const roomy = (x, y) => [[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4]].every(([dx, dy]) => hits(x + dx, y + dy));
+    const tryAt = (x, y) => { x = Math.round(x); y = Math.round(y); if(!hits(x, y)) return; const c = clear(x, y) + (roomy(x, y) ? 1000 : 0); if(c > 2 && (!best || c > best.c)) best = {x, y, c}; };
     // a grid first (the same spots every run), then random points for odd shapes
     for(let i = 1; i < 16; i++) for(let j = 1; j < 16; j++) tryAt(x0 + (x1 - x0) * i / 16, y0 + (y1 - y0) * j / 16);
     for(let k = 0; k < 4000 && !best; k++) tryAt(x0 + Math.random() * (x1 - x0), y0 + Math.random() * (y1 - y0));

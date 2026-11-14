@@ -3,7 +3,10 @@ import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTa
 
 // Select a place the quick way (the keyboard), type its name, pick it from the list and save
 async function answer(page, name, typed = name){
-  await page.evaluate(n => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n).dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})), name);
+  const select = () => page.evaluate(n => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n).dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})), name);
+  await select();
+  // the answer box opens once the place is selected; on a busy computer the first try can come too early
+  await expect(async () => { if(!(await page.locator('#answer').isEditable())) await select(); await expect(page.locator('#answer')).toBeEditable({timeout: 1000}); }).toPass({timeout: 10_000});
   await page.fill('#answer', typed);
   const option = page.locator(`#opts li[data-v="${name.replace(/"/g, '\\"')}"]`);
   if(await option.count()) await option.first().dispatchEvent('click'); // pick it from the list (the list can close itself while it updates)

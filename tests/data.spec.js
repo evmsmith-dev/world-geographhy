@@ -2,7 +2,7 @@
 // They catch typos (a fun fact for "Lake Titikaka"), forgotten files, and counts that no longer match a map.
 import fs from 'node:fs';
 import path from 'node:path';
-import { test, expect, openGame } from './helpers.js';
+import { test, expect, openGame, REGIONS } from './helpers.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
@@ -178,4 +178,12 @@ test('every landmark is placed inside its country (or in the sea off it), and th
     expect(wrong, `${m}: landmarks outside their country`).toEqual([]);
   }
   expect(D.tours.find(t => t.id === 'world-landmarks').count, 'landmarks in the World Tour').toBe(all);
+});
+
+test('on GitHub, every place is in exactly one of the "tap every place" test jobs', () => {
+  const wf = read('.github/workflows/tests.yml');
+  const groups = [...new Set([...wf.matchAll(/tap-everything --grep "([^"]+)"/g)].map(m => m[1]))].map(g => new RegExp(g));
+  expect(groups.length, 'groups of places in the workflow').toBeGreaterThan(1);
+  const bad = REGIONS.map(r => r.name).filter(n => groups.filter(g => g.test(`${n}: every place can be tapped in Find it`)).length !== 1);
+  expect(bad, 'places in no group, or in two').toEqual([]);
 });

@@ -454,3 +454,21 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 /* tabs fill their column, with equal parts (place screen and Scores) */
 #scrRegion .tabs,#scrScores .tabs{display:flex}
 #scrRegion .tabs button,#scrScores .tabs button{flex:1 1 0;min-width:0}
+
+/* Mountains & Water: countries become a quiet gray background; seas and lakes are blue, mountain ranges brown */
+.bgland{fill:var(--other);stroke:color-mix(in srgb,var(--border) 70%,transparent);stroke-width:.6;vector-effect:non-scaling-stroke;pointer-events:none}
+.map .st.water{fill:color-mix(in srgb,#2f7fc8 55%,var(--sea));stroke:color-mix(in srgb,#2f7fc8 70%,var(--ink));stroke-width:.8}
+.map .st.mtn{fill:color-mix(in srgb,#9a6b3f 60%,var(--land));stroke:color-mix(in srgb,#9a6b3f 70%,var(--ink));stroke-width:.8}
+@media (hover:hover){
+  .map .st.water:hover{fill:color-mix(in srgb,#2f7fc8 55%,var(--sel) 35%)}
+  .map .st.mtn:hover{fill:color-mix(in srgb,#9a6b3f 50%,var(--sel) 40%)}
+}
+.map .st.water.done,.map .st.mtn.done{fill:var(--answered)}
+.map .st.water.ok,.map .st.mtn.ok{fill:var(--ok)} .map .st.water.bad,.map .st.mtn.bad{fill:var(--bad)}
+.map .st.water.sel,.map .st.mtn.sel{fill:var(--sel)}
+.map .st.water.off,.map .st.mtn.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.water.mixup,.map .st.mtn.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))}
+.map .st.water.wrongflash,.map .st.mtn.wrongflash{fill:var(--bad)}
+svg.shape path.geowater{fill:color-mix(in srgb,#2f7fc8 40%,var(--sea));stroke:none}
+svg.shape path.geomtn{fill:color-mix(in srgb,#9a6b3f 45%,var(--land));stroke:none}
+svg.shape rect.dimsea{fill:var(--sea);stroke:none}

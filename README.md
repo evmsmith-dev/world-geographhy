@@ -1,6 +1,6 @@
 # World Geography Quiz
 
-A map quiz for kids: US states, capitals and flags, countries, capitals and flags of Europe, Africa, Asia, Oceania, North America and South America, and the continents and oceans. It installs as an app on phones, tablets and computers, works offline, and keeps separate scores, streaks and badges for each player on the device.
+A map quiz for kids: US states, capitals and flags, countries, capitals and flags of Europe, Africa, Asia, Oceania, North America and South America, their major mountain ranges, seas and lakes, and the continents and oceans. It installs as an app on phones, tablets and computers, works offline, and keeps separate scores, streaks and badges for each player on the device.
 
 ## Put it on GitHub Pages
 
@@ -18,9 +18,8 @@ A map quiz for kids: US states, capitals and flags, countries, capitals and flag
 
 ## Updating
 
-Upload **all the files** from the new version, replacing the old ones. Each release has its own version stamp.
+Changes now arrive as pull requests on GitHub: review one, then click **Merge**, and GitHub Pages publishes it. Each release has its own version stamp.
 The app checks for a new version when it opens or comes back on screen (at most once an hour) and shows **A new version is ready** with an **Update** button.
-If your repository still has `camerica.json` from an older version, you can delete it. North America replaced it.
 
 GitHub can take up to about 10 minutes after an upload before the new files are live.
 
@@ -37,6 +36,7 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `app.js` | The game |
 | `app.css` | The look |
 | `us.json`, `world.json`, `europe.json`, `africa.json`, `asia.json`, `oceania.json`, `namerica.json`, `samerica.json` | Map shapes for the US, the world, Europe, Africa, Asia, Oceania, North America and South America |
+| `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`, `namerica-geo.json`, `samerica-geo.json` | Mountain ranges, seas and lakes for each continent's **Mountains & Water** tab (the countries come from the continent's own map file) |
 | `flags.json` | Flags of the countries in Europe, Africa, Asia, Oceania, North America and South America |
 | `usflags.json` | Flags of the 50 US states |
 | `facts.json` | The “Did you know?” fun facts shown in Explore |
@@ -45,8 +45,11 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `sw.js` | Offline support |
 | `icon*.png`, `icon.svg`, `apple-touch-icon.png`, `favicon-32.png` | App icons |
 | `*.woff2` | Fonts, stored locally so it works offline |
+| `tools/` | Scripts that build the map files. Not used by the game itself; kept here so the maps can be rebuilt |
 
 ## Credits
+
+Mountain range, sea and lake shapes come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain.
 
 Flag images come from the flag-icons project (https://github.com/lipis/flag-icons), used under the MIT License:
 

@@ -100,6 +100,10 @@ export async function tapPlace(page, name){
     await mapSettled(page);
     spot = await spotFor(page, name);
   }
+  for(let i = 0; i < 3 && !spot && !(await page.isDisabled('#zIn')); i++){ // still crowded (Qatar next to Bahrain): zoom in more
+    await page.click('#zIn'); await mapSettled(page);
+    spot = await spotFor(page, name);
+  }
   expect(spot, `a spot where a finger can tap ${name}`).toBeTruthy();
   await page.touchscreen.tap(spot.x, spot.y);
   return spot;

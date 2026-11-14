@@ -190,8 +190,19 @@ const REGIONS = [...new Set(TOPICS.map(t => t.group))].map(g => ({name:g, topics
 const getPart = r => { const v = r && r.parts ? LS.get(`part-${player ? player.id : ''}-${r.name}`) : null; return v && r.parts[v] ? v : 'All'; };
 const setPart = (r, v) => LS.set(`part-${player ? player.id : ''}-${r.name}`, v);
 const partChips = (r, cur, done = {}) => r.parts ? `<div class="partrow"><span class="fieldlabel">Part:</span><div class="chips pick">${['All', ...Object.keys(r.parts)].map(v => `<button data-part="${v}" aria-pressed="${v===cur}"${done[v] ? ` aria-label="${v}, badge earned"` : ''}>${v}${done[v] ? '<span class="pdone" aria-hidden="true">🏅</span>' : ''}</button>`).join('')}</div></div>` : '';
+// World Tour: every country (or every Land & Water place) in one game, each question on its own continent's map.
+// Answers count for the continent topics they come from, so what's learned in one place counts in the other.
+const TOURS = [
+  {id:'world-countries', group:'World', tab:'All Countries', name:'Countries of the World', nouns:'countries', icon:'🌍',
+    from:['eu-countries', 'af-countries', 'as-countries', 'oc-countries', 'na-countries', 'sa-countries']},
+  {id:'world-geo', group:'World', tab:'All Land & Water', name:'Land & Water of the World', nouns:'mountains, deserts, seas and lakes', icon:'🏞️',
+    from:['eu-geo', 'af-geo', 'as-geo', 'oc-geo', 'na-geo', 'sa-geo']},
+].map(t => ({...t, tour:true, count:t.from.reduce((sum, f) => sum + TOPIC[f].count, 0)}));
+const TOUR = Object.fromEntries(TOURS.map(t => [t.id, t]));
+const tabsOf = r => r.name === 'World' ? [...r.topics, ...TOURS] : r.topics; // the place screen's tabs
 const regionOf = tid => REGIONS.find(r => r.topics.some(t => t.id === tid));
-const lastTab = r => { const t = LS.get(`tab-${player ? player.id : ''}-${r.name}`); return r.topics.find(x => x.id === t) || r.topics[0]; };
+// the tab last used in a place; the World Tour tabs only count on the place screen (tours = true)
+const lastTab = (r, tours) => { const t = LS.get(`tab-${player ? player.id : ''}-${r.name}`), all = tours ? tabsOf(r) : r.topics; return all.find(x => x.id === t) || r.topics[0]; };
 const rememberTab = (r, tid) => LS.set(`tab-${player ? player.id : ''}-${r.name}`, tid);
 const MODES = {flash:'Learn', find:'Find it', practice:'Practice', test:'Test'};
 const MODE_DESC = {flash:'Flashcards, one at a time', find:'We show a name, you tap the map', practice:'Answer and find out right away', test:'Answer them all, then see your score'};

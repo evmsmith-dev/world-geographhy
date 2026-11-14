@@ -13,7 +13,7 @@ export const test = base.extend({
 });
 export { expect };
 
-// Open the game with the test hook on (see WGQ_TEST in src/17-start.js)
+// Open the game with the test hook on (see WGQ_TEST in src/18-start.js)
 export async function openGame(page){
   await page.goto('/?test');
   await page.waitForFunction(() => window.WGQ_TEST);
@@ -145,4 +145,26 @@ export async function answer(page, name, typed = name){
   const option = page.locator(`#opts li[data-v="${name.replace(/"/g, '\\"')}"]`);
   if(await option.count()) await option.first().dispatchEvent('click'); // pick it from the list (the list can close itself while it updates)
   await page.click('#submit');
+}
+
+// Answer one question of a Daily 10 or World Tour correctly, whatever kind it is
+export async function answerRun(page){
+  const info = await page.evaluate(() => {
+    const chip = document.getElementById('chipText').textContent, W = window.WGQ_TEST;
+    const t = W.TOPICS.find(t => chip.includes(t.name));
+    return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: document.querySelector('#map path.sel')?.dataset.n};
+  });
+  expect(info.topic, 'the question says which topic it is from').toBeTruthy();
+  if(info.pick){
+    const right = await page.evaluate(async ({topic, sel}) => {
+      const W = window.WGQ_TEST, t = W.TOPIC[topic];
+      if(/-capitals$/.test(topic)){ const m = await W.loadMap(t.map); const it = m.items.find(i => i.n === sel); return it.cap || W.CAP[sel]; }
+      return sel;
+    }, info);
+    await page.click(`#choices button[data-dv="${right.replace(/"/g, '\\"')}"]`);
+  } else {
+    await tapPlace(page, await findTarget(page, info.topic));
+  }
+  await expect(page.locator('#feedback')).toContainText(/yes/i);
+  return info;
 }

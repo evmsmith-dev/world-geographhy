@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preload" href="assets/fonts/alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="src/app.css">
-<script>window.WGQ_BUILD='2026-11-14T11:12:39Z';
+<script>window.WGQ_BUILD='2026-11-14T11:40:30Z';
 // When a new version's offline helper (sw.js) takes over a page that an older one opened, load the page once more
 // so every file comes from the new version. This matters when files move (they moved into folders in November 2026).
 if('serviceWorker' in navigator && navigator.serviceWorker.controller){
@@ -28,7 +28,24 @@ if('serviceWorker' in navigator && navigator.serviceWorker.controller){
   });
 }
 </script>
-<script src="src/app.js" defer></script>
+<!-- the game's code, in this order (see src/README.md) -->
+<script src="src/01-helpers.js" defer></script>
+<script src="src/02-topics.js" defer></script>
+<script src="src/03-storage.js" defer></script>
+<script src="src/04-screens.js" defer></script>
+<script src="src/05-sound.js" defer></script>
+<script src="src/06-players.js" defer></script>
+<script src="src/07-home.js" defer></script>
+<script src="src/08-map.js" defer></script>
+<script src="src/09-game.js" defer></script>
+<script src="src/10-find-it.js" defer></script>
+<script src="src/11-easy-answers.js" defer></script>
+<script src="src/12-flashcards.js" defer></script>
+<script src="src/13-scores.js" defer></script>
+<script src="src/14-explore.js" defer></script>
+<script src="src/15-daily.js" defer></script>
+<script src="src/16-settings.js" defer></script>
+<script src="src/17-start.js" defer></script>
 </head>
 <body>
 <div class="wrap">

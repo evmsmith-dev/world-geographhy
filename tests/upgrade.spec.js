@@ -8,6 +8,7 @@ import { execSync, spawn } from 'node:child_process';
 import { test, expect } from './helpers.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
+const CACHE = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8').match(/const CACHE = '([^']+)'/)[1]; // this version's offline copy
 const OLD = 'beb13493b9721513ecc9ee3a7c45dcb16c698a18'; // main just before the files moved into folders (November 2026)
 
 function haveCommit(){ try { execSync(`git -C "${ROOT}" cat-file -e ${OLD}^{commit}`, {stdio: 'ignore'}); return true; } catch { return false; } }
@@ -53,8 +54,8 @@ test('a device with the old version updates to this one and keeps its progress',
 
     // after the update (and the one extra reload when the new offline helper takes over), the new version runs
     const now = fn => page.evaluate(fn).catch(() => null); // null while the page is reloading
-    await expect.poll(() => now(() => !!document.querySelector('script[src="src/app.js"]') && !!window.WGQ_TEST), {timeout: 30_000}).toBe(true);
-    await expect.poll(() => now(() => caches.keys()), {timeout: 30_000}).toEqual(['wgq-v2']);
+    await expect.poll(() => now(() => !!document.querySelector('script[src^="src/"]') && !!window.WGQ_TEST), {timeout: 30_000}).toBe(true);
+    await expect.poll(() => now(() => caches.keys()), {timeout: 30_000}).toEqual([CACHE]);
     await page.waitForLoadState('load');
     await page.waitForTimeout(1000); // in case the one extra reload is still on its way
     await expect(page.locator('#homePlayer')).toContainText('Ama');

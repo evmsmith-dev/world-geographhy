@@ -35,7 +35,7 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `index.html` | The page, with the version stamp |
 | `sw.js` | Offline support: the list of files saved on the device. It stays at the top level so it can serve the whole game |
 | `manifest.webmanifest` | App name, colors and icons for installing |
-| `src/` | The game's code (`app.js`) and look (`app.css`) |
+| `src/` | The game's code, in numbered files (`01-helpers.js` … `17-start.js`, see `src/README.md`), and its look (`app.css`) |
 | `data/maps/` | Map shapes: `us.json`, `world.json` and one file per continent (`europe.json`, `africa.json`, …), plus each continent's **Land & Water** places (`europe-geo.json`, …) |
 | `data/` | `flags.json` (country flags), `usflags.json` (state flags), `facts.json` (the “Did you know?” fun facts), `thumbs.json` (small map pictures for the home screen) |
 | `assets/icons/` | App icons |

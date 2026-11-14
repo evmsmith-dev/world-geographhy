@@ -251,3 +251,58 @@ test('Landmarks: each continent has a tab, Explore says the country, and questio
   expect(q).toMatch(/^Find /);
   expect(q, 'no "the" before Machu Picchu, Angel Falls, Salar de Uyuni…').not.toMatch(/^Find the (Machu Picchu|Christ the Redeemer|Iguazu Falls|Angel Falls|Mitad del Mundo|Salar de Uyuni)/);
 });
+
+test('Landmarks have pictures: in Explore, Find it, Practice and on flashcards, and "Which landmark is this?" in the Daily 10', async ({page}) => {
+  const loaded = img => expect.poll(() => img.evaluate(i => i.complete && i.naturalWidth > 0), {timeout: 10_000}).toBe(true);
+  const picOf = n => page.evaluate(n => window.WGQ_TEST.picSrc(n), n);
+  await newPlayer(page);
+  // Explore: the picture beside the name
+  await openTopic(page, 'Europe', 'eu-landmarks');
+  await page.click('#exploreBtn');
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 10);
+  await mapSettled(page);
+  await tapPlace(page, 'Eiffel Tower');
+  await expect(page.locator('#exInfo img.lmpic')).toHaveAttribute('src', 'assets/landmarks/eiffel-tower.svg');
+  await loaded(page.locator('#exInfo img.lmpic'));
+  // Find it: the picture with the name to find
+  await goHome(page);
+  await openTopic(page, 'Asia', 'as-landmarks');
+  await startMode(page, 'find');
+  const target = await findTarget(page, 'as-landmarks');
+  await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', await picOf(target));
+  await loaded(page.locator('#findQ img.lmpic'));
+  // Practice: tap a landmark and its picture shows with "Which landmark is this?"
+  await goHome(page);
+  await openTopic(page, 'Africa', 'af-landmarks');
+  await startMode(page, 'practice');
+  await expect(page.locator('#findQ')).toBeHidden();
+  await page.evaluate(() => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === 'Victoria Falls').dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})));
+  await expect(page.locator('#selLabel')).toHaveText('Which landmark is this?');
+  await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', 'assets/landmarks/victoria-falls.svg');
+  // Flashcards: the picture on the front, the answer and the map on the back
+  await goHome(page);
+  await openTopic(page, 'Africa', 'af-landmarks');
+  await startMode(page, 'flash');
+  await expect(page.locator('#fFront image')).toHaveAttribute('href', /^assets\/landmarks\/.+\.svg$/);
+  await expect(page.locator('#fPrompt')).toHaveText('Which landmark is this?');
+  const front = await page.getAttribute('#fFront image', 'href');
+  await page.click('#fReveal');
+  expect(front, 'the front shows the landmark on the back').toBe(await picOf(await page.textContent('#fAnswer')));
+  await expect(page.locator('#fBack path.hi, #fBack circle.hi').first()).toBeAttached();
+  // Daily 10: the picture, not the place, then the place once answered
+  await goHome(page);
+  await page.evaluate(() => { window.WGQ_TEST.dailyQuestions = [['sa-landmarks', 'Machu Picchu', 'pick'], ['eu-landmarks', 'Colosseum', 'find']]; });
+  await page.click('#dailyBtn');
+  await expect(page.locator('#chipText')).toContainText('Question 1 of 2');
+  await expect(page.locator('#selLabel')).toHaveText('Which landmark is this?');
+  await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', 'assets/landmarks/machu-picchu.svg');
+  await expect(page.locator('#map path.sel'), 'the place is not shown before answering').toHaveCount(0);
+  await expect(page.locator('#choices button')).toHaveCount(4);
+  await page.click('#choices button[data-dv="Machu Picchu"]');
+  await expect(page.locator('#feedback')).toContainText("Yes! That's Machu Picchu.");
+  await expect(page.locator('#map path.ok')).toHaveAttribute('data-n', 'Machu Picchu');
+  await expect(page.locator('#chipText')).toContainText('Question 2 of 2');
+  await expect(page.locator('#findQ')).toContainText('Find the Colosseum');
+  await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', 'assets/landmarks/colosseum.svg');
+  await expect(page.locator('#choices')).toBeHidden();
+});

@@ -155,10 +155,12 @@ export async function answer(page, name, typed = name){
 
 // Answer one question of a Daily 10 or World Tour correctly, whatever kind it is
 export async function answerRun(page){
-  const info = await page.evaluate(() => {
+  const info = await page.evaluate(async () => {
     const chip = document.getElementById('chipText').textContent, W = window.WGQ_TEST;
     const t = W.TOPICS.find(t => chip.includes(t.name));
-    return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: document.querySelector('#map path.sel')?.dataset.n};
+    const pic = document.querySelector('#findQ:not([hidden]) img.lmpic'); // "Which landmark is this?" shows a picture, not the place
+    const shown = pic && (await W.loadMap(t.map)).items.find(i => W.picSrc(i.n) === pic.getAttribute('src'));
+    return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: document.querySelector('#map path.sel')?.dataset.n || (shown && shown.n)};
   });
   expect(info.topic, 'the question says which topic it is from').toBeTruthy();
   if(info.pick){

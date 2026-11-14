@@ -38,6 +38,7 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `src/` | The game's code, in numbered files (`01-helpers.js` … `18-start.js`, see `src/README.md`), and its look (`app.css`) |
 | `data/maps/` | Map shapes: `us.json`, `world.json` and one file per continent (`europe.json`, `africa.json`, …), plus each continent's **Land & Water** places (`europe-geo.json`, …) each continent's **Landmarks** (`europe-landmarks.json`, …), and the US **Regions**, **Cities**, **National Parks** and **Land & Water** (`usregions.json`, `uscities.json`, `usparks.json`, `us-geo.json`) |
 | `data/` | `flags.json` (country flags), `usflags.json` (state flags), `facts.json` (the “Did you know?” fun facts), `thumbs.json` (small map pictures for the home screen) |
+| `assets/landmarks/` | A drawing of each landmark, shown in Explore, on flashcards and in "Which landmark is this?" questions (made by `tools/build-pictures.mjs`) |
 | `assets/icons/` | App icons |
 | `assets/fonts/` | Fonts, stored locally so the game works offline |
 | `tests/` | Automatic tests that run on GitHub (see `tests/README.md`). Not part of the published game |
@@ -48,7 +49,7 @@ When you add a file the game uses, add it to the list in `sw.js` too (a test che
 
 ## Credits
 
-Mountain range, plain, desert, sea, lake and national park shapes and city locations come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain. Parks that Natural Earth doesn't include are placed by hand at the park (Arches, Acadia, Mammoth Cave and Carlsbad Caverns from the US National Park Service's coordinates, also public domain). Landmarks are placed by hand at each landmark's location.
+Mountain range, plain, desert, sea, lake and national park shapes and city locations come from Natural Earth (https://www.naturalearthdata.com), which is in the public domain. Parks that Natural Earth doesn't include are placed by hand at the park (Arches, Acadia, Mammoth Cave and Carlsbad Caverns from the US National Park Service's coordinates, also public domain). Landmarks are placed by hand at each landmark's location, and their drawings are original, made for this game.
 
 Flag images come from the flag-icons project (https://github.com/lipis/flag-icons), used under the MIT License:
 

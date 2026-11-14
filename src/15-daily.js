@@ -80,7 +80,8 @@ async function startRun(run){
 }
 async function dailyShow(){
   const q = DAILY.qs[DAILY.i]; T = TOPIC[q.t]; M = await loadMap(T.map); drawMap();
-  DAILY.tries = 0; DAILY.busy = false; current = q.style === 'pick' ? q.n : null;
+  DAILY.tries = 0; DAILY.busy = false; const pic = q.style === 'pick' && T.landmarks; // a landmark: "Which landmark is this?" with its picture, not its place
+  current = q.style === 'pick' && !pic ? q.n : null;
   $('chipText').innerHTML = `${esc(DAILY.title)}<small>Question ${DAILY.i+1} of ${DAILY.qs.length} · ${esc(T.name)}</small>`;
   $('tally').innerHTML = `<b>${DAILY.right}</b> right`;
   feedback('');
@@ -89,16 +90,17 @@ async function dailyShow(){
     $('sub').textContent = 'Tap the right place on the map. You get 2 tries.';
     $('selLabel').textContent = 'Find it on the map';
     if(T.flags) fq.innerHTML = `${flagImg(q.n,'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>`;
+    else if(T.landmarks) fq.innerHTML = `${picImg(q.n, 'big')}<span>${esc(noThe(q.n) ? `Find ${q.n}` : `Find the ${q.n}`)}</span>`;
     else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !noThe(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else {
-    $('sub').textContent = 'Look at the orange place on the map, then pick the right answer.';
+    $('sub').textContent = pic ? 'Look at the picture, then pick the right answer.' : 'Look at the orange place on the map, then pick the right answer.';
     $('selLabel').textContent = T.flags ? `Which flag belongs to this ${T.itemWord || 'country'}?` : T.showsItem ? `What is the capital of ${q.n}?` : T.ask(q.n);
-    fq.hidden = true; ch.hidden = false;
+    fq.hidden = !pic; fq.innerHTML = pic ? picImg(q.n, 'big') : ''; ch.hidden = false;
     const right = key(q.n), others = choiceOrder(right, NAMES.map(key)).slice(0, 3), opts = shuffle([right, ...others]);
     ch.classList.toggle('flags', !!T.flags);
     ch.innerHTML = opts.map((v,i) => T.flags ? `<button data-dv="${esc(v)}" aria-label="Flag ${i+1}">${flagImg(v)}</button>` : `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
-    focusItem(q.n);
+    if(!pic) focusItem(q.n);
   }
   dailyPaint(); showWholeMap(DAILY.i === 0 || T !== DAILY.lastT); DAILY.lastT = T;
 }

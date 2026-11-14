@@ -20,6 +20,7 @@ async function gameData(page){
     return {
       topics: W.TOPICS.map(t => ({id: t.id, group: t.group, map: t.map, count: t.count, tab: t.tab, name: t.name, flags: !!t.flags, geo: !!t.geo, parts: t.parts || null})),
       maps, mapW, flags, facts: await W.facts(), lookalikes: W.LOOKALIKES, say: W.SAY, geoAlias: W.GEO_ALIAS, worldFact: W.WORLD_FACT, tours: W.TOURS.map(t => ({id: t.id, count: t.count, from: t.from})), cap: W.CAP, capNote: W.CAP_NOTE,
+      pics: Object.fromEntries(W.TOPICS.filter(t => t.landmarks).flatMap(t => maps[t.map].map(i => [i.n, W.picSrc(i.n)]))),
     };
   });
 }
@@ -178,6 +179,25 @@ test('every landmark is placed inside its country (or in the sea off it), and th
     expect(wrong, `${m}: landmarks outside their country`).toEqual([]);
   }
   expect(D.tours.find(t => t.id === 'world-landmarks').count, 'landmarks in the World Tour').toBe(all);
+});
+
+test('every landmark has its drawing, and every drawing is up to date and saved for offline use', async () => {
+  const dir = path.join(ROOT, 'assets/landmarks'), files = fs.readdirSync(dir).sort(), sw = read('sw.js');
+  expect(Object.keys(D.pics).length, 'landmarks').toBe(D.tours.find(t => t.id === 'world-landmarks').count);
+  const missing = Object.entries(D.pics).filter(([, src]) => !fs.existsSync(path.join(ROOT, src))).map(([n, src]) => `${n} (${src})`);
+  expect(missing, 'landmarks with no drawing').toEqual([]);
+  const used = new Set(Object.values(D.pics).map(src => path.basename(src)));
+  expect(files.filter(f => !used.has(f)), 'drawings that no landmark uses').toEqual([]);
+  expect(files.filter(f => !sw.includes(`'assets/landmarks/${f}'`)), 'drawings missing from the offline list in sw.js').toEqual([]);
+  // each file is what tools/build-pictures.mjs makes from tools/pictures/, so a change there was built
+  const {frame} = await import(path.join(ROOT, 'tools/pictures/common.mjs'));
+  for(const part of ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica']){
+    const drawings = (await import(path.join(ROOT, `tools/pictures/${part}.mjs`))).default;
+    for(const [n, [sky, body]] of Object.entries(drawings)){
+      expect(D.pics[n], `${part}.mjs draws "${n}", which isn't a landmark`).toBeTruthy();
+      expect(read(D.pics[n]) === frame(n, sky, body), `${D.pics[n]} matches tools/pictures/${part}.mjs (run node tools/build-pictures.mjs)`).toBe(true);
+    }
+  }
 });
 
 test('on GitHub, every place is in exactly one of the "tap every place" test jobs', () => {

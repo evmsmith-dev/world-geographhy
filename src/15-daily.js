@@ -66,7 +66,7 @@ async function startDaily(){ return startRun({title:'Daily 10', pick:pickDaily, 
 async function startRun(run){
   returnTo = run.home; showScreen('scrPlay');
   pushLayer(() => { DAILY = null; $('dailyDone').hidden = true; $('play').querySelectorAll('[data-dhide]').forEach(el => { el.hidden = false; el.removeAttribute('data-dhide'); });
-    showScreen(run.home); if(run.home === 'scrRegion') renderRegion(); else renderHome(); });
+    showScreen(run.home); itemsSaved().then(() => { if(run.home === 'scrRegion') renderRegion(); else renderHome(); }); });
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
   $('chipText').innerHTML = `${esc(run.title)}<small>Getting your questions ready…</small>`; $('sub').textContent = ''; $('tally').textContent = ''; $('clock').hidden = true;
   $('dailyHome').textContent = run.home === 'scrRegion' ? 'Back' : 'Back home';

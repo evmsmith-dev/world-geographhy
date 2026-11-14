@@ -95,7 +95,7 @@ const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
 const MAPDATA = {}; // map files once loaded, with items indexed by name
 // country flags live in flags.json; US state flags in usflags.json, kept as "us:Georgia" so the state and the country don't mix up
 let FLAGURL = {}; const flagsLoading = {};
-const loadFlags = (map) => { const us = map === 'us', file = us ? 'usflags.json' : 'flags.json';
+const loadFlags = (map) => { const us = map === 'us', file = us ? 'data/usflags.json' : 'data/flags.json';
   return flagsLoading[file] || (flagsLoading[file] = fetch(file).then(r => { if(!r.ok) throw new Error('flags ' + r.status); return r.json(); })
     .then(f => { for(const [n, svg] of Object.entries(f)) FLAGURL[(us ? 'us:' : '') + n] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); })
     .catch(e => { delete flagsLoading[file]; throw e; })); };
@@ -526,7 +526,7 @@ async function migrateCentralAmerica(){
 
 /* ===================== 7. home ===================== */
 let THUMBS = null;
-const loadThumbs = () => THUMBS ? Promise.resolve(THUMBS) : fetch('thumbs.json').then(r => r.ok ? r.json() : {}).then(t => (THUMBS = t)).catch(() => (THUMBS = {}));
+const loadThumbs = () => THUMBS ? Promise.resolve(THUMBS) : fetch('data/thumbs.json').then(r => r.ok ? r.json() : {}).then(t => (THUMBS = t)).catch(() => (THUMBS = {}));
 const thumbSvg = map => { const t = THUMBS && THUMBS[map]; return t ? `<svg class="rthumb" viewBox="0 0 ${t.w} ${t.h}" aria-hidden="true">${t.o ? `<path class="o" d="${t.o}"/>` : ''}<path d="${t.d}"/></svg>` : '<span class="rthumb"></span>'; };
 // Up next: one suggestion for what to play, moving each part from Learn to Find it to Practice to Test.
 async function upNext(){
@@ -632,7 +632,7 @@ $('homeSettings').onclick = () => openSettings();
 
 /* ===================== 8. map, zoom & search ===================== */
 const MAPS = {};
-const loadMap = name => MAPS[name] || (MAPS[name] = fetch(name + '.json').then(r => { if(!r.ok) throw new Error('map ' + r.status); return r.json(); })
+const loadMap = name => MAPS[name] || (MAPS[name] = fetch('data/maps/' + name + '.json').then(r => { if(!r.ok) throw new Error('map ' + r.status); return r.json(); })
   .then(async m => {
     if(m.base){ // a Land & Water map: its continent's countries become a plain gray background
       const b = await loadMap(m.base);
@@ -1621,7 +1621,7 @@ function exploreStep(dir){
 }
 // "Did you know?" facts, loaded the first time Explore needs one
 let FACTS = null, factsLoading = null;
-const loadFacts = () => factsLoading || (factsLoading = fetch('facts.json').then(r => { if(!r.ok) throw 0; return r.json(); }).then(f => FACTS = f).catch(() => { factsLoading = null; }));
+const loadFacts = () => factsLoading || (factsLoading = fetch('data/facts.json').then(r => { if(!r.ok) throw 0; return r.json(); }).then(f => FACTS = f).catch(() => { factsLoading = null; }));
 function factFor(n, map){ if(!FACTS) return null; if(T && T.geo) return (FACTS.geo || {})[n] || null; if(map === 'world') return null; return (map === 'us' ? FACTS.us : FACTS.country)[n] || null; }
 function exploreInfo(n){
   const box = $('exInfo');
@@ -1988,7 +1988,7 @@ $('playHelp').onclick = () => openHelp();
 
 /* ===================== 12. updates & start-up ===================== */
 // Installed app only: offline support, and a check for a newer index.html (at most once an hour).
-const CORE = ['./','index.html','app.js','app.css'];
+const CORE = ['./','index.html','src/app.js','src/app.css'];
 let latest = null;
 async function checkForUpdate(force){
   if(!navigator.onLine) return;
@@ -2010,7 +2010,7 @@ async function applyUpdate(){
       const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
       const done = sw ? await new Promise(res => { const ch = new MessageChannel(); ch.port1.onmessage = e => res(e.data === 'refreshed'); sw.postMessage('refresh', [ch.port2]); setTimeout(() => res(false), 20000); }) : false;
       if(!done){ // an older service worker that can't do this yet: refresh the main files directly
-        const cache = await caches.open('wgq-v1');
+        const cache = await caches.open('wgq-v2');
         await Promise.all(CORE.map(async u => { const r = await fetch(u + (u.includes('?')?'&':'?') + 'check=' + Date.now(), {cache:'no-store'}); if(r.ok) await cache.put(u, r); }));
       }
     }

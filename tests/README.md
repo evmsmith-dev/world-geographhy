@@ -16,6 +16,7 @@ The game itself doesn't use anything in this folder.
 | `saved.spec.js` | Progress survives closing the game; a backup made by an older version still loads with every player, score and badge; a backup saved now loads on another device; old Central America progress moves to North America. |
 | `layout.spec.js` | Tabs aren't cut off, the place screen is centered, the zoom buttons don't cover the map, and the game fits on the screen without scrolling. |
 | `offline.spec.js` | After one visit, the game opens and plays with no internet. |
+| `upgrade.spec.js` | A device with an older version (from before the files moved into folders) updates to this one when the kid presses Update, keeps its progress, and still works offline. It reads the old version from the git history. |
 
 "Phone" is a Galaxy-sized screen in Chromium (the engine in Chrome and Samsung Internet). "iPad" is an iPad (7th
 generation) in WebKit (the engine in Safari).

@@ -116,6 +116,7 @@ export async function mapSettled(page){
 
 // The place a Find it question is asking for: "Find the Alps", "Which country has the capital Paris?" or a flag
 export async function findTarget(page, topicId){
+  await expect(page.locator('#findQ')).not.toBeEmpty(); // the question appears once the map has loaded
   return page.evaluate(async tid => {
     const W = window.WGQ_TEST, t = W.TOPIC[tid], q = document.getElementById('findQ');
     const img = q.querySelector('img.flag');

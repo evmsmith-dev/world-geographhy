@@ -8,17 +8,27 @@
 <meta name="theme-color" content="#eef1f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12181d" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Geography Quiz">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="preload" href="alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="app.css?v=2026-10-28T11:27:27Z">
-<script>window.WGQ_BUILD='2026-11-14T05:46:12Z'</script>
-<script src="app.js?v=2026-10-28T11:27:27Z" defer></script>
+<link rel="preload" href="assets/fonts/alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="src/app.css">
+<script>window.WGQ_BUILD='2026-11-14T11:12:39Z';
+// When a new version's offline helper (sw.js) takes over a page that an older one opened, load the page once more
+// so every file comes from the new version. This matters when files move (they moved into folders in November 2026).
+if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+  const first = navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(navigator.serviceWorker.controller === first || sessionStorage.getItem('wgq-swap')) return; // same helper, or already reloaded once
+    sessionStorage.setItem('wgq-swap', '1'); location.reload();
+  });
+}
+</script>
+<script src="src/app.js" defer></script>
 </head>
 <body>
 <div class="wrap">

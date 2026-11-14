@@ -30,22 +30,21 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 
 ## Files
 
-| File | Purpose |
+| File or folder | Purpose |
 |---|---|
 | `index.html` | The page, with the version stamp |
-| `app.js` | The game |
-| `app.css` | The look |
-| `us.json`, `world.json`, `europe.json`, `africa.json`, `asia.json`, `oceania.json`, `namerica.json`, `samerica.json` | Map shapes for the US, the world, Europe, Africa, Asia, Oceania, North America and South America |
-| `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`, `namerica-geo.json`, `samerica-geo.json` | Mountain ranges, deserts, seas and lakes for each continent's **Land & Water** tab (the countries come from the continent's own map file) |
-| `flags.json` | Flags of the countries in Europe, Africa, Asia, Oceania, North America and South America |
-| `usflags.json` | Flags of the 50 US states |
-| `facts.json` | The “Did you know?” fun facts shown in Explore |
-| `thumbs.json` | Small map pictures for the home screen |
+| `sw.js` | Offline support: the list of files saved on the device. It stays at the top level so it can serve the whole game |
 | `manifest.webmanifest` | App name, colors and icons for installing |
-| `sw.js` | Offline support |
-| `icon*.png`, `icon.svg`, `apple-touch-icon.png`, `favicon-32.png` | App icons |
-| `*.woff2` | Fonts, stored locally so it works offline |
-| `tools/` | Scripts that build the map files. Not used by the game itself; kept here so the maps can be rebuilt |
+| `src/` | The game's code (`app.js`) and look (`app.css`) |
+| `data/maps/` | Map shapes: `us.json`, `world.json` and one file per continent (`europe.json`, `africa.json`, …), plus each continent's **Land & Water** places (`europe-geo.json`, …) |
+| `data/` | `flags.json` (country flags), `usflags.json` (state flags), `facts.json` (the “Did you know?” fun facts), `thumbs.json` (small map pictures for the home screen) |
+| `assets/icons/` | App icons |
+| `assets/fonts/` | Fonts, stored locally so the game works offline |
+| `tests/` | Automatic tests that run on GitHub (see `tests/README.md`). Not part of the published game |
+| `tools/` | Scripts that build the Land & Water maps. Not part of the published game |
+| `.github/workflows/` | Runs the tests, and publishes the game when they pass |
+
+When you add a file the game uses, add it to the list in `sw.js` too (a test checks this).
 
 ## Credits
 

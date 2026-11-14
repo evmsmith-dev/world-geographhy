@@ -1,8 +1,8 @@
 // World Geography Quiz: offline support.
 // Serves the saved copy right away, then refreshes it from the website in the background.
 // Only touches caches that start with "wgq-", so other apps on the same site are left alone.
-// Change the version when files move, so devices drop the old copies (v2: files moved into folders; v3: app.js split into numbered files; v4: the World Tour file).
-const CACHE = 'wgq-v4';
+// Change the version when files move, so devices drop the old copies (v2: files moved into folders; v3: app.js split into numbered files; v4: the World Tour file; v5: the landmark drawings).
+const CACHE = 'wgq-v5';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'src/app.css',
   'src/01-helpers.js', 'src/02-topics.js', 'src/03-storage.js', 'src/04-screens.js', 'src/05-sound.js', 'src/06-players.js', 'src/07-home.js', 'src/08-map.js', 'src/09-game.js', 'src/10-find-it.js', 'src/11-easy-answers.js', 'src/12-flashcards.js', 'src/13-scores.js', 'src/14-explore.js', 'src/15-daily.js', 'src/16-world-tour.js', 'src/17-settings.js', 'src/18-start.js',
@@ -14,6 +14,22 @@ const FILES = [
   'data/maps/europe-landmarks.json', 'data/maps/africa-landmarks.json', 'data/maps/asia-landmarks.json', 'data/maps/oceania-landmarks.json', 'data/maps/namerica-landmarks.json', 'data/maps/samerica-landmarks.json',
   'assets/icons/icon.svg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/icon-maskable-512.png',
   'assets/icons/apple-touch-icon.png', 'assets/icons/favicon-32.png',
+  'assets/landmarks/abu-simbel.svg', 'assets/landmarks/acropolis.svg', 'assets/landmarks/angel-falls.svg', 'assets/landmarks/angkor-wat.svg',
+  'assets/landmarks/big-ben.svg', 'assets/landmarks/borobudur.svg', 'assets/landmarks/brandenburg-gate.svg', 'assets/landmarks/burj-khalifa.svg',
+  'assets/landmarks/chichen-itza.svg', 'assets/landmarks/christ-the-redeemer.svg', 'assets/landmarks/colosseum.svg',
+  'assets/landmarks/eiffel-tower.svg', 'assets/landmarks/golden-gate-bridge.svg', 'assets/landmarks/grand-canyon.svg',
+  'assets/landmarks/great-barrier-reef.svg', 'assets/landmarks/great-mosque-of-djenne.svg', 'assets/landmarks/great-wall-of-china.svg',
+  'assets/landmarks/great-zimbabwe.svg', 'assets/landmarks/hollywood-sign.svg', 'assets/landmarks/iguazu-falls.svg', 'assets/landmarks/kremlin.svg',
+  'assets/landmarks/leaning-tower-of-pisa.svg', 'assets/landmarks/machu-picchu.svg', 'assets/landmarks/milford-sound.svg',
+  'assets/landmarks/mitad-del-mundo.svg', 'assets/landmarks/mount-everest.svg', 'assets/landmarks/mount-fuji.svg',
+  'assets/landmarks/mount-kilimanjaro.svg', 'assets/landmarks/mount-rushmore.svg', 'assets/landmarks/nazca-lines.svg',
+  'assets/landmarks/neuschwanstein-castle.svg', 'assets/landmarks/niagara-falls.svg', 'assets/landmarks/panama-canal.svg',
+  'assets/landmarks/perito-moreno-glacier.svg', 'assets/landmarks/petra.svg', 'assets/landmarks/petronas-towers.svg',
+  'assets/landmarks/pyramids-of-giza.svg', 'assets/landmarks/rock-churches-of-lalibela.svg', 'assets/landmarks/sagrada-familia.svg',
+  'assets/landmarks/salar-de-uyuni.svg', 'assets/landmarks/statue-of-liberty.svg', 'assets/landmarks/stonehenge.svg',
+  'assets/landmarks/sydney-opera-house.svg', 'assets/landmarks/table-mountain.svg', 'assets/landmarks/taj-mahal.svg',
+  'assets/landmarks/teotihuacan.svg', 'assets/landmarks/terracotta-army.svg', 'assets/landmarks/twelve-apostles.svg', 'assets/landmarks/uluru.svg',
+  'assets/landmarks/victoria-falls.svg', 'assets/landmarks/waitomo-glowworm-caves.svg', 'assets/landmarks/white-house.svg',
   'assets/fonts/alegreya-sans-latin-400-normal.woff2', 'assets/fonts/alegreya-sans-latin-500-normal.woff2', 'assets/fonts/alegreya-sans-latin-700-normal.woff2',
   'assets/fonts/alegreya-sans-sc-latin-500-normal.woff2', 'assets/fonts/alegreya-sans-sc-latin-800-normal.woff2'
 ];

@@ -12,6 +12,11 @@ function drawCardArt(el, n, side){
     el.innerHTML = `<image href="${flagSrc(n)}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/><rect x=".5" y=".5" width="399" height="299" fill="none" class="flagframe"/>`;
     return;
   }
+  if(T.landmarks && side === 'front'){ // a drawing of the landmark; the back shows where it is
+    el.setAttribute('viewBox', '0 0 200 160');
+    el.innerHTML = `<image href="${picSrc(n)}" x="0" y="0" width="200" height="160"/>`;
+    return;
+  }
   const it = ITEM[n];
   if(T.card === 'shape' || T.card === 'flag'){ // the shape on its own, with a star on the capital
     const [x0,y0,x1,y1] = it.fb || it.b, w = x1-x0, h = y1-y0, pad = Math.max(w,h)*0.1, r = Math.max(w,h)*0.055;

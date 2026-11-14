@@ -87,6 +87,9 @@ const loadFlags = (map) => { const us = map === 'us', file = us ? 'data/usflags.
     .catch(e => { delete flagsLoading[file]; throw e; })); };
 const flagSrc = n => FLAGURL[(M && MAPDATA.us && M === MAPDATA.us ? 'us:' : '') + n] || '';
 const flagImg = (n, cls='') => flagSrc(n) ? `<img class="flag ${cls}" src="${flagSrc(n)}" alt="" draggable="false">` : '';
+// Landmark drawings: one picture for each landmark in assets/landmarks/, named after it (tools/build-pictures.mjs)
+const picSrc = n => 'assets/landmarks/' + n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.svg';
+const picImg = (n, cls='') => `<img class="lmpic ${cls}" src="${picSrc(n)}" alt="" draggable="false">`;
 // size rank among its kind, and one fact a kid can remember
 const WORLD_FACT = {
   'Asia':[1,'Mount Everest, the tallest mountain on Earth, is here.'],

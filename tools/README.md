@@ -47,3 +47,17 @@ longitude/latitude written in the script, with the country it's in; the script c
 `geo`), and change the count on its continent's `landmarkTopic` line in `src/02-topics.js`.
 
 In a folder with `d3-geo` installed: `node tools/build-landmarks.mjs data/maps`
+
+## build-pictures.mjs: the landmark drawings
+
+Builds `assets/landmarks/`: one small SVG drawing for each landmark (200 by 160, with rounded corners and its own sky, so it
+looks the same in light and dark mode). Each drawing is written by hand as shapes in `tools/pictures/` (one file per
+continent, with shared pieces like clouds and arches in `common.mjs`). The file name comes from the landmark's name
+(`Chichén Itzá` → `chichen-itza.svg`).
+
+1. Edit a drawing in `tools/pictures/<continent>.mjs` (or add one, named exactly like the landmark).
+2. `node tools/build-pictures.mjs` (no packages needed).
+3. For a new landmark, also add its file to the list in `sw.js`, so it works offline.
+
+A data test checks that every landmark has a drawing, that each file matches `tools/pictures/`, and that `sw.js` lists them all.
+

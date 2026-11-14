@@ -1,4 +1,4 @@
-// Builds the National Parks map (data/maps/usparks.json): 23 well-known parks on the US map.
+// Builds the National Parks map (data/maps/usparks.json): 45 well-known parks on the US map.
 // Outlines come from Natural Earth's parks (public domain); the four parks Natural Earth doesn't have are a point,
 // from the National Park Service (public domain). Every park gets a tap circle, since most are small on the map.
 // Run: node tools/build-parks.mjs <folder with ne_10m_parks_and_protected_lands_area.geojson> data/maps
@@ -36,6 +36,29 @@ const PARKS = [
   ['Big Bend National Park', 'Big Bend NP', 'Texas'],
   ['Denali National Park', 'Denali NP & PRES', 'Alaska'],
   ['Hawaiʻi Volcanoes National Park', "Hawai'i Volcanoes NP", 'Hawaii'],
+  // more parks: outlines from Natural Earth where it has them; the rest are a point at the park (within a few miles)
+  ['Bryce Canyon National Park', [-112.187, 37.593], 'Utah'],
+  ['Canyonlands National Park', 'Canyonlands NP', 'Utah'],
+  ['Sequoia National Park', 'Sequoia  NP', 'California'],
+  ['Redwood National Park', 'Redwood NP', 'California'],
+  ['North Cascades National Park', 'North Cascades NP', 'Washington'],
+  ['Petrified Forest National Park', 'Petrified Forest NP', 'Arizona'],
+  ['Saguaro National Park', [-110.95, 32.25], 'Arizona'],
+  ['Mesa Verde National Park', [-108.49, 37.18], 'Colorado'],
+  ['Great Sand Dunes National Park', 'Great Sand Dunes NP & PRES', 'Colorado'],
+  ['White Sands National Park', 'White Sands NM', 'New Mexico'],
+  ['Theodore Roosevelt National Park', [-103.45, 46.97], 'North Dakota'],
+  ['Voyageurs National Park', 'Voyageurs NP', 'Minnesota'],
+  ['Isle Royale National Park', 'Isle Royale NP', 'Michigan'],
+  ['Indiana Dunes National Park', [-87.05, 41.65], 'Indiana'],
+  ['Cuyahoga Valley National Park', [-81.55, 41.24], 'Ohio'],
+  ['Gateway Arch National Park', [-90.185, 38.624], 'Missouri'],
+  ['Hot Springs National Park', [-93.05, 34.51], 'Arkansas'],
+  ['New River Gorge National Park', [-81.08, 37.97], 'West Virginia'],
+  ['Congaree National Park', [-80.78, 33.78], 'South Carolina'],
+  ['Glacier Bay National Park', 'Glacier Bay NP & PRES', 'Alaska'],
+  ['Wrangell–St. Elias National Park', 'Wrangell-St. Elias NP & PRES', 'Alaska'],
+  ['Haleakalā National Park', [-156.17, 20.72], 'Hawaii'],
 ];
 
 const r1 = x => Math.round(x * 10) / 10;

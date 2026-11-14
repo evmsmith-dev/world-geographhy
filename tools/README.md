@@ -17,9 +17,9 @@ Natural Earth has no Mojave Desert, so the script draws its outline by hand from
 
 ## build-parks.mjs: the National Parks map
 
-Builds `data/maps/usparks.json`: 23 national parks on the US map, drawn over the states. Outlines come from Natural Earth's
+Builds `data/maps/usparks.json`: 45 national parks on the US map, drawn over the states. Outlines come from Natural Earth's
 `ne_10m_parks_and_protected_lands_area.geojson`; Natural Earth doesn't have Arches, Acadia, Mammoth Cave or Carlsbad Caverns,
-so those are a point from the National Park Service, written in the script. To add a park, add a line to `PARKS` in the script,
+so those (and some others) are a point at the park, written in the script. To add a park, add a line to `PARKS` in the script,
 then add its fun fact to `data/facts.json` (under `geo`) and its short name to `PARK_ALIAS` in `src/02-topics.js`, and change
 the count on the `us-parks` topic.
 

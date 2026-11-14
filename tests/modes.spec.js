@@ -157,9 +157,9 @@ test('each Land & Water place screen says how many of each kind of place there a
 test('National Parks: Explore says which state each park is in, and flashcards show it', async ({page}) => {
   await newPlayer(page);
   await openTopic(page, 'United States', 'us-parks');
-  await expect(page.locator('#regionBody .stats')).toContainText('0 of 23 learned');
+  await expect(page.locator('#regionBody .stats')).toContainText('0 of 45 learned');
   await page.click('#exploreBtn');
-  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 23);
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 45);
   await expect(page.locator('#chipText')).toContainText('Explore national parks');
   await mapSettled(page);
   await tapPlace(page, 'Yellowstone National Park');

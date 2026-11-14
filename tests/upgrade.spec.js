@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execSync, spawn } from 'node:child_process';
-import { test, expect } from './helpers.js';
+import { test, expect, answer } from './helpers.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OLD = 'beb13493b9721513ecc9ee3a7c45dcb16c698a18'; // main just before the files moved into folders (November 2026)
@@ -37,8 +37,7 @@ test('a device with the old version updates to this one and keeps its progress',
     await page.click('.modebig[data-mode="practice"]');
     await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 14);
     for(const n of ['Australia', 'Fiji']){
-      await page.evaluate(n => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n).dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})), n);
-      await page.fill('#answer', n); await page.click('#submit');
+      await answer(page, n);
       await expect(page.locator('#feedback')).toContainText(/yes/i);
     }
     await page.waitForTimeout(500);

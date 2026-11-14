@@ -139,27 +139,36 @@ const TOPICS = [
     tapWhat:'Tap a continent or ocean, find its name', tapHint:'Tap a continent or ocean',
     ask:()=> 'Which continent or ocean is this?', flashFront:()=> 'Which continent or ocean is this?', card:'locate',
     back:(n,item)=>({answer:n, sub:worldSize(n, item.kind)}) },
-  ...regionTopics('eu', 'Europe', 'europe', 44, 14, 'Find all 44 countries in Europe.', 'Name the capital of every country in Europe.', EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
-  geoTopic('eu', 'Europe', 'europe', 14, 14, 'Find 6 mountain ranges and 8 seas, bays and channels in Europe. (Europe has no big deserts!)'),
-  ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
-  geoTopic('af', 'Africa', 'africa', 13, 14, 'Find 3 mountain areas, 3 deserts, 3 seas and gulfs, and 4 lakes in Africa.'),
-  ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
-  geoTopic('as', 'Asia', 'asia', 19, 14, 'Find 4 mountain ranges, 4 deserts, 7 seas, gulfs and bays, and 4 lakes in Asia.'),
-  ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, 'Find all 14 countries in Oceania.', 'Name the capital of every country in Oceania.', OC_ALIAS, OC_CAP_ALIAS),
-  geoTopic('oc', 'Oceania', 'oceania', 9, 12, 'Find 2 mountain ranges, 3 deserts, and 4 seas, gulfs and bays in Oceania.'),
-  ...regionTopics('na', 'North America', 'namerica', 23, 20, 'Find all 23 countries in North America.', 'Name the capital of every country in North America.', NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
-  geoTopic('na', 'North America', 'namerica', 17, 20, 'Find 4 mountain ranges, 3 deserts, 4 seas and bays, the 5 Great Lakes and the Great Salt Lake in North America.'),
-  ...regionTopics('sa', 'South America', 'samerica', 12, 6, 'Find all 12 countries in South America.', 'Name the capital of every country in South America.', {}, SA_CAP_ALIAS),
-  geoTopic('sa', 'South America', 'samerica', 7, 12, 'Find the Andes, 2 highland areas, Patagonia, the Atacama Desert, Lake Titicaca and the Río de la Plata in South America.'),
+  ...regionTopics('eu', 'Europe', 'europe', 44, 14, EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
+  geoTopic('eu', 'Europe', 'europe', 14, 14, '(Europe has no big deserts!)'),
+  ...regionTopics('af', 'Africa', 'africa', 54, 10, AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
+  geoTopic('af', 'Africa', 'africa', 13, 14),
+  ...regionTopics('as', 'Asia', 'asia', 48, 14, AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
+  geoTopic('as', 'Asia', 'asia', 19, 14),
+  ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, OC_ALIAS, OC_CAP_ALIAS),
+  geoTopic('oc', 'Oceania', 'oceania', 9, 12),
+  ...regionTopics('na', 'North America', 'namerica', 23, 20, NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
+  geoTopic('na', 'North America', 'namerica', 17, 20),
+  ...regionTopics('sa', 'South America', 'samerica', 12, 6, {}, SA_CAP_ALIAS),
+  geoTopic('sa', 'South America', 'samerica', 7, 12),
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
-function geoTopic(id, region, map, count, maxZoom, blurb){
-  return {id:id+'-geo', group:region, map:map+'-geo', count, maxZoom, geo:true, card:'locate', tab:'Land & Water', name:`Land & Water of ${region}`, blurb,
+// The place screen's line for a Land & Water topic, worked out from its map: "Find 6 mountain ranges, 5 seas, a bay and a channel in Europe."
+const GEO_ORDER = ['range', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
+function geoBlurb(t, m){
+  const n = {}; m.items.forEach(i => { n[i.sub] = (n[i.sub] || 0) + 1; });
+  const parts = GEO_ORDER.filter(s => n[s]).map(s => n[s] === 1 ? `a ${GEO_WORD[s]}` : `${n[s]} ${GEO_WORD[s]}s`);
+  const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
+  return `Find ${list} in ${t.group}.` + (t.note ? ` ${t.note}` : '');
+}
+function geoTopic(id, region, map, count, maxZoom, note){
+  return {id:id+'-geo', group:region, map:map+'-geo', count, maxZoom, geo:true, card:'locate', tab:'Land & Water', name:`Land & Water of ${region}`, note,
     answer:n=>n, nouns:'mountains, deserts, seas and lakes', listWord:'places', itemWord:'place', alias:GEO_ALIAS,
     tapHint:'Tap a mountain, desert, sea or lake', tapWhat:'Tap a mountain, desert, sea or lake, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A ${GEO_WORD[geoSub(n)]} in ${esc(region)}`})};
 }
-function regionTopics(id, region, map, count, maxZoom, blurb, capBlurb, alias, capAlias, parts){
+function regionTopics(id, region, map, count, maxZoom, alias, capAlias, parts){
+  const blurb = `Find all ${count} countries in ${region}.`, capBlurb = `Name the capital of every country in ${region}.`;
   const cap = n => MAPDATA[map].by[n].cap;
   const note = n => CAP_NOTE[n] ? ` ${esc(CAP_NOTE[n])}` : '';
   const base = {group:region, map, count, maxZoom, card:'shape', tapHint:'Tap a country on the map', itemWord:'country', parts};

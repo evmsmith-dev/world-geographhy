@@ -138,3 +138,40 @@ test('How to play opens and covers Land & Water', async ({page}) => {
   await page.click('#homeHelp');
   await expect(page.locator('.steps')).toContainText('Land & Water');
 });
+
+test('crowded places next to tiny countries can be tapped without zooming in', async ({page}) => {
+  await newPlayer(page);
+  for(const [region, topic, places] of [['Europe', 'eu-countries', ['Switzerland', 'Italy', 'Austria']], ['Asia', 'as-countries', ['Qatar', 'United Arab Emirates', 'Malaysia']]]){
+    await goHome(page);
+    await openTopic(page, region, topic);
+    await page.click('#exploreBtn');
+    await page.waitForFunction(() => document.querySelectorAll('#map path.st').length > 0);
+    // Explore zooms in on what was tapped; go back to the whole map once that has happened
+    const wholeMap = async () => { await page.waitForTimeout(300); await mapSettled(page); if(!(await page.isDisabled('#zFit'))){ await page.click('#zFit'); await mapSettled(page); } };
+    for(const place of places){
+      await wholeMap();
+      await tapPlace(page, place, {zoom: false});
+      await expect(page.locator('#exInfo')).toContainText(place);
+    }
+    // and the tiny neighbors' circles still work
+    for(const tiny of region === 'Europe' ? ['Liechtenstein', 'San Marino'] : ['Bahrain', 'Singapore']){
+      await wholeMap();
+      await tapPlace(page, tiny, {zoom: false});
+      await expect(page.locator('#exInfo')).toContainText(tiny);
+    }
+  }
+});
+
+test('each Land & Water place screen says how many of each kind of place there are, adding up to the total', async ({page}) => {
+  await newPlayer(page);
+  const regions = {eu: 'Europe', af: 'Africa', as: 'Asia', oc: 'Oceania', na: 'North America', sa: 'South America'};
+  for(const [id, region] of Object.entries(regions)){
+    await goHome(page);
+    await openTopic(page, region, id + '-geo');
+    const text = await page.locator('#regionBody .sub').first().textContent();
+    expect(text).toMatch(new RegExp(`^Find .+ in ${region}\\.`));
+    const sum = [...text.matchAll(/(\d+|\ba) [a-z]/g)].reduce((a, m) => a + (m[1] === 'a' ? 1 : +m[1]), 0);
+    const count = await page.evaluate(id => window.WGQ_TEST.TOPIC[id].count, id + '-geo');
+    expect(sum, `"${text}" adds up to ${count}`).toBe(count);
+  }
+});

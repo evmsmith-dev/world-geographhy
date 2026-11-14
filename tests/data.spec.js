@@ -12,12 +12,14 @@ async function gameData(page){
   await openGame(page);
   return page.evaluate(async () => {
     const W = window.WGQ_TEST, maps = {};
-    for(const t of W.TOPICS) if(!maps[t.map]){ const m = await W.loadMap(t.map); maps[t.map] = m.items.map(i => ({n: i.n, cap: i.cap, kind: i.kind, sub: i.sub, dot: !!i.dot})); }
+    for(const t of W.TOPICS) if(!maps[t.map]){ const m = await W.loadMap(t.map); maps[t.map] = {w: m.w, items: m.items.map(i => ({n: i.n, cap: i.cap, kind: i.kind, sub: i.sub, dot: !!i.dot, b: i.b}))}; }
     const flags = {};
     for(const t of W.TOPICS.filter(t => t.flags)) flags[t.map] = Object.keys(await W.flags(t.map));
+    const mapW = {};
+    for(const k in maps){ mapW[k] = maps[k].w; maps[k] = maps[k].items; }
     return {
       topics: W.TOPICS.map(t => ({id: t.id, map: t.map, count: t.count, tab: t.tab, name: t.name, flags: !!t.flags, geo: !!t.geo, parts: t.parts || null})),
-      maps, flags, facts: await W.facts(), lookalikes: W.LOOKALIKES, say: W.SAY, geoAlias: W.GEO_ALIAS, worldFact: W.WORLD_FACT, cap: W.CAP, capNote: W.CAP_NOTE,
+      maps, mapW, flags, facts: await W.facts(), lookalikes: W.LOOKALIKES, say: W.SAY, geoAlias: W.GEO_ALIAS, worldFact: W.WORLD_FACT, cap: W.CAP, capNote: W.CAP_NOTE,
     };
   });
 }
@@ -120,4 +122,14 @@ test('every JSON file is valid', () => {
   const files = ['manifest.webmanifest', ...fs.readdirSync(path.join(ROOT, 'data'), {recursive: true}).filter(f => f.endsWith('.json')).map(f => path.join('data', f))];
   expect(files.length, "JSON files found").toBeGreaterThanOrEqual(19);
   for(const f of files) expect(() => JSON.parse(read(f)), f).not.toThrow();
+});
+
+test('places too small for a finger on a phone have a tap circle', () => {
+  // on a phone a map is about 340 pixels wide; anything under 8 pixels across needs a circle to tap
+  for(const t of D.topics.filter(t => !t.geo)){
+    const items = D.maps[t.map], px = 340 / D.mapW[t.map];
+    expect(px, `${t.map} has a width`).toBeGreaterThan(0);
+    const tiny = items.filter(i => i.b && !i.dot && Math.max(i.b[2] - i.b[0], i.b[3] - i.b[1]) * px < 8).map(i => i.n);
+    expect(tiny, `${t.map}: tiny places with no tap circle`).toEqual([]);
+  }
 });

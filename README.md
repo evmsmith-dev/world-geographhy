@@ -18,7 +18,7 @@ A map quiz for kids: US states, capitals and flags, countries, capitals and flag
 
 ## Updating
 
-Changes now arrive as pull requests on GitHub. Each one runs the automatic tests (see `tests/README.md`): a green check means they passed, a red X means something broke. Review a pull request, then click **Merge**. The tests run again on main, and only if they all pass is the game published to GitHub Pages, about 5 minutes after merging. If they fail, the site keeps the last good version. Each release has its own version stamp.
+Changes now arrive as pull requests on GitHub. Each one runs the automatic tests (see `tests/README.md`): a green check means they passed, a red X means something broke. Review a pull request, then click **Merge**. The tests run again on main, and only if they all pass is the game published to GitHub Pages, about 5 minutes after merging. If they fail, the site keeps the last good version. Publishing stamps the version (`WGQ_BUILD` in `index.html`) with the time of the last change to the game itself, so devices are offered an update only when the game changed; there's no need to change the stamp by hand.
 The app checks for a new version when it opens or comes back on screen (at most once an hour) and shows **A new version is ready** with an **Update** button.
 
 After it's published, GitHub can take a few more minutes before every device sees the new files.
@@ -32,7 +32,7 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 
 | File or folder | Purpose |
 |---|---|
-| `index.html` | The page, with the version stamp |
+| `index.html` | The page. Its version stamp is filled in when the game is published |
 | `sw.js` | Offline support: the list of files saved on the device. It stays at the top level so it can serve the whole game |
 | `manifest.webmanifest` | App name, colors and icons for installing |
 | `src/` | The game's code, in numbered files (`01-helpers.js` … `17-start.js`, see `src/README.md`), and its look (`app.css`) |

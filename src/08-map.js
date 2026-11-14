@@ -56,13 +56,28 @@ function setPlaceClass(n, extra){
 if('ResizeObserver' in window) new ResizeObserver(() => { if(DOTS && Object.keys(DOTS).length && vb && vb.w) setVB(vb); }).observe(svg);
 function raiseDots(last){ for(const k in DOTS) if(k !== last) svg.appendChild(DOTS[k]); if(last && DOTS[last]) svg.appendChild(DOTS[last]); const g = svg.querySelector('#exLabels'); if(g) svg.appendChild(g); }
 // a finger is bigger than a dot: a tap near a dot picks it, so tiny places are easy to hit
-function dotNear(cx, cy){
+// The tap circle a finger tap is meant for, if any. Fingers get some extra room around each circle. But a circle can sit
+// on top of a bigger neighbor (Qatar's on the edge of the UAE, Liechtenstein's on Switzerland): a tap on that neighbor's
+// land only goes to the circle when it's near the circle's middle, so the neighbor can still be tapped.
+const DOT_ROOM = 8, DOT_CORE = 5;
+function dotNear(cx, cy, under){
   let best = null, bd = 1e9;
   for(const k in DOTS){ const c = DOTS[k]; if(c.classList.contains('off') || c.style.display === 'none') continue;
     const r = c.getBoundingClientRect(); if(!r.width) continue;
     const d = Math.hypot(cx - (r.left + r.width/2), cy - (r.top + r.height/2));
-    if(d <= r.width/2 + 8 && d < bd){ bd = d; best = k; } } // the dot plus a little extra for fingers
+    const reach = under && under !== k ? DOT_CORE : r.width/2 + DOT_ROOM;
+    if(d <= reach && d < bd){ bd = d; best = k; } }
   return best;
+}
+// the place drawn under the finger, looking through any tap circles
+function placeUnder(cx, cy){
+  for(const el of document.elementsFromPoint(cx, cy)){
+    if(el.tagName === 'circle') continue;
+    const p = el.closest && el.closest('.st');
+    if(p && svg.contains(p)) return p.classList.contains('off') ? null : p.dataset.n;
+    if(el === svg) return null;
+  }
+  return null;
 }
 function setVB(v){
   const w = clampW(v.w), h = w*VH/VW;
@@ -127,8 +142,10 @@ function endPointer(e){
   if(!pts.has(e.pointerId)) return;
   const tap = e.type==='pointerup' && pts.size===1 && !dragged;
   pts.delete(e.pointerId);
-  if(tap){ const near = e.pointerType === 'mouse' ? null : dotNear(e.clientX, e.clientY); const el = document.elementFromPoint(e.clientX, e.clientY); const p = el && el.closest && el.closest('.st');
-    const n = near || (p && p.dataset.n); if(n) select(n); }
+  if(tap){ let n;
+    if(e.pointerType === 'mouse'){ const el = document.elementFromPoint(e.clientX, e.clientY), p = el && el.closest && el.closest('.st'); n = p && p.dataset.n; } // a mouse is exact
+    else { const under = placeUnder(e.clientX, e.clientY); n = dotNear(e.clientX, e.clientY, under) || under; }
+    if(n) select(n); }
   if(pts.size === 1){ const [p] = [...pts.values()]; drag = {x:p.x, y:p.y, vb:{...vb}}; pinch0 = null; }
   if(!pts.size){ drag = null; pinch0 = null; }
 }

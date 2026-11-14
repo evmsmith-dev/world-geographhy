@@ -122,13 +122,16 @@ function worldSize(n, kind){
   return `<b>${size}.</b> ${esc(fact)}`;
 }
 
-// Mountains & Water: mountain ranges, seas and lakes, on the continent's map with its countries as a gray background
+// Land & Water: mountain ranges, deserts, seas and lakes, on the continent's map with its countries as a gray background
 const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
   'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
   'Carpathian Mountains':['carpathians','carpathian'],'Zagros Mountains':['zagros'],'Drakensberg':['drakensbergs','drakensberg mountains'],'Brazilian Highlands':['brazilian'],'Guiana Highlands':['guiana'],
-  'Río de la Plata':['rio de la plata','river plate','plata'],'Great Australian Bight':['australian bight','bight'],'Gulf of Carpentaria':['carpentaria'],'English Channel':['channel'],'Bay of Biscay':['biscay']};
-const GEO_WORD = {range:'mountain range', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
+  'Río de la Plata':['rio de la plata','river plate','plata'],'Great Australian Bight':['australian bight','bight'],'Gulf of Carpentaria':['carpentaria'],'English Channel':['channel'],'Bay of Biscay':['biscay'],
+  'Sahara':['sahara desert'],'Kalahari Desert':['kalahari'],'Namib Desert':['namib'],'Arabian Desert':['arabian','rub al khali','empty quarter'],'Gobi Desert':['gobi'],'Taklamakan Desert':['taklamakan','taklimakan'],
+  'Thar Desert':['thar','great indian desert'],'Atacama Desert':['atacama'],'Great Victoria Desert':['great victoria'],'Great Sandy Desert':['great sandy'],'Simpson Desert':['simpson'],
+  'Sonoran Desert':['sonoran','sonora'],'Chihuahuan Desert':['chihuahuan','chihuahua'],'Mojave Desert':['mojave','mohave']};
+const GEO_WORD = {range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
 const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
 const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
 // "That's the Black Sea", "That's the Alps", but "That's Lake Erie", "That's Patagonia" and "That's France"
@@ -156,23 +159,23 @@ const TOPICS = [
     ask:()=> 'Which continent or ocean is this?', flashFront:()=> 'Which continent or ocean is this?', card:'locate',
     back:(n,item)=>({answer:n, sub:worldSize(n, item.kind)}) },
   ...regionTopics('eu', 'Europe', 'europe', 44, 14, 'Find all 44 countries in Europe.', 'Name the capital of every country in Europe.', EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
-  geoTopic('eu', 'Europe', 'europe', 14, 14, 'Find 6 mountain ranges and 8 seas, bays and channels in Europe.'),
+  geoTopic('eu', 'Europe', 'europe', 14, 14, 'Find 6 mountain ranges and 8 seas, bays and channels in Europe. (Europe has no big deserts!)'),
   ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
-  geoTopic('af', 'Africa', 'africa', 10, 14, 'Find 3 mountain areas, 3 seas and gulfs, and 4 lakes in Africa.'),
+  geoTopic('af', 'Africa', 'africa', 13, 14, 'Find 3 mountain areas, 3 deserts, 3 seas and gulfs, and 4 lakes in Africa.'),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
-  geoTopic('as', 'Asia', 'asia', 15, 14, 'Find 4 mountain ranges, 7 seas, gulfs and bays, and 4 lakes in Asia.'),
+  geoTopic('as', 'Asia', 'asia', 19, 14, 'Find 4 mountain ranges, 4 deserts, 7 seas, gulfs and bays, and 4 lakes in Asia.'),
   ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, 'Find all 14 countries in Oceania.', 'Name the capital of every country in Oceania.', OC_ALIAS, OC_CAP_ALIAS),
-  geoTopic('oc', 'Oceania', 'oceania', 6, 12, 'Find 2 mountain ranges and 4 seas, gulfs and bays in Oceania.'),
+  geoTopic('oc', 'Oceania', 'oceania', 9, 12, 'Find 2 mountain ranges, 3 deserts, and 4 seas, gulfs and bays in Oceania.'),
   ...regionTopics('na', 'North America', 'namerica', 23, 20, 'Find all 23 countries in North America.', 'Name the capital of every country in North America.', NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
-  geoTopic('na', 'North America', 'namerica', 14, 20, 'Find 4 mountain ranges, 4 seas and bays, the 5 Great Lakes and the Great Salt Lake in North America.'),
+  geoTopic('na', 'North America', 'namerica', 17, 20, 'Find 4 mountain ranges, 3 deserts, 4 seas and bays, the 5 Great Lakes and the Great Salt Lake in North America.'),
   ...regionTopics('sa', 'South America', 'samerica', 12, 6, 'Find all 12 countries in South America.', 'Name the capital of every country in South America.', {}, SA_CAP_ALIAS),
-  geoTopic('sa', 'South America', 'samerica', 6, 12, 'Find the Andes, 2 highland areas, Patagonia, Lake Titicaca and the Río de la Plata in South America.'),
+  geoTopic('sa', 'South America', 'samerica', 7, 12, 'Find the Andes, 2 highland areas, Patagonia, the Atacama Desert, Lake Titicaca and the Río de la Plata in South America.'),
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
 function geoTopic(id, region, map, count, maxZoom, blurb){
-  return {id:id+'-geo', group:region, map:map+'-geo', count, maxZoom, geo:true, card:'locate', tab:'Mountains & Water', name:`Mountains & Water of ${region}`, blurb,
-    answer:n=>n, nouns:'mountains, seas and lakes', listWord:'places', itemWord:'place', alias:GEO_ALIAS,
-    tapHint:'Tap a mountain range, sea or lake', tapWhat:'Tap a mountain range, sea or lake, find its name', ask:geoAsk, flashFront:geoAsk,
+  return {id:id+'-geo', group:region, map:map+'-geo', count, maxZoom, geo:true, card:'locate', tab:'Land & Water', name:`Land & Water of ${region}`, blurb,
+    answer:n=>n, nouns:'mountains, deserts, seas and lakes', listWord:'places', itemWord:'place', alias:GEO_ALIAS,
+    tapHint:'Tap a mountain, desert, sea or lake', tapWhat:'Tap a mountain, desert, sea or lake, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A ${GEO_WORD[geoSub(n)]} in ${esc(region)}`})};
 }
 function regionTopics(id, region, map, count, maxZoom, blurb, capBlurb, alias, capAlias, parts){
@@ -355,7 +358,7 @@ const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','
   'Belmopan':'bel-moh-pan','Paramaribo':'pah-rah-mah-ree-boh','Antananarivo':'an-tah-nah-nah-ree-voh','Gaborone':'hah-boh-roh-nay','São Tomé and Príncipe':'sow toh-may and preen-see-pay',
   'São Tomé':'sow toh-may','Eswatini':'eh-swah-tee-nee','Djibouti':'jih-boo-tee','Timor-Leste':'tee-mor lesh-tay','Dili':'dee-lee','Bandar Seri Begawan':'bun-dar seh-ree beh-gah-wan',
   'Vientiane':'vee-en-tee-ahn','Lake Titicaca':'lake tee-tee-kah-kah','Lake Baikal':'lake by-kahl','Lake Tanganyika':'lake tan-gan-yee-kah','Aegean Sea':'ih-jee-un sea',
-  'Tian Shan':'tee-en shahn','Pyrenees':'peer-uh-neez','Caucasus Mountains':'kaw-kuh-sus mountains','Sierra Madre':'see-air-uh mah-dray','Hindu Kush':'hin-doo koosh','Drakensberg':'drah-kenz-berg','Zagros Mountains':'zag-ross mountains','Carpathian Mountains':'kar-pay-thee-un mountains','Río de la Plata':'ree-oh day lah plah-tah','Guiana Highlands':'ghee-ah-nah highlands','Gulf of Carpentaria':'gulf of kar-pen-tair-ee-uh','Great Australian Bight':'great australian bite','Patagonia':'pat-uh-go-nee-uh','Aral Sea':'air-ul sea','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
+  'Tian Shan':'tee-en shahn','Pyrenees':'peer-uh-neez','Caucasus Mountains':'kaw-kuh-sus mountains','Sierra Madre':'see-air-uh mah-dray','Hindu Kush':'hin-doo koosh','Drakensberg':'drah-kenz-berg','Zagros Mountains':'zag-ross mountains','Carpathian Mountains':'kar-pay-thee-un mountains','Río de la Plata':'ree-oh day lah plah-tah','Guiana Highlands':'ghee-ah-nah highlands','Gulf of Carpentaria':'gulf of kar-pen-tair-ee-uh','Great Australian Bight':'great australian bite','Patagonia':'pat-uh-go-nee-uh','Aral Sea':'air-ul sea','Chihuahuan Desert':'chee-wah-wun desert','Taklamakan Desert':'tah-kluh-muh-kahn desert','Kalahari Desert':'kah-lah-hah-ree desert','Namib Desert':'nah-mib desert','Mojave Desert':'mo-hah-vee desert','Sonoran Desert':'so-nor-un desert','Atacama Desert':'ah-tah-kah-mah desert','Thar Desert':'tar desert','Sahara':'suh-hair-uh','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
   'Belize':'beh-leez','Managua':'mah-nah-gwah','San José':'san ho-zay','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
   'Palikir':'pah-lee-keer','Majuro':'mah-joo-roh','Funafuti':'foo-nah-foo-tee','Tuvalu':'too-vah-loo','Nauru':'nah-oo-roo','Yaren':'yah-ren','Apia':'ah-pee-ah',
   'Vanuatu':'vah-noo-ah-too','Port Vila':'port vee-lah','Honiara':'hoh-nee-ah-rah','Phnom Penh':'puh-nom pen','Nur-Sultan':'noor sool-tahn','Astana':'ah-stah-nah'};
@@ -595,7 +598,7 @@ $('regionBack').onclick = () => popLayer();
 $('exploreBtn').onclick = () => enterExplore(curRegion.name, false, TOPIC[curTab] && TOPIC[curTab].geo ? curTab : null);
 async function renderRegion(){
   if(!curRegion || !player) return;
-  const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Mountains & Water has no parts
+  const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Land & Water has no parts
   $('regionTitle').textContent = r.name;
   $('regionTabs').hidden = r.topics.length < 2;
   $('regionTabs').classList.toggle('many', r.topics.length > 3);
@@ -631,7 +634,7 @@ $('homeSettings').onclick = () => openSettings();
 const MAPS = {};
 const loadMap = name => MAPS[name] || (MAPS[name] = fetch(name + '.json').then(r => { if(!r.ok) throw new Error('map ' + r.status); return r.json(); })
   .then(async m => {
-    if(m.base){ // a Mountains & Water map: its continent's countries become a plain gray background
+    if(m.base){ // a Land & Water map: its continent's countries become a plain gray background
       const b = await loadMap(m.base);
       Object.assign(m, {w:b.w, h:b.h, seabg:b.seabg, other:b.other, bgland:b.items.map(i => i.d).join('')});
     }
@@ -650,7 +653,7 @@ function drawMap(){
   NAMES = M.items.map(i => i.n).sort();
   ORDER = M.items.slice().sort((a,b) => a.c[0]-b.c[0]).map(i => i.n);
   const path = i => `<path class="st ${kindClass(i)}" d="${i.d}" data-n="${esc(i.n)}" tabindex="0" role="button"/>`;
-  // bottom to top: sea, oceans and seas, other land, the countries' gray background (Mountains & Water), then places on land
+  // bottom to top: sea, oceans and seas, other land, the countries' gray background (Land & Water), then places on land
   svg.innerHTML = (M.seabg ? `<rect class="seabg" width="${VW}" height="${VH}"/>` : '') + (M.sphere ? `<path class="globe" d="${M.sphere}"/>` : '') +
     M.items.filter(sinks).map(path).join('') +
     (M.other ? `<path class="other" d="${M.other}"/>` : '') +
@@ -666,8 +669,8 @@ function drawMap(){
 svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if(p && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(p.dataset.n); } });
 
 const clampW = w => Math.min(VW, Math.max(MINW, w));
-// how a place is drawn: land, ocean, water (seas and lakes) or mountain range
-const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : 'land';
+// how a place is drawn: land, ocean, water (seas and lakes), mountain range or desert
+const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : i.kind === 'desert' ? 'desert' : 'land';
 // oceans and seas lie under the land, so they are never brought to the front over it
 const sinks = i => i.kind === 'ocean' || i.layer === 'under';
 // color a place and its tap dot; extra is the state ('sel', 'ok'…). The mixed-up place keeps its outline for a moment.
@@ -1102,6 +1105,11 @@ const LOOKALIKES = [
   ['name','Aral Sea','Caspian Sea','The Caspian Sea is the huge one farther west. The Aral Sea is the small one to its east.'],
   ['name','Gulf of Guinea','Gulf of Aden','The Gulf of Guinea is on Africa’s west coast. The Gulf of Aden is on the east, by the Horn of Africa.'],
   ['name','Brazilian Highlands','Guiana Highlands','The Brazilian Highlands are the big area in eastern Brazil. The Guiana Highlands are the smaller area farther north.'],
+  ['name','Great Victoria Desert','Great Sandy Desert','The Great Sandy Desert is farther north, near the northwest coast. The Great Victoria Desert is in the south.'],
+  ['name','Sonoran Desert','Chihuahuan Desert','The Sonoran Desert is in the west, by the Gulf of California. The Chihuahuan Desert is farther east, near Texas.'],
+  ['name','Mojave Desert','Sonoran Desert','The Mojave Desert is the northern one, around Death Valley and Las Vegas. The Sonoran Desert is south of it.'],
+  ['name','Kalahari Desert','Namib Desert','The Namib Desert is the thin strip along the coast. The Kalahari Desert is the bigger one inland, to its east.'],
+  ['name','Gobi Desert','Taklamakan Desert','The Gobi Desert is farther east, in Mongolia and China. The Taklamakan Desert is to the west, below the Tian Shan.'],
   ['name','Gulf of Carpentaria','Great Australian Bight','The Gulf of Carpentaria is in the north of Australia. The Great Australian Bight is the big curve in the south.'],
   ['name','Arkansas','Kansas','Kansas is in the middle of the country. Arkansas is farther southeast, next to the Mississippi River.'],
   ['flag','Belgium','Germany','Belgium’s stripes go up and down. Germany’s go across.'],
@@ -1204,6 +1212,14 @@ function nextFind(){
 $('skipBtn').onclick = () => { if(G && !G.busy && findTarget()) revealFind(`Skipped. Here is <b>${esc(findTarget())}</b>.`); };
 
 /* ---- Easy answers: pick from 4 instead of typing ---- */
+// wrong choices, in the order to offer them. For mountains and water, places of the same kind come first,
+// so "Which lake is this?" offers other lakes, not the Andes
+function choiceOrder(right, list){
+  const mix = shuffle(list.filter(v => v !== right));
+  if(!(T && T.geo && ITEM[right])) return mix;
+  const r = ITEM[right], rank = v => !ITEM[v] ? 3 : ITEM[v].sub === r.sub ? 0 : ITEM[v].kind === r.kind ? 1 : 2;
+  return mix.sort((a, b) => rank(a) - rank(b));
+}
 const easy = () => !!(player && (player.prefs.easy || (T && T.flags))) && G && (G.mode === 'test' || G.mode === 'practice');
 function renderChoices(){
   const box = $('choices');
@@ -1211,8 +1227,8 @@ function renderChoices(){
   let opts = G.choices[current];
   if(!opts){ // the right answer plus 3 others, kept the same if you come back to this one
     const right = key(current);
-    const others = shuffle(pool().filter(v => v !== right)).slice(0, 3);
-    if(others.length < 3) others.push(...shuffle(NAMES.map(key).filter(v => v !== right && !others.includes(v))).slice(0, 3 - others.length));
+    const others = choiceOrder(right, pool()).slice(0, 3);
+    if(others.length < 3) others.push(...choiceOrder(right, NAMES.map(key).filter(v => !others.includes(v))).slice(0, 3 - others.length));
     opts = G.choices[current] = shuffle([right, ...others]);
   }
   box.classList.toggle('flags', !!T.flags);
@@ -1320,7 +1336,7 @@ function drawCardArt(el, n, side){
     el.setAttribute('viewBox', `${x0-pad} ${y0-pad} ${w+2*pad} ${h+2*pad}`);
     const k = it.fk || it.k;
     el.innerHTML = `<path class="item" d="${it.fd || it.d}"/>` + (k ? `<polygon class="star" points="${starPts(k[0], k[1], r)}"/>` : '');
-  } else if(T.geo){ // the continent, zoomed in around this mountain range, sea or lake
+  } else if(T.geo){ // the continent, zoomed in around this mountain range, desert, sea or lake
     const [x0,y0,x1,y1] = it.b, cx = (x0+x1)/2, cy = (y0+y1)/2, w = Math.min(VW, Math.max((x1-x0)*1.8, (y1-y0)*1.8*4/3, VW*0.45)), h = w*3/4;
     el.setAttribute('viewBox', `${cx-w/2} ${cy-h/2} ${w} ${h}`);
     const cls = i => i.n === n ? 'hi' : 'dim geo' + kindClass(i);
@@ -1555,7 +1571,7 @@ function enterExplore(regionName, fromPicker, topicId){
   T = topicId && TOPIC[topicId] ? TOPIC[topicId] : R.topics[0];
   EXPLORE = {R, labels: LS.get('labels') !== '0', geo: !!T.geo};
   if(R.map !== 'world') loadFacts();
-  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>${T.geo ? 'Explore mountains & water' : 'Explore the map'}</small>`;
+  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>${T.geo ? 'Explore land & water' : 'Explore the map'}</small>`;
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
   $('sub').textContent = 'Loading the map…'; $('tally').textContent = ''; $('clock').hidden = true;
   (async () => {
@@ -1745,7 +1761,7 @@ async function dailyShow(){
     $('sub').textContent = 'Look at the orange place on the map, then pick the right answer.';
     $('selLabel').textContent = T.flags ? `Which flag belongs to this ${T.itemWord || 'country'}?` : T.showsItem ? `What is the capital of ${q.n}?` : T.ask(q.n);
     fq.hidden = true; ch.hidden = false;
-    const right = key(q.n), others = shuffle(NAMES.map(key).filter(v => v !== right)).slice(0, 3), opts = shuffle([right, ...others]);
+    const right = key(q.n), others = choiceOrder(right, NAMES.map(key)).slice(0, 3), opts = shuffle([right, ...others]);
     ch.classList.toggle('flags', !!T.flags);
     ch.innerHTML = opts.map((v,i) => T.flags ? `<button data-dv="${esc(v)}" aria-label="Flag ${i+1}">${flagImg(v)}</button>` : `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
     focusItem(q.n);
@@ -1783,7 +1799,7 @@ $('choices').addEventListener('click', e => {
   b.classList.add(right ? 'picked-ok' : 'picked-bad');
   const r = $('choices').querySelector(`[data-dv="${CSS.escape(key(q.n))}"]`); if(r && !right) r.classList.add('picked-ok');
   const w = right ? null : placeOf(v); if(w){ flashMix(w); noteMix(q.n, w); }
-  dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is <b>${esc(key(q.n))}</b>`}. ${mixTip(q.n, w)}`);
+  dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : T.geo ? `That's ${esc(the(v))}` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is ${T.geo ? esc(the(key(q.n))) : `<b>${esc(key(q.n))}</b>`}`}. ${mixTip(q.n, w)}`);
 });
 async function dailyFinish(){
   const score = DAILY.right, first = !streakNow(player).doneToday;
@@ -1833,7 +1849,7 @@ const BADGES = [
       desc:`Learn all ${names.length} ${t.nouns} in ${partPhrase(t.group, part)}.`, group:t.group, topic:t.id, part, need:names.length})) : []),
   ]),
 ];
-function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : t.geo ? '⛰️' : '🗺️'; }
+function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : t.geo ? '🏞️' : '🗺️'; }
 async function computeBadges(p){
   const attempts = (await DB.all('attempts')).filter(a => a.pid === p.id && TOPIC[a.topic]);
   const items = (await DB.all('items')).filter(r => r.pid === p.id);
@@ -1950,7 +1966,7 @@ $('importFile').addEventListener('change', async e => {
 function openHelp(){
   openPanel({kind:'full', title:'How to play', html:`
     <ol class="steps">
-      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, North America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b>, <b>Flags</b>, or <b>Mountains & Water</b> for mountain ranges, seas and lakes. Want a shorter game? Big places like Europe, Africa, Asia and North America have a <b>Part</b> row, so you can play just one part, like West Africa or the Caribbean. Learn every one in a part to earn its badge 🏅.</p></li>
+      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, North America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b>, <b>Flags</b>, or <b>Land & Water</b> for mountain ranges, deserts, seas and lakes. Want a shorter game? Big places like Europe, Africa, Asia and North America have a <b>Part</b> row, so you can play just one part, like West Africa or the Caribbean. Learn every one in a part to earn its badge 🏅.</p></li>
       <li><h3>Look around first</h3><p>Tap <b>🔍 Explore the map</b> to look around with no quiz. Tap any place to see its name, flag, capital and a fun fact. Turn <b>Show names</b> off to hide the names and quiz yourself.</p></li>
       <li><h3>Pick how to play</h3><p><b>Learn:</b> flashcards, one at a time.<br><b>Find it:</b> the game shows a name, and you tap it on the map. You get 3 tries.<br><b>Practice:</b> find out right away if you are right.<br><b>Test:</b> answer them all, then press <b>Review</b> to see your score.</p></li>
       <li><h3>Tap the map</h3><p>In Practice and Test, tap a place. It turns orange. Then start typing its name in the box. Pick the name from the list and press <b>Save</b> or <b>Check</b>. Don't worry about spelling. The list helps you. Don't like typing? Turn on <b>Easy answers</b> in <b>⚙ Settings</b> to pick from 4 answers instead. Flags games always let you pick from 4.</p></li>

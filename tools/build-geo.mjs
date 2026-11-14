@@ -28,25 +28,35 @@ const FEATURES = {
     ['Sierra Madre','range','mtn',['SIERRA MADRE OCCIDENTAL','SIERRA MADRE ORIENTAL','Sierra Madre del Sur']],
     ['Gulf of Mexico','gulf','sea',['Gulf of Mexico','Bahía de Campeche']], ['Hudson Bay','bay','sea',['Hudson Bay','James Bay']], ['Caribbean Sea','sea','sea',['Caribbean Sea','Gulf of Honduras']], ['Bering Sea','sea','sea',['Bering Sea']],
     ['Lake Superior','lake','lake',['Lake Superior']], ['Lake Michigan','lake','lake',['Lake Michigan']], ['Lake Huron','lake','lake',['Lake Huron']], ['Lake Erie','lake','lake',['Lake Erie']], ['Lake Ontario','lake','lake',['Lake Ontario']],
-    ['Sierra Nevada','range','mtn',['SIERRA NEVADA']], ['Great Salt Lake','lake','lake',['Great Salt Lake']]],
+    ['Sierra Nevada','range','mtn',['SIERRA NEVADA']], ['Great Salt Lake','lake','lake',['Great Salt Lake']],
+    ['Sonoran Desert','desert','mtn',['SONORAN DESERT']], ['Chihuahuan Desert','desert','mtn',['CHIHUAHUAN DESERT']], ['Mojave Desert','desert','hand',['Mojave Desert']]],
   // big land regions come first, so they draw under the mountain ranges they touch (Patagonia under the Andes)
   samerica: [['Patagonia','region','mtn',['PATAGONIA']], ['Brazilian Highlands','highlands','mtn',['BRAZILIAN HIGHLANDS']], ['Guiana Highlands','highlands','mtn',['GUIANA HIGHLANDS']],
-    ['Andes','range','mtn',['ANDES']], ['Lake Titicaca','lake','lake',['Lago Titicaca']], ['Río de la Plata','estuary','sea',['Río de la Plata']]],
+    ['Andes','range','mtn',['ANDES']], ['Lake Titicaca','lake','lake',['Lago Titicaca']], ['Río de la Plata','estuary','sea',['Río de la Plata']], ['Atacama Desert','desert','mtn',['DESIERTO DE ATACAMA'],{top:true}]],
   europe: [['Alps','range','mtn',['ALPS']], ['Pyrenees','range','mtn',['PYRENEES']], ['Ural Mountains','range','mtn',['URAL MOUNTAINS']], ['Caucasus Mountains','range','mtn',['CAUCASUS MTS.','Lesser Caucasus']],
     ['Scandinavian Mountains','range','mtn',['KJØLEN MOUNTAINS']],
     ['Mediterranean Sea','sea','sea',['Mediterranean Sea','Alboran Sea','Balearic Sea','Golfe du Lion','Gulf of Gabès','Gulf of Sidra','Ionian Sea','Ligurian Sea','Tyrrhenian Sea']], ['Adriatic Sea','sea','sea',['Adriatic Sea']], ['Aegean Sea','sea','sea',['Aegean Sea','Sea of Crete']], ['Black Sea','sea','sea',['Black Sea']], ['Baltic Sea','sea','sea',['Baltic Sea','Gulf of Bothnia','Gulf of Finland','Gulf of Riga','Mecklenburger Bucht']], ['North Sea','sea','sea',['North Sea','Skagerrak']],
     ['Carpathian Mountains','range','mtn',['CARPATHIAN MOUNTAINS']], ['Bay of Biscay','bay','sea',['Bay of Biscay']], ['English Channel','channel','sea',['English Channel']]],
   africa: [['Atlas Mountains','range','mtn',['ATLAS MOUNTAINS','HAUT ATLAS','ATLAS SAHARIEN','Anti Atlas','Moyen Atlas','Atlas Tellien']], ['Ethiopian Highlands','highlands','mtn',['ETHIOPIAN HIGHLANDS']],
     ['Red Sea','sea','sea',['Red Sea']], ['Lake Victoria','lake','lake',['Lake Victoria']], ['Lake Tanganyika','lake','lake',['Lake Tanganyika']], ['Lake Malawi','lake','lake',['Lake Malawi']],
-    ['Drakensberg','range','mtn',['DRAKENSBERG']], ['Gulf of Guinea','gulf','sea',['Gulf of Guinea','Bight of Benin','Bight of Biafra']], ['Gulf of Aden','gulf','sea',['Gulf of Aden']], ['Lake Chad','lake','lake',['Lake Chad']]],
+    ['Drakensberg','range','mtn',['DRAKENSBERG']], ['Gulf of Guinea','gulf','sea',['Gulf of Guinea','Bight of Benin','Bight of Biafra']], ['Gulf of Aden','gulf','sea',['Gulf of Aden']], ['Lake Chad','lake','lake',['Lake Chad']],
+    ['Sahara','desert','mtn',['SAHARA']], ['Kalahari Desert','desert','mtn',['KALAHARI DESERT']], ['Namib Desert','desert','mtn',['NAMIB DESERT']]],
   asia: [['Himalayas','range','mtn',['HIMALAYAS']], ['Hindu Kush','range','mtn',['HINDU KUSH']], ['Tian Shan','range','mtn',['TIAN SHAN']],
     ['Caspian Sea','lake','sea',['Caspian Sea']], ['Arabian Sea','sea','sea',['Arabian Sea']], ['Persian Gulf','gulf','sea',['Persian Gulf']], ['Bay of Bengal','bay','sea',['Bay of Bengal']],
     ['South China Sea','sea','sea',['South China Sea','Gulf of Tonkin']], ['Sea of Japan','sea','sea',['Sea of Japan']], ['Lake Baikal','lake','lake',['Lake Baikal']],
-    ['Zagros Mountains','range','mtn',['ZAGROS MOUNTAINS']], ['Yellow Sea','sea','sea',['Yellow Sea','Bo Hai']], ['East China Sea','sea','sea',['East China Sea']], ['Aral Sea','lake','lake',['South Aral Sea','North Aral Sea']], ['Dead Sea','lake','lake',['Dead Sea']]],
+    ['Zagros Mountains','range','mtn',['ZAGROS MOUNTAINS']], ['Yellow Sea','sea','sea',['Yellow Sea','Bo Hai']], ['East China Sea','sea','sea',['East China Sea']], ['Aral Sea','lake','lake',['South Aral Sea','North Aral Sea']], ['Dead Sea','lake','lake',['Dead Sea']],
+    ['Arabian Desert','desert','mtn',['RUB’ AL KHALI','An Nafud Desert']], ['Gobi Desert','desert','mtn',['GOBI DESERT']], ['Taklamakan Desert','desert','mtn',['TAKLIMAKAN DESERT']], ['Thar Desert','desert','mtn',['THAR DESERT']]],
   oceania: [['Great Dividing Range','range','mtn',['GREAT DIVIDING RANGE']], ['Coral Sea','sea','sea',['Coral Sea']], ['Tasman Sea','sea','sea',['Tasman Sea']],
-    ['Southern Alps','range','mtn',['SOUTHERN ALPS']], ['Gulf of Carpentaria','gulf','sea',['Gulf of Carpentaria']], ['Great Australian Bight','bay','sea',['Great Australian Bight']]],
+    ['Southern Alps','range','mtn',['SOUTHERN ALPS']], ['Gulf of Carpentaria','gulf','sea',['Gulf of Carpentaria']], ['Great Australian Bight','bay','sea',['Great Australian Bight']],
+    ['Great Victoria Desert','desert','mtn',['GREAT VICTORIA DESERT']], ['Great Sandy Desert','desert','mtn',['GREAT SANDY DESERT']], ['Simpson Desert','desert','mtn',['Simpson Desert']]],
 };
-const SRC = {sea: load('ne_10m_geography_marine_polys'), lake: load('ne_50m_lakes'), mtn: load('ne_10m_geography_regions_polys')};
+// Natural Earth has no Mojave Desert, so its outline is drawn here by hand (longitude, latitude), going clockwise:
+// from the Antelope Valley north past Death Valley, east to Las Vegas and the Colorado River, then back west along the edge of the Sonoran Desert
+const HAND = [{type:'Feature', properties:{name:'Mojave Desert'}, geometry:{type:'Polygon', coordinates:[[
+  [-118.45,34.75], [-118.2,35.25], [-117.95,35.75], [-117.55,36.2], [-117.2,36.75], [-116.8,37.1], [-116.3,36.95], [-115.7,36.65], [-115.1,36.45],
+  [-114.55,36.2], [-114.05,35.75], [-114.2,35.2], [-114.45,34.75], [-114.9,34.35], [-115.5,34.05], [-116.2,33.95], [-116.75,34.15], [-117.3,34.35],
+  [-117.85,34.5], [-118.45,34.75]]]}}];
+const SRC = {sea: load('ne_10m_geography_marine_polys'), lake: load('ne_50m_lakes'), mtn: load('ne_10m_geography_regions_polys'), hand: HAND};
 const nameOf = f => f.properties.name || f.properties.NAME;
 
 // Ramer–Douglas–Peucker on one closed ring (split at the far point first, so the ring can't collapse)
@@ -73,7 +83,7 @@ for(const [region, list] of Object.entries(FEATURES)){
   const proj = d3.geoAzimuthalEqualArea().rotate([-P.c[0], -P.c[1]]).scale(P.s).translate(P.t).clipAngle(90).precision(0.1);
   const box = [[[0,0],[P.w,0],[P.w,P.h],[0,P.h],[0,0]]];
   const items = [];
-  for(const [n, sub, src, dataNames] of list){
+  for(const [n, sub, src, dataNames, opt = {}] of list){
     const feats = SRC[src].filter(f => dataNames.includes(nameOf(f)));
     if(!feats.length) throw new Error('not found: ' + n);
     // project each feature to flat map coordinates (d3 handles the globe; we read the projected rings back)
@@ -89,7 +99,7 @@ for(const [region, list] of Object.entries(FEATURES)){
     // several features (the sub-ranges of the Atlas, the parts of the Mediterranean) overlap or touch: join them
     let shape = parts.length > 1 ? pc.union(...parts) : (parts[0] || []);
     shape = pc.intersection(shape, box);               // only what is on this map
-    const tol = src === 'mtn' ? 1.2 : 0.6;
+    const tol = src === 'mtn' || src === 'hand' ? 1.2 : 0.6;
     shape = shape.map(poly => poly.map(r => simplifyRing(r, tol)).filter(r => r.length >= 3 && Math.abs(area(r)) > 0.8)).filter(p => p.length);
     if(!shape.length){ console.log(`  ${region}: ${n} is off this map, skipped`); continue; }
     const d = shape.map(poly => poly.map(r => 'M' + r.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L') + 'Z').join('')).join('');
@@ -97,10 +107,17 @@ for(const [region, list] of Object.entries(FEATURES)){
     const b = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map(v => +v.toFixed(1));
     const big = shape.map(p => p[0]).sort((u, v) => Math.abs(area(v)) - Math.abs(area(u)))[0];
     let c = centroid(big).map(v => +v.toFixed(1));
-    const item = {n, kind: src === 'mtn' ? 'mountain' : 'water', sub, layer: (sub === 'lake' || src === 'mtn') ? 'over' : 'under', d, b, c};
+    const onLand = src === 'mtn' || src === 'hand';
+    const item = {n, kind: sub === 'desert' ? 'desert' : onLand ? 'mountain' : 'water', sub, layer: (sub === 'lake' || onLand) ? 'over' : 'under', d, b, c};
+    if(opt.top) item.top = 1;
     if(Math.max(b[2]-b[0], b[3]-b[1]) < (sub === 'lake' ? 32 : 14)) item.dot = c; // too small to tap: give it a tap circle (lakes sit inside land and mountains, so a bit more generous)
     items.push(item);
   }
+  // places on land are drawn bottom to top: deserts, then big regions and highlands, then mountain ranges, then lakes.
+  // A desert that lies inside a mountain range (the Atacama, in the Andes) is marked top, so it sits above the range
+  const rank = i => i.layer === 'under' ? 0 : i.top ? 4 : i.sub === 'desert' ? 1 : (i.sub === 'region' || i.sub === 'highlands') ? 2 : i.sub === 'range' ? 3 : 5;
+  items.sort((u, v) => rank(u) - rank(v));
+  items.forEach(i => delete i.top);
   const out = {base: region, items};
   fs.writeFileSync(path.join(OUT, `${region}-geo.json`), JSON.stringify(out));
   console.log(region, items.length, 'features', (JSON.stringify(out).length/1024).toFixed(0) + ' KB', items.filter(i => i.dot).map(i => i.n).join(', '));

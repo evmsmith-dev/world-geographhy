@@ -2,7 +2,7 @@
 
 These scripts build the game's map files. The game doesn't use them; they're here so the maps can be rebuilt.
 
-## build-geo.mjs: Mountains & Water maps
+## build-geo.mjs: Land & Water maps
 
 Builds `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`, `namerica-geo.json` and `samerica-geo.json`.
 
@@ -12,3 +12,5 @@ Builds `europe-geo.json`, `africa-geo.json`, `asia-geo.json`, `oceania-geo.json`
 3. `node tools/build-geo.mjs <that folder> .`
 
 The list of features and each continent map's projection are at the top of the script. The projections were recovered from the existing country maps, to within 0.03 pixels, so the features line up with the countries.
+
+Natural Earth has no Mojave Desert, so the script draws its outline by hand from a list of longitude/latitude points (`HAND` in the script). Edit those points to reshape it.

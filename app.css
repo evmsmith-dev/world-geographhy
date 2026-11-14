@@ -463,7 +463,7 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
   #scrRegion .tabs.many button[aria-selected="true"],.tabs.many button[aria-selected="true"]{background:var(--btn)}
 }
 
-/* Mountains & Water: countries become a quiet gray background; seas and lakes are blue, mountain ranges brown */
+/* Land & Water: countries become a quiet gray background; seas and lakes are blue, mountain ranges brown, deserts sandy yellow */
 .bgland{fill:var(--other);stroke:color-mix(in srgb,var(--border) 70%,transparent);stroke-width:.6;vector-effect:non-scaling-stroke;pointer-events:none}
 .map .st.water{fill:color-mix(in srgb,#2f7fc8 55%,var(--sea));stroke:color-mix(in srgb,#2f7fc8 70%,var(--ink));stroke-width:.8}
 .map .st.mtn{fill:color-mix(in srgb,#9a6b3f 60%,var(--land));stroke:color-mix(in srgb,#9a6b3f 70%,var(--ink));stroke-width:.8}
@@ -477,6 +477,12 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 .map .st.water.off,.map .st.mtn.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
 .map .st.water.mixup,.map .st.mtn.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))}
 .map .st.water.wrongflash,.map .st.mtn.wrongflash{fill:var(--bad)}
+.map .st.desert{fill:color-mix(in srgb,#e6c25a 65%,var(--land));stroke:color-mix(in srgb,#c79a2e 75%,var(--ink));stroke-width:.8}
+@media (hover:hover){.map .st.desert:hover{fill:color-mix(in srgb,#e6c25a 50%,var(--sel) 40%)}}
+.map .st.desert.done{fill:var(--answered)} .map .st.desert.ok{fill:var(--ok)} .map .st.desert.bad{fill:var(--bad)} .map .st.desert.sel{fill:var(--sel)}
+.map .st.desert.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.desert.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.desert.wrongflash{fill:var(--bad)}
 svg.shape path.geowater{fill:color-mix(in srgb,#2f7fc8 40%,var(--sea));stroke:none}
 svg.shape path.geomtn{fill:color-mix(in srgb,#9a6b3f 45%,var(--land));stroke:none}
+svg.shape path.geodesert{fill:color-mix(in srgb,#e6c25a 50%,var(--land));stroke:none}
 svg.shape rect.dimsea{fill:var(--sea);stroke:none}

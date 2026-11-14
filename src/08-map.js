@@ -42,7 +42,7 @@ svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if
 
 const clampW = w => Math.min(VW, Math.max(MINW, w));
 // how a place is drawn: land, ocean, water (seas and lakes), mountain range or desert
-const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : i.kind === 'desert' ? 'desert' : i.kind === 'park' ? 'park' : i.kind === 'city' ? 'city' : i.kind === 'plain' ? 'plain' : i.kind === 'usregion' ? `usregion tone${i.tone}` : 'land';
+const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : i.kind === 'desert' ? 'desert' : i.kind === 'park' ? 'park' : i.kind === 'city' ? 'city' : i.kind === 'plain' ? 'plain' : i.kind === 'river' ? 'river' : i.kind === 'usregion' ? `usregion tone${i.tone}` : 'land';
 // oceans and seas lie under the land, so they are never brought to the front over it
 const sinks = i => i.kind === 'ocean' || i.layer === 'under';
 // color a place and its tap dot; extra is the state ('sel', 'ok'…). The mixed-up place keeps its outline for a moment.
@@ -67,6 +67,24 @@ function dotNear(cx, cy, under){
     const d = Math.hypot(cx - (r.left + r.width/2), cy - (r.top + r.height/2));
     const reach = under && under !== k ? DOT_CORE : r.width/2 + DOT_ROOM;
     if(d <= reach && d < bd){ bd = d; best = k; } }
+  return best;
+}
+// A river is a thin line, so a finger tap counts for it when it lands within a few pixels of the line
+const RIVER_ROOM = 8;
+function riverNear(cx, cy){
+  const rivers = M && M.items.filter(i => i.kind === 'river' && els[i.n] && !els[i.n].classList.contains('off'));
+  if(!rivers || !rivers.length) return null;
+  const ctm = svg.getScreenCTM(); if(!ctm) return null;
+  const pt = new DOMPoint(cx, cy).matrixTransform(ctm.inverse()), room = RIVER_ROOM / ctm.a; // the finger, in map units
+  let best = null, bd = room;
+  for(const i of rivers){
+    i.lines = i.lines || i.d.split('M').filter(Boolean).map(l => l.split('L').map(p => p.split(',').map(Number)));
+    for(const l of i.lines) for(let k = 1; k < l.length; k++){
+      const [ax, ay] = l[k-1], [bx, by] = l[k], dx = bx - ax, dy = by - ay, L = dx*dx + dy*dy;
+      const t = L ? Math.max(0, Math.min(1, ((pt.x - ax)*dx + (pt.y - ay)*dy) / L)) : 0, d = Math.hypot(pt.x - ax - t*dx, pt.y - ay - t*dy);
+      if(d < bd){ bd = d; best = i.n; }
+    }
+  }
   return best;
 }
 // the place drawn under the finger, looking through any tap circles
@@ -144,7 +162,7 @@ function endPointer(e){
   pts.delete(e.pointerId);
   if(tap){ let n;
     if(e.pointerType === 'mouse'){ const el = document.elementFromPoint(e.clientX, e.clientY), p = el && el.closest && el.closest('.st'); n = p && p.dataset.n; } // a mouse is exact
-    else { const under = placeUnder(e.clientX, e.clientY); n = dotNear(e.clientX, e.clientY, under) || under; }
+    else { const under = placeUnder(e.clientX, e.clientY); n = dotNear(e.clientX, e.clientY, under) || riverNear(e.clientX, e.clientY) || under; }
     if(n) select(n); }
   if(pts.size === 1){ const [p] = [...pts.values()]; drag = {x:p.x, y:p.y, vb:{...vb}}; pinch0 = null; }
   if(!pts.size){ drag = null; pinch0 = null; }

@@ -193,7 +193,7 @@ test('the United States tabs: Regions, Cities and Land & Water work in Explore, 
   await expect(page.locator('#regionTabs button')).toHaveText(['States', 'Capitals', 'Flags', 'Regions', 'Cities', 'National Parks', 'Land & Water']);
   const cut = await page.$$eval('#regionTabs button', bs => bs.filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
   expect(cut, 'tab names that are cut off').toEqual([]);
-  for(const [topic, count, place, detail] of [['us-regions', 5, 'Southwest', '4 states: Arizona, New Mexico, Texas and Oklahoma'], ['us-cities', 25, 'Houston', 'A city in Texas'], ['us-geo', 26, 'Great Plains', 'A plain in the United States']]){
+  for(const [topic, count, place, detail] of [['us-regions', 5, 'Southwest', '4 states: Arizona, New Mexico, Texas and Oklahoma'], ['us-cities', 25, 'Houston', 'A city in Texas'], ['us-geo', 31, 'Mississippi River', 'A river in the United States']]){
     await goHome(page);
     await openTopic(page, 'United States', topic);
     await expect(page.locator('#regionBody .stats')).toContainText(`0 of ${count} learned`);

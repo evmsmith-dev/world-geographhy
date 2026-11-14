@@ -6,7 +6,8 @@ export const test = base.extend({
   page: async ({page}, use) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    page.on('console', m => { if(m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
+    // (the browser's own notes when it can't reach the website, like checking for a new offline helper while offline, don't count)
+    page.on('console', m => { if(m.type() === 'error' && !/Failed to load resource|error occurred when fetching the script|Failed to update a ServiceWorker/.test(m.text())) errors.push(m.text()); });
     await use(page);
     expect(errors, 'errors on the page').toEqual([]);
   },
@@ -71,7 +72,11 @@ export async function spotFor(page, name){
     if(mine) return {x: mine.r.left + mine.r.width/2, y: mine.r.top + mine.r.height/2};
     const el = [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n);
     if(!el) return {missing: true};
-    const clear = (x, y) => Math.min(Infinity, ...dots.map(d => Math.hypot(x - (d.r.left + d.r.width/2), y - (d.r.top + d.r.height/2)) - 5)); // a circle only takes a tap on another place's land near its middle (DOT_CORE in src/08-map.js)
+    // points along every river line: a tap within 8 pixels of a river goes to the river (RIVER_ROOM in src/08-map.js)
+    const along = el => { const len = el.getTotalLength(), m = el.getScreenCTM(), out = []; for(let k = 0; k <= 300; k++){ const p = el.getPointAtLength(len * k / 300); const q = new DOMPoint(p.x, p.y).matrixTransform(m); out.push([q.x, q.y]); } return out; };
+    const rivers = [...document.querySelectorAll('#map path.st.river')].filter(r => !r.classList.contains('off')), riverPts = rivers.filter(r => r !== el).flatMap(along);
+    const clear = (x, y) => Math.min(Infinity, ...dots.map(d => Math.hypot(x - (d.r.left + d.r.width/2), y - (d.r.top + d.r.height/2)) - 5), // a circle only takes a tap on another place's land near its middle (DOT_CORE in src/08-map.js)
+      ...riverPts.map(([px, py]) => Math.hypot(x - px, y - py) - 8));
     const R = el.getBoundingClientRect();
     const x0 = Math.max(R.left, S.left), x1 = Math.min(R.right, S.right), y0 = Math.max(R.top, S.top), y1 = Math.min(R.bottom, S.bottom);
     // whole pixels, like real touch events, and a few pixels of the same place all around (a finger is not a pin point)
@@ -79,6 +84,7 @@ export async function spotFor(page, name){
     const hits = (x, y) => { const h = document.elementsFromPoint(x, y).find(e => e.tagName !== 'circle'); return h && h.dataset && h.dataset.n === n; }; // looking through circles, as the game does
     const roomy = (x, y) => [[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4]].every(([dx, dy]) => hits(x + dx, y + dy));
     const tryAt = (x, y) => { x = Math.round(x); y = Math.round(y); if(!hits(x, y)) return; const c = clear(x, y) + (roomy(x, y) ? 1000 : 0); if(c > 2 && (!best || c > best.c)) best = {x, y, c}; };
+    if(el.classList.contains('river')){ for(const [x, y] of along(el)) if(x > S.left && x < S.right && y > S.top && y < S.bottom) tryAt(x, y); return best; } // a river: spots along its line
     // a grid first (the same spots every run), then random points for odd shapes
     for(let i = 1; i < 16; i++) for(let j = 1; j < 16; j++) tryAt(x0 + (x1 - x0) * i / 16, y0 + (y1 - y0) * j / 16);
     for(let k = 0; k < 4000 && !best; k++) tryAt(x0 + Math.random() * (x1 - x0), y0 + Math.random() * (y1 - y0));

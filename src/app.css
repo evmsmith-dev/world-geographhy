@@ -518,3 +518,13 @@ svg.shape path.geousregion{fill:color-mix(in srgb,var(--ink) 12%,var(--land));st
 .map .st.city.mixup,.map .st.plain.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.city.wrongflash,.map .st.plain.wrongflash{fill:var(--bad)}
 svg.shape path.geocity{fill:color-mix(in srgb,#3b4a59 50%,var(--land));stroke:none}
 svg.shape path.geoplain{fill:color-mix(in srgb,#a3b06a 45%,var(--land));stroke:none}
+
+/* US rivers: lines, so their color is the line's color (and a selected river gets a thicker line) */
+.map .st.river{fill:none;stroke:#3f86c9;stroke-width:3.5;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+@media (hover:hover){.map .st.river:hover{fill:none;stroke:var(--sel)}}
+.map .st.river.done{fill:none;stroke:var(--answered)} .map .st.river.ok{fill:none;stroke:var(--ok)} .map .st.river.bad{fill:none;stroke:var(--bad)}
+.map .st.river.sel{fill:none;stroke:var(--sel);stroke-width:5.5}
+.map .st.river.off{fill:none;stroke:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
+.map .st.river.mixup{fill:none;stroke:color-mix(in srgb,var(--bad) 50%,var(--sheet))} .map .st.river.wrongflash{fill:none;stroke:var(--bad)}
+svg.shape path.rline{fill:none;stroke:#3f86c9;stroke-width:2.5;vector-effect:non-scaling-stroke}
+svg.shape path.rline.hi{stroke:var(--sel);stroke-width:5}

@@ -34,6 +34,11 @@ const FEATURES = {
     ['Mojave Desert','desert','hand',['Mojave Desert']], ['Sonoran Desert','desert','mtn',['SONORAN DESERT']], ['Chihuahuan Desert','desert','mtn',['CHIHUAHUAN DESERT']],
     ['Lake Superior','lake','lake',['Lake Superior']], ['Lake Michigan','lake','lake',['Lake Michigan']], ['Lake Huron','lake','lake',['Lake Huron']], ['Lake Erie','lake','lake',['Lake Erie']], ['Lake Ontario','lake','lake',['Lake Ontario']],
     ['Great Salt Lake','lake','lake',['Great Salt Lake']], ['Lake Okeechobee','lake','lake',['Lake Okeechobee']],
+    // rivers: lines, not shapes. The same name can be a river elsewhere too (a Colorado in Texas and one in Argentina), so each keeps only
+    // the parts inside a longitude/latitude box; the Colorado stops at the Mexican border
+    ['Mississippi River','river','river',['Mississippi'],{box:[-96, 28, -88, 48]}], ['Missouri River','river','river',['Missouri'],{box:[-114, 38, -90, 49]}],
+    ['Ohio River','river','river',['Ohio'],{box:[-90, 36, -79, 41]}], ['Colorado River','river','river',['Colorado'],{box:[-116, 32.6, -105, 41]}],
+    ['Rio Grande','river','river',['Rio Grande'],{box:[-108, 25, -96, 38]}],
     ['Gulf of Mexico','gulf','sea',['Gulf of Mexico']], ['Chesapeake Bay','bay','sea',['Chesapeake Bay'],{over:true}], ['San Francisco Bay','bay','sea',['San Francisco Bay'],{over:true}], ['Gulf of Maine','gulf','sea',['Gulf of Maine']]],
   namerica: [['Rocky Mountains','range','mtn',['ROCKY MOUNTAINS']], ['Appalachian Mountains','range','mtn',['APPALACHIAN MTS.']],
     ['Sierra Madre','range','mtn',['SIERRA MADRE OCCIDENTAL','SIERRA MADRE ORIENTAL','Sierra Madre del Sur']],
@@ -67,7 +72,7 @@ const HAND = [{type:'Feature', properties:{name:'Mojave Desert'}, geometry:{type
   [-118.45,34.75], [-118.2,35.25], [-117.95,35.75], [-117.55,36.2], [-117.2,36.75], [-116.8,37.1], [-116.3,36.95], [-115.7,36.65], [-115.1,36.45],
   [-114.55,36.2], [-114.05,35.75], [-114.2,35.2], [-114.45,34.75], [-114.9,34.35], [-115.5,34.05], [-116.2,33.95], [-116.75,34.15], [-117.3,34.35],
   [-117.85,34.5], [-118.45,34.75]]]}}];
-const SRC = {sea: load('ne_10m_geography_marine_polys'), lake: load('ne_50m_lakes'), mtn: load('ne_10m_geography_regions_polys'), hand: HAND};
+const SRC = {sea: load('ne_10m_geography_marine_polys'), lake: load('ne_50m_lakes'), mtn: load('ne_10m_geography_regions_polys'), hand: HAND, river: load('ne_50m_rivers_lake_centerlines')};
 const nameOf = f => f.properties.name || f.properties.NAME;
 
 // Ramer–Douglas–Peucker on one closed ring (split at the far point first, so the ring can't collapse)
@@ -89,6 +94,28 @@ function simplifyRing(ring, tol){
 const area = ring => { let s = 0; for(let i = 0, j = ring.length-1; i < ring.length; j = i++) s += (ring[j][0]+ring[i][0]) * (ring[j][1]-ring[i][1]); return s/2; };
 const centroid = ring => { let a = 0, x = 0, y = 0; for(let i = 0, j = ring.length-1; i < ring.length; j = i++){ const f = ring[j][0]*ring[i][1] - ring[i][0]*ring[j][1]; a += f; x += (ring[j][0]+ring[i][0])*f; y += (ring[j][1]+ring[i][1])*f; } a /= 2; return [x/(6*a), y/(6*a)]; };
 
+// A river: its lines inside opt.box (longitude/latitude), projected, cut at the map's edges and simplified
+function riverItem(n, feats, proj, P, opt){
+  const [w, s, e, nn] = opt.box, lines = [];
+  for(const f of feats){
+    const parts = f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for(const line of parts){
+      let cur = [];
+      for(const [lon, lat] of line){
+        const p = lon >= w && lon <= e && lat >= s && lat <= nn ? proj([lon, lat]) : null;
+        if(p && p[0] >= 0 && p[0] <= P.w && p[1] >= 0 && p[1] <= P.h) cur.push(p); else { if(cur.length > 1) lines.push(cur); cur = []; }
+      }
+      if(cur.length > 1) lines.push(cur);
+    }
+  }
+  const simple = lines.map(l => rdp(l, 0.5)).filter(l => l.length > 1);
+  const d = simple.map(l => 'M' + l.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L')).join('');
+  const all = simple.flat(), xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+  const longest = simple.slice().sort((a, b) => b.length - a.length)[0];
+  return {n, kind: 'river', sub: 'river', layer: 'over', d, b: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map(v => +v.toFixed(1)),
+    c: longest[longest.length >> 1].map(v => +v.toFixed(1))};
+}
+
 for(const [region, list] of Object.entries(FEATURES)){
   const P = PROJ[region];
   const proj = P.make ? P.make() : d3.geoAzimuthalEqualArea().rotate([-P.c[0], -P.c[1]]).scale(P.s).translate(P.t).clipAngle(90).precision(0.1);
@@ -100,6 +127,7 @@ for(const [region, list] of Object.entries(FEATURES)){
   for(const [n, sub, src, dataNames, opt = {}] of list){
     const feats = SRC[src].filter(f => dataNames.includes(nameOf(f)));
     if(!feats.length) throw new Error('not found: ' + n);
+    if(src === 'river'){ items.push(riverItem(n, feats, proj, P, opt)); continue; }
     // project each feature to flat map coordinates (d3 handles the globe; we read the projected rings back)
     const parts = [];
     for(const f of feats){
@@ -131,7 +159,7 @@ for(const [region, list] of Object.entries(FEATURES)){
   }
   // places on land are drawn bottom to top: deserts, then big regions and highlands, then mountain ranges, then lakes.
   // A desert that lies inside a mountain range (the Atacama, in the Andes) is marked top, so it sits above the range
-  const rank = i => i.layer === 'under' ? 0 : i.top ? 4 : i.kind === 'plain' ? 0.5 : i.sub === 'desert' ? 1 : (i.sub === 'region' || i.sub === 'highlands') ? 2 : i.sub === 'range' ? 3 : 5;
+  const rank = i => i.layer === 'under' ? 0 : i.kind === 'river' ? 6 : i.top ? 4 : i.kind === 'plain' ? 0.5 : i.sub === 'desert' ? 1 : (i.sub === 'region' || i.sub === 'highlands') ? 2 : i.sub === 'range' ? 3 : 5;
   items.sort((u, v) => rank(u) - rank(v));
   items.forEach(i => delete i.top);
   const out = {base: region, items};

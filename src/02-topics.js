@@ -113,7 +113,7 @@ PARK_ALIAS['Hawaiʻi Volcanoes National Park'].push('hawaii volcanoes national p
 const REGION_ALIAS = {Northeast:['north east','the northeast'], Southeast:['south east','the southeast'], Midwest:['mid west','the midwest'], Southwest:['south west','the southwest'], West:['the west']};
 const CITY_ALIAS = {'New York':['new york city','nyc'], 'Los Angeles':['la','l.a.'], 'Philadelphia':['philly'], 'Washington, D.C.':['washington dc','washington d.c.','dc','d.c.','washington'],
   'St. Louis':['st louis','saint louis'], 'San Francisco':['sf'], 'Portland':['portland oregon']};
-const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
+const GEO_ALIAS = {'Mississippi River':['mississippi'],'Missouri River':['missouri'],'Ohio River':['ohio'],'Colorado River':['colorado'],'Rio Grande':['rio grande river','the rio grande'],'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
   'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
   'Carpathian Mountains':['carpathians','carpathian'],'Zagros Mountains':['zagros'],'Drakensberg':['drakensbergs','drakensberg mountains'],'Brazilian Highlands':['brazilian'],'Guiana Highlands':['guiana'],
@@ -121,7 +121,7 @@ const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains'
   'Sahara':['sahara desert'],'Kalahari Desert':['kalahari'],'Namib Desert':['namib'],'Arabian Desert':['arabian','rub al khali','empty quarter'],'Gobi Desert':['gobi'],'Taklamakan Desert':['taklamakan','taklimakan'],
   'Thar Desert':['thar','great indian desert'],'Atacama Desert':['atacama'],'Great Victoria Desert':['great victoria'],'Great Sandy Desert':['great sandy'],'Simpson Desert':['simpson'],
   'Sonoran Desert':['sonoran','sonora'],'Chihuahuan Desert':['chihuahuan','chihuahua'],'Mojave Desert':['mojave','mohave']};
-const GEO_WORD = {usregion:'region', city:'city', park:'national park', plain:'plain', plateau:'plateau', basin:'basin', valley:'valley', range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
+const GEO_WORD = {river:'river', usregion:'region', city:'city', park:'national park', plain:'plain', plateau:'plateau', basin:'basin', valley:'valley', range:'mountain range', desert:'desert', highlands:'highland area', region:'region', sea:'sea', gulf:'gulf', bay:'bay', channel:'channel', estuary:'river mouth', lake:'lake'};
 const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
 const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
 // "That's the Black Sea", "That's the Alps", but "That's Lake Erie", "That's Patagonia" and "That's France"
@@ -159,7 +159,7 @@ const TOPICS = [
     map:'usparks', count:23, maxZoom:12, geo:true, card:'locate', answer:n=>n, nouns:'national parks', listWord:'parks', itemWord:'park', alias:PARK_ALIAS,
     tapHint:'Tap a national park', tapWhat:'Tap a national park, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A national park in ${esc(MAPDATA.usparks.by[n].where)}`}) },
-  geoTopic('us', 'United States', 'us', 26, 12),
+  geoTopic('us', 'United States', 'us', 31, 12),
   { id:'world', group:'World', tab:'Continents & Oceans', name:'Continents & Oceans', blurb:'Find the 7 continents and 5 oceans.', map:'world', count:12,
     answer:n=>n, nouns:'places', listWord:'continents and oceans', alias:WORLD_ALIAS, maxZoom:5,
     tapWhat:'Tap a continent or ocean, find its name', tapHint:'Tap a continent or ocean',
@@ -180,7 +180,7 @@ const TOPICS = [
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
 // The place screen's line for a Land & Water topic, worked out from its map: "Find 6 mountain ranges, 5 seas, a bay and a channel in Europe."
-const GEO_ORDER = ['usregion', 'city', 'park', 'range', 'plain', 'plateau', 'basin', 'valley', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
+const GEO_ORDER = ['usregion', 'city', 'park', 'range', 'plain', 'plateau', 'basin', 'valley', 'river', 'highlands', 'region', 'desert', 'sea', 'gulf', 'bay', 'channel', 'estuary', 'lake'];
 function geoBlurb(t, m){
   const n = {}; m.items.forEach(i => { n[i.sub] = (n[i.sub] || 0) + 1; });
   const parts = GEO_ORDER.filter(s => n[s]).map(s => n[s] === 1 ? `a ${GEO_WORD[s]}` : `${n[s]} ${GEO_WORD[s]}s`);

@@ -21,7 +21,7 @@ function drawCardArt(el, n, side){
   } else if(T.geo){ // the continent, zoomed in around this mountain range, desert, sea or lake
     const [x0,y0,x1,y1] = it.b, cx = (x0+x1)/2, cy = (y0+y1)/2, w = Math.min(VW, Math.max((x1-x0)*1.8, (y1-y0)*1.8*4/3, VW*0.45)), h = w*3/4;
     el.setAttribute('viewBox', `${cx-w/2} ${cy-h/2} ${w} ${h}`);
-    const cls = i => i.n === n ? 'hi' : 'dim geo' + kindClass(i);
+    const cls = i => (i.n === n ? 'hi' : 'dim geo' + kindClass(i)) + (i.kind === 'river' ? ' rline' : ''); // rivers are lines
     el.innerHTML = `<rect class="dim dimsea" x="${cx-w}" y="${cy-h}" width="${w*2}" height="${h*2}"/>` +
       M.items.filter(sinks).map(i => `<path class="${cls(i)}" d="${i.d}"/>`).join('') +
       (M.other ? `<path class="dim" d="${M.other}" style="fill:var(--other)"/>` : '') + `<path class="dim" d="${M.bgland}"/>` +

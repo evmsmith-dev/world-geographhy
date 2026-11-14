@@ -49,6 +49,7 @@ const LOOKALIKES = [
   ['name','Southwest','West','The Southwest is just four states, with Texas. The West is bigger and goes all the way to the Pacific Ocean.'],
   ['name','Dallas','Houston','Dallas is in north Texas. Houston is in the south, near the Gulf of Mexico.'],
   ['name','Los Angeles','San Diego','Los Angeles is the bigger one, farther north. San Diego is right by Mexico.'],
+  ['name','Mississippi River','Missouri River','The Mississippi runs north to south down the middle of the country. The Missouri comes in from the west and joins it.'],
   ['name','Great Plains','Central Lowlands','The Great Plains are farther west, next to the Rocky Mountains. The Central Lowlands are east of them.'],
   ['name','Colorado Plateau','Great Basin','The Colorado Plateau is around the Grand Canyon. The Great Basin is west of it, mostly in Nevada.'],
   ['name','Cascade Range','Sierra Nevada','The Cascades are farther north, in Washington and Oregon. The Sierra Nevada is in California.'],

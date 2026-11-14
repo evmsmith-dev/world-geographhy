@@ -88,6 +88,7 @@ export async function spotFor(page, name){
 // Tap a place on the map with a finger. If every spot of it is too close to a tiny neighbor's tap circle
 // (Switzerland next to Liechtenstein on a phone), zoom in on it first, the way a kid would.
 export async function tapPlace(page, name){
+  await mapSettled(page); // the map may still be sliding into place
   let spot = await spotFor(page, name);
   expect(spot && spot.missing, `${name} is on the map`).toBeFalsy();
   if(!spot && !(await page.isDisabled('#zFit'))){ // zoomed in somewhere else: back to the whole map first
@@ -97,6 +98,10 @@ export async function tapPlace(page, name){
   if(!spot){
     await page.evaluate(n => window.WGQ_TEST.zoomTo(n), name);
     await mapSettled(page);
+    spot = await spotFor(page, name);
+  }
+  for(let i = 0; i < 3 && !spot && !(await page.isDisabled('#zIn')); i++){ // still crowded (Qatar next to Bahrain): zoom in more
+    await page.click('#zIn'); await mapSettled(page);
     spot = await spotFor(page, name);
   }
   expect(spot, `a spot where a finger can tap ${name}`).toBeTruthy();
@@ -116,6 +121,7 @@ export async function mapSettled(page){
 
 // The place a Find it question is asking for: "Find the Alps", "Which country has the capital Paris?" or a flag
 export async function findTarget(page, topicId){
+  await expect(page.locator('#findQ')).not.toBeEmpty(); // the question appears once the map has loaded
   return page.evaluate(async tid => {
     const W = window.WGQ_TEST, t = W.TOPIC[tid], q = document.getElementById('findQ');
     const img = q.querySelector('img.flag');
@@ -125,4 +131,16 @@ export async function findTarget(page, topicId){
     if(cap){ const m = await W.loadMap(t.map); const it = m.items.find(i => (i.cap || W.CAP[i.n]) === cap[1]); return it ? it.n : null; }
     return text.replace(/^Find (the )?/, '').trim();
   }, topicId);
+}
+
+// Select a place the quick way (the keyboard), type its name, pick it from the list and save
+export async function answer(page, name, typed = name){
+  const select = () => page.evaluate(n => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n).dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})), name);
+  await select();
+  // the answer box opens once the place is selected; on a busy computer the first try can come too early
+  await expect(async () => { if(!(await page.locator('#answer').isEditable())) await select(); await expect(page.locator('#answer')).toBeEditable({timeout: 1000}); }).toPass({timeout: 10_000});
+  await page.fill('#answer', typed);
+  const option = page.locator(`#opts li[data-v="${name.replace(/"/g, '\\"')}"]`);
+  if(await option.count()) await option.first().dispatchEvent('click'); // pick it from the list (the list can close itself while it updates)
+  await page.click('#submit');
 }

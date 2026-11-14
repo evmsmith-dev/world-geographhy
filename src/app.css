@@ -1,11 +1,11 @@
 /* World Geography Quiz
    Layout: a home screen of topic cards; a play screen with a slim top bar, the map, and a
    sticky answer bar; sheets slide up from the bottom for choices, dialogs only for risky actions. */
-@font-face{font-family:"Alegreya Sans";font-weight:400;font-display:swap;src:url(alegreya-sans-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Alegreya Sans";font-weight:500;font-display:swap;src:url(alegreya-sans-latin-500-normal.woff2) format("woff2")}
-@font-face{font-family:"Alegreya Sans";font-weight:700;font-display:swap;src:url(alegreya-sans-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"Alegreya Sans SC";font-weight:500;font-display:swap;src:url(alegreya-sans-sc-latin-500-normal.woff2) format("woff2")}
-@font-face{font-family:"Alegreya Sans SC";font-weight:800;font-display:swap;src:url(alegreya-sans-sc-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Alegreya Sans";font-weight:400;font-display:swap;src:url(../assets/fonts/alegreya-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Alegreya Sans";font-weight:500;font-display:swap;src:url(../assets/fonts/alegreya-sans-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Alegreya Sans";font-weight:700;font-display:swap;src:url(../assets/fonts/alegreya-sans-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Alegreya Sans SC";font-weight:500;font-display:swap;src:url(../assets/fonts/alegreya-sans-sc-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Alegreya Sans SC";font-weight:800;font-display:swap;src:url(../assets/fonts/alegreya-sans-sc-latin-800-normal.woff2) format("woff2")}
 
 :root{
   --bg:#eef1f3; --sheet:#ffffff; --ink:#1d2a33; --muted:#5d6c76; --line:#c9d2d8;

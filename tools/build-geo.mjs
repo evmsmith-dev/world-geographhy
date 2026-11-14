@@ -1,4 +1,4 @@
-// Builds the "Mountains & Water" map files (europe-geo.json, africa-geo.json, ...).
+// Builds the "Land & Water" map files (data/maps/europe-geo.json, africa-geo.json, ...).
 // Each file holds only mountain ranges, seas and lakes; the game draws the continent's countries underneath as a gray background.
 // Data: Natural Earth (public domain), https://www.naturalearthdata.com
 //   ne_10m_geography_marine_polys, ne_50m_lakes, ne_10m_geography_regions_polys (from github.com/nvkelso/natural-earth-vector)

@@ -95,14 +95,19 @@ test('Land & Water places each have a kind the game can name', () => {
 test('the offline list has every file the game needs, and only files that exist', () => {
   const sw = read('sw.js'), files = JSON.parse('[' + sw.match(/const FILES = \[([\s\S]*?)\];/)[1].replace(/'/g, '"') + ']');
   expect(files.filter(f => f !== './' && !fs.existsSync(path.join(ROOT, f))), 'files in sw.js that do not exist').toEqual([]);
-  const need = new Set(['index.html', 'app.js', 'app.css', 'facts.json', 'flags.json', 'usflags.json', 'thumbs.json', 'manifest.webmanifest']);
-  D.topics.forEach(t => { need.add(t.map + '.json'); });
-  for(const t of D.topics.filter(t => t.geo)) need.add(t.map.replace(/-geo$/, '') + '.json'); // a Land & Water map is drawn on its continent's map
-  for(const m of read('app.css').matchAll(/url\(['"]?([^'")]+)['"]?\)/g)) if(!m[1].startsWith('data:')) need.add(m[1]);
-  const manifest = JSON.parse(read('manifest.webmanifest'));
-  (manifest.icons || []).forEach(i => need.add(i.src));
-  for(const m of read('index.html').matchAll(/(?:href|src)="([^"#?]+)(?:\?[^"]*)?"/g)) if(!/^(https?:|data:|mailto:)/.test(m[1]) && m[1] !== './') need.add(m[1]);
+  const need = new Set(['index.html', 'manifest.webmanifest', 'data/facts.json', 'data/flags.json', 'data/usflags.json', 'data/thumbs.json']);
+  D.topics.forEach(t => { need.add(`data/maps/${t.map}.json`); });
+  for(const t of D.topics.filter(t => t.geo)) need.add(`data/maps/${t.map.replace(/-geo$/, '')}.json`); // a Land & Water map is drawn on its continent's map
+  // files named in the page, the stylesheet (relative to the stylesheet) and the manifest
+  const local = f => !/^(https?:|data:|mailto:|#)/.test(f) && f !== './';
+  for(const m of read('index.html').matchAll(/(?:href|src)="([^"#?]+)(?:\?[^"]*)?"/g)) if(local(m[1])) need.add(m[1]);
+  for(const css of [...need].filter(f => f.endsWith('.css')))
+    for(const m of read(css).matchAll(/url\(['"]?([^'")]+)['"]?\)/g)) if(local(m[1])) need.add(path.posix.normalize(path.posix.join(path.posix.dirname(css), m[1])));
+  for(const js of [...need].filter(f => f.endsWith('.js')))
+    for(const m of read(js).matchAll(/^\s*import\s[^'"]*['"](\.[^'"]+)['"]/gm)) need.add(path.posix.normalize(path.posix.join(path.posix.dirname(js), m[1])));
+  (JSON.parse(read('manifest.webmanifest')).icons || []).forEach(i => need.add(i.src));
   expect([...need].filter(f => !files.includes(f)), 'files the game uses that are missing from the offline list in sw.js').toEqual([]);
+  expect([...need].filter(f => !fs.existsSync(path.join(ROOT, f))), 'files the game uses that do not exist').toEqual([]);
 });
 
 test('the build stamp in index.html is a real date and time', () => {
@@ -112,5 +117,7 @@ test('the build stamp in index.html is a real date and time', () => {
 });
 
 test('every JSON file is valid', () => {
-  for(const f of fs.readdirSync(ROOT).filter(f => f.endsWith('.json') || f.endsWith('.webmanifest'))) expect(() => JSON.parse(read(f)), f).not.toThrow();
+  const files = ['manifest.webmanifest', ...fs.readdirSync(path.join(ROOT, 'data'), {recursive: true}).filter(f => f.endsWith('.json')).map(f => path.join('data', f))];
+  expect(files.length, "JSON files found").toBeGreaterThanOrEqual(19);
+  for(const f of files) expect(() => JSON.parse(read(f)), f).not.toThrow();
 });

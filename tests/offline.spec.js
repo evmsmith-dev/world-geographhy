@@ -3,14 +3,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect, newPlayer, openGame, openTopic, startMode, tapPlace } from './helpers.js';
 
-const FILES = fs.readFileSync(path.join(import.meta.dirname, '..', 'sw.js'), 'utf8').match(/const FILES = \[([\s\S]*?)\];/)[1].match(/'[^']+'/g).length;
+const SW = fs.readFileSync(path.join(import.meta.dirname, '..', 'sw.js'), 'utf8');
+const FILES = SW.match(/const FILES = \[([\s\S]*?)\];/)[1].match(/'[^']+'/g).length, CACHE = SW.match(/const CACHE = '([^']+)'/)[1];
 
 test('after one visit, the game opens and plays with no internet', async ({page, context, browserName}) => {
   // Playwright's WebKit can't load pages offline through a service worker ("internal error"), so this runs in Chromium only
   test.skip(browserName === 'webkit', 'offline pages are not supported in Playwright WebKit');
   await newPlayer(page);
   // wait until the service worker is in charge and has saved every file
-  await page.waitForFunction(async n => navigator.serviceWorker.controller && (await (await caches.open('wgq-v1')).keys()).length >= n, FILES, {timeout: 60_000, polling: 500});
+  await page.waitForFunction(async ([n, c]) => navigator.serviceWorker.controller && (await (await caches.open(c)).keys()).length >= n, [FILES, CACHE], {timeout: 60_000, polling: 500});
   await context.setOffline(true);
   await openGame(page);
   await expect(page.locator('#homePlayer')).toContainText('Ama');

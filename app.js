@@ -122,6 +122,15 @@ function worldSize(n, kind){
   return `<b>${size}.</b> ${esc(fact)}`;
 }
 
+// Mountains & Water: mountain ranges, seas and lakes, on the continent's map with its countries as a gray background
+const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
+  'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
+  'Mediterranean Sea':['mediterranean','med'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal']};
+const GEO_WORD = {range:'mountain range', sea:'sea', gulf:'gulf', bay:'bay', lake:'lake'};
+const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
+const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
+// "That's the Black Sea", "That's the Alps", but "That's Lake Erie" and "That's France"
+const the = n => T && T.geo && !/^Lake /.test(n) ? 'the ' + n : n;
 const TOPICS = [
   { id:'us-states', group:'United States', tab:'States', name:'US States', blurb:'Name all 50 states on the map.', map:'us', count:50,
     answer:n=>n, nouns:'states', listWord:'state names', alias:STATE_ALIAS, maxZoom:10,
@@ -144,13 +153,25 @@ const TOPICS = [
     ask:()=> 'Which continent or ocean is this?', flashFront:()=> 'Which continent or ocean is this?', card:'locate',
     back:(n,item)=>({answer:n, sub:worldSize(n, item.kind)}) },
   ...regionTopics('eu', 'Europe', 'europe', 44, 14, 'Find all 44 countries in Europe.', 'Name the capital of every country in Europe.', EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
+  geoTopic('eu', 'Europe', 'europe', 9, 14, 'Find 5 mountain ranges and 4 seas in Europe.'),
   ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
+  geoTopic('af', 'Africa', 'africa', 6, 10, 'Find 2 mountain ranges, a sea and 3 big lakes in Africa.'),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
+  geoTopic('as', 'Asia', 'asia', 10, 14, 'Find 3 mountain ranges, 6 seas, gulfs and bays, and Lake Baikal in Asia.'),
   ...regionTopics('oc', 'Oceania', 'oceania', 14, 12, 'Find all 14 countries in Oceania.', 'Name the capital of every country in Oceania.', OC_ALIAS, OC_CAP_ALIAS),
+  geoTopic('oc', 'Oceania', 'oceania', 3, 12, 'Find a mountain range and 2 seas in Oceania.'),
   ...regionTopics('na', 'North America', 'namerica', 23, 20, 'Find all 23 countries in North America.', 'Name the capital of every country in North America.', NA_ALIAS, NA_CAP_ALIAS, NA_PARTS),
+  geoTopic('na', 'North America', 'namerica', 12, 20, 'Find 3 mountain ranges, 4 seas and bays, and the 5 Great Lakes in North America.'),
   ...regionTopics('sa', 'South America', 'samerica', 12, 6, 'Find all 12 countries in South America.', 'Name the capital of every country in South America.', {}, SA_CAP_ALIAS),
+  geoTopic('sa', 'South America', 'samerica', 2, 12, 'Find the Andes and Lake Titicaca in South America.'),
 ];
 // Countries and capitals of a region. Capital names live in the region's map file.
+function geoTopic(id, region, map, count, maxZoom, blurb){
+  return {id:id+'-geo', group:region, map:map+'-geo', count, maxZoom, geo:true, card:'locate', tab:'Mountains & Water', name:`Mountains & Water of ${region}`, blurb,
+    answer:n=>n, nouns:'mountains, seas and lakes', listWord:'places', itemWord:'place', alias:GEO_ALIAS,
+    tapHint:'Tap a mountain range, sea or lake', tapWhat:'Tap a mountain range, sea or lake, find its name', ask:geoAsk, flashFront:geoAsk,
+    back:n=>({answer:n, sub:`A ${GEO_WORD[geoSub(n)]} in ${esc(region)}`})};
+}
 function regionTopics(id, region, map, count, maxZoom, blurb, capBlurb, alias, capAlias, parts){
   const cap = n => MAPDATA[map].by[n].cap;
   const note = n => CAP_NOTE[n] ? ` ${esc(CAP_NOTE[n])}` : '';
@@ -330,7 +351,8 @@ const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','
   'Kyiv':'keev','Czechia':'check-ee-uh','Brasília':'brah-zee-lee-ah','Bogotá':'boh-goh-tah','Asunción':'ah-soon-see-ohn','Tegucigalpa':'teh-goo-see-gal-pah',
   'Belmopan':'bel-moh-pan','Paramaribo':'pah-rah-mah-ree-boh','Antananarivo':'an-tah-nah-nah-ree-voh','Gaborone':'hah-boh-roh-nay','São Tomé and Príncipe':'sow toh-may and preen-see-pay',
   'São Tomé':'sow toh-may','Eswatini':'eh-swah-tee-nee','Djibouti':'jih-boo-tee','Timor-Leste':'tee-mor lesh-tay','Dili':'dee-lee','Bandar Seri Begawan':'bun-dar seh-ree beh-gah-wan',
-  'Vientiane':'vee-en-tee-ahn','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
+  'Vientiane':'vee-en-tee-ahn','Lake Titicaca':'lake tee-tee-kah-kah','Lake Baikal':'lake by-kahl','Lake Tanganyika':'lake tan-gan-yee-kah',
+  'Tian Shan':'tee-en shahn','Pyrenees':'peer-uh-neez','Caucasus Mountains':'kaw-kuh-sus mountains','Sierra Madre':'see-air-uh mah-dray','Hindu Kush':'hin-doo koosh','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
   'Belize':'beh-leez','Managua':'mah-nah-gwah','San José':'san ho-zay','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
   'Palikir':'pah-lee-keer','Majuro':'mah-joo-roh','Funafuti':'foo-nah-foo-tee','Tuvalu':'too-vah-loo','Nauru':'nah-oo-roo','Yaren':'yah-ren','Apia':'ah-pee-ah',
   'Vanuatu':'vah-noo-ah-too','Port Vila':'port vee-lah','Honiara':'hoh-nee-ah-rah','Phnom Penh':'puh-nom pen','Nur-Sultan':'noor sool-tahn','Astana':'ah-stah-nah'};
@@ -567,10 +589,10 @@ function openRegion(name){
   renderRegion();
 }
 $('regionBack').onclick = () => popLayer();
-$('exploreBtn').onclick = () => enterExplore(curRegion.name);
+$('exploreBtn').onclick = () => enterExplore(curRegion.name, false, TOPIC[curTab] && TOPIC[curTab].geo ? curTab : null);
 async function renderRegion(){
   if(!curRegion || !player) return;
-  const r = curRegion, t = TOPIC[curTab];
+  const t = TOPIC[curTab], r = t.parts ? curRegion : {...curRegion, parts:null}; // Mountains & Water has no parts
   $('regionTitle').textContent = r.name;
   $('regionTabs').hidden = r.topics.length < 2;
   $('regionTabs').innerHTML = r.topics.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
@@ -604,7 +626,12 @@ $('homeSettings').onclick = () => openSettings();
 /* ===================== 8. map, zoom & search ===================== */
 const MAPS = {};
 const loadMap = name => MAPS[name] || (MAPS[name] = fetch(name + '.json').then(r => { if(!r.ok) throw new Error('map ' + r.status); return r.json(); })
-  .then(m => { m.by = Object.fromEntries(m.items.map(i => [i.n, i])); MAPDATA[name] = m; return m; })
+  .then(async m => {
+    if(m.base){ // a Mountains & Water map: its continent's countries become a plain gray background
+      const b = await loadMap(m.base);
+      Object.assign(m, {w:b.w, h:b.h, seabg:b.seabg, other:b.other, bgland:b.items.map(i => i.d).join('')});
+    }
+    m.by = Object.fromEntries(m.items.map(i => [i.n, i])); MAPDATA[name] = m; return m; })
   .catch(e => { delete MAPS[name]; throw e; }));
 let DOTS = {}; // tap targets for countries too small to tap (Vatican City, Monaco…)
 
@@ -618,11 +645,13 @@ function drawMap(){
   ITEM = Object.fromEntries(M.items.map(i => [i.n, i]));
   NAMES = M.items.map(i => i.n).sort();
   ORDER = M.items.slice().sort((a,b) => a.c[0]-b.c[0]).map(i => i.n);
-  const path = i => `<path class="st ${i.kind==='ocean'?'ocean':'land'}" d="${i.d}" data-n="${esc(i.n)}" tabindex="0" role="button"/>`;
+  const path = i => `<path class="st ${kindClass(i)}" d="${i.d}" data-n="${esc(i.n)}" tabindex="0" role="button"/>`;
+  // bottom to top: sea, oceans and seas, other land, the countries' gray background (Mountains & Water), then places on land
   svg.innerHTML = (M.seabg ? `<rect class="seabg" width="${VW}" height="${VH}"/>` : '') + (M.sphere ? `<path class="globe" d="${M.sphere}"/>` : '') +
-    M.items.filter(i=>i.kind==='ocean').map(path).join('') +
+    M.items.filter(sinks).map(path).join('') +
     (M.other ? `<path class="other" d="${M.other}"/>` : '') +
-    M.items.filter(i=>i.kind!=='ocean').map(path).join('');
+    (M.bgland ? `<path class="bgland" d="${M.bgland}"/>` : '') +
+    M.items.filter(i => !sinks(i)).map(path).join('');
   els = {}; svg.querySelectorAll('path.st').forEach(p => els[p.dataset.n] = p);
   DOTS = {};
   M.items.filter(i => i.dot).forEach(i => { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('cx', i.dot[0]); c.setAttribute('cy', i.dot[1]); c.dataset.n = i.n; c.setAttribute('aria-hidden','true'); svg.appendChild(c); DOTS[i.n] = c; });
@@ -633,9 +662,13 @@ function drawMap(){
 svg.addEventListener('keydown', e => { const p = e.target.closest('path.st'); if(p && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(p.dataset.n); } });
 
 const clampW = w => Math.min(VW, Math.max(MINW, w));
+// how a place is drawn: land, ocean, water (seas and lakes) or mountain range
+const kindClass = i => i.kind === 'ocean' ? 'ocean' : i.kind === 'water' ? 'water' : i.kind === 'mountain' ? 'mtn' : 'land';
+// oceans and seas lie under the land, so they are never brought to the front over it
+const sinks = i => i.kind === 'ocean' || i.layer === 'under';
 // color a place and its tap dot; extra is the state ('sel', 'ok'…). The mixed-up place keeps its outline for a moment.
 function setPlaceClass(n, extra){
-  let cls = 'st ' + (ITEM[n].kind === 'ocean' ? 'ocean' : 'land') + (extra ? ' ' + extra.trim() : '');
+  let cls = 'st ' + kindClass(ITEM[n]) + (extra ? ' ' + extra.trim() : '');
   if(MIX && MIX.n === n && Date.now() < MIX.until) cls += ' mixup';
   els[n].setAttribute('class', cls); if(DOTS[n]) DOTS[n].setAttribute('class', cls + ' dot');
 }
@@ -968,8 +1001,8 @@ function select(n){
       : `${right} ${a ? `You said ${esc(a)}.` : `You left it blank.`}`;
     paint(); return;
   }
-  if(ITEM[n].kind !== 'ocean'){ svg.appendChild(els[n]); raiseDots(n); } // bring to front so its outline shows, but keep tap dots on top
-  if(isSolved(n)) feedback(T.showsItem ? `<b>${esc(key(n))}</b>. You already got this one.` : `That's <b>${esc(n)}</b>. You already got this one.`, 'ok');
+  if(!sinks(ITEM[n])){ svg.appendChild(els[n]); raiseDots(n); } // bring to front so its outline shows, but keep tap dots on top
+  if(isSolved(n)) feedback(T.showsItem ? `<b>${esc(key(n))}</b>. You already got this one.` : `That's <b>${esc(the(n))}</b>. You already got this one.`, 'ok');
   else if(G.mode==='practice' && G.answers[n]) feedback(`You said ${esc(G.answers[n])}. ${T.showsItem ? `The capital is <b>${esc(key(n))}</b>` : `This is <b>${esc(n)}</b>`}.`, 'bad');
   else feedback('');
   setInput(); paint();
@@ -986,8 +1019,8 @@ async function submit(){
       if(right){ G.solved[current] = G.round; feedback(`Yes! That's the flag of <b>${esc(current)}</b>.`, 'ok'); sound('right'); }
       else { const w = placeOf(v); noteMix(current, w); feedback(`Not quite. That's the flag of ${esc(v)}. Here is the flag of <b>${esc(current)}</b>: ${flagImg(current, 'tiny')} ${mixTip(current, w)}`, 'bad'); flashMix(w); sound('wrong'); }
     }
-    else if(right){ G.solved[current] = G.round; feedback(`Yes! ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(v)}</b>.`, 'ok'); sound('right'); }
-    else { const w = placeOf(v); noteMix(current, w); feedback(`Not quite. ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(key(current))}</b>, not ${esc(v)}. ${mixTip(current, w)}`, 'bad'); flashMix(w); sound('wrong'); }
+    else if(right){ G.solved[current] = G.round; feedback(`Yes! ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(T.showsItem ? v : the(v))}</b>.`, 'ok'); sound('right'); }
+    else { const w = placeOf(v); noteMix(current, w); feedback(`Not quite. ${T.showsItem ? `The capital of ${esc(current)} is` : `That's`} <b>${esc(T.showsItem ? key(current) : the(key(current)))}</b>, not ${esc(T.showsItem ? v : the(v))}. ${mixTip(current, w)}`, 'bad'); flashMix(w); sound('wrong'); }
     recordItem(player.id, T.id, current, right);
     setInput(); paint(); saveSoon();
     if(PN().every(n => !isOpen(n))) feedback($('feedback').innerHTML + ' That was the last one. Press <b>Review</b> to see how you did!', right ? 'ok' : 'bad');
@@ -1020,7 +1053,7 @@ $('prev').onclick = () => EXPLORE ? exploreStep(-1) : step(-1);
 const findTarget = () => G.queue && G.queue[0];
 function findAsk(n){
   if(T.showsItem) return `Which ${T.itemWord} has the capital ${key(n)}?`;
-  return ITEM[n].kind === 'ocean' ? `Find the ${n}` : `Find ${n}`;
+  return ITEM[n].kind === 'ocean' || (T.geo && !/^Lake /.test(n)) ? `Find the ${n}` : `Find ${n}`;
 }
 // Mix-up help: when a kid picks the wrong place, show both and say how to tell them apart
 function placeOf(answer){ return answer ? (NAMES.find(x => key(x) === answer) || (ITEM[answer] ? answer : null)) : null; }
@@ -1052,6 +1085,14 @@ const LOOKALIKES = [
   ['name','Mississippi','Missouri','Mississippi is in the south, by the Gulf. Missouri is farther north, in the middle of the country.'],
   ['name','Alabama','Mississippi','Mississippi is the one on the left. Alabama is just to its east.'],
   ['name','Kansas','Nebraska','Nebraska is the one on top. Kansas is just south of it.'],
+  ['name','Lake Michigan','Lake Huron','Lake Michigan is the long one that points south. Lake Huron is just east of it.'],
+  ['name','Lake Erie','Lake Ontario','Lake Ontario is the one farthest east. Lake Erie is just southwest of it, and Niagara Falls is between them.'],
+  ['name','Lake Superior','Lake Huron','Lake Superior is the biggest one, at the top. Lake Huron is southeast of it.'],
+  ['name','Lake Tanganyika','Lake Malawi','Lake Tanganyika is the long one farther north and west. Lake Malawi is to its southeast.'],
+  ['name','Arabian Sea','Bay of Bengal','The Arabian Sea is west of India. The Bay of Bengal is east of India.'],
+  ['name','Coral Sea','Tasman Sea','The Coral Sea is the northern one, by the Great Barrier Reef. The Tasman Sea is south, between Australia and New Zealand.'],
+  ['name','Himalayas','Hindu Kush','The Himalayas are the long range to the east, along Nepal. The Hindu Kush is to the west, in Afghanistan.'],
+  ['name','Rocky Mountains','Appalachian Mountains','The Rocky Mountains are in the west. The Appalachian Mountains are in the east.'],
   ['name','Arkansas','Kansas','Kansas is in the middle of the country. Arkansas is farther southeast, next to the Mississippi River.'],
   ['flag','Belgium','Germany','Belgium’s stripes go up and down. Germany’s go across.'],
   ['flag','Ireland','Italy','Ireland’s flag is green, white and orange. Italy’s is green, white and red.'],
@@ -1128,12 +1169,12 @@ function findTap(n){
   if(n === t){
     G.solved[t] = G.round; G.answers[t] = t;
     recordItem(player.id, T.id, t, G.tries === 0); sound('right');
-    feedback(`Yes! That's <b>${esc(t)}</b>${T.showsItem ? `. Its capital is ${esc(key(t))}` : ''}.`, 'ok');
+    feedback(`Yes! That's <b>${esc(the(t))}</b>${T.showsItem ? `. Its capital is ${esc(key(t))}` : ''}.`, 'ok');
     current = t; paint(); G.busy = true; setTimeout(nextFind, 900); return;
   }
-  if(isSolved(n) || G.answers[n]){ feedback(`That's ${esc(n)}. You already did that one. Keep looking!`); flashWrong(n); return; }
+  if(isSolved(n) || G.answers[n]){ feedback(`That's ${esc(the(n))}. You already did that one. Keep looking!`); flashWrong(n); return; }
   G.tries++; if(!G.firstWrong) G.firstWrong = n; sound('wrong'); flashWrong(n); noteMix(t, n);
-  const hint = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(n)}.`;
+  const hint = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(the(n))}.`;
   if(G.tries < 3) feedback(`${hint} Try again! ${3-G.tries} ${3-G.tries === 1 ? 'try' : 'tries'} left. ${mixTip(t, n)}`, 'bad');
   else revealFind(`${hint} Here is <b>${esc(t)}</b>. ${mixTip(t, n)}`);
 }
@@ -1269,6 +1310,14 @@ function drawCardArt(el, n, side){
     el.setAttribute('viewBox', `${x0-pad} ${y0-pad} ${w+2*pad} ${h+2*pad}`);
     const k = it.fk || it.k;
     el.innerHTML = `<path class="item" d="${it.fd || it.d}"/>` + (k ? `<polygon class="star" points="${starPts(k[0], k[1], r)}"/>` : '');
+  } else if(T.geo){ // the continent, zoomed in around this mountain range, sea or lake
+    const [x0,y0,x1,y1] = it.b, cx = (x0+x1)/2, cy = (y0+y1)/2, w = Math.min(VW, Math.max((x1-x0)*1.8, (y1-y0)*1.8*4/3, VW*0.45)), h = w*3/4;
+    el.setAttribute('viewBox', `${cx-w/2} ${cy-h/2} ${w} ${h}`);
+    const cls = i => i.n === n ? 'hi' : 'dim geo' + kindClass(i);
+    el.innerHTML = `<rect class="dim dimsea" x="${cx-w}" y="${cy-h}" width="${w*2}" height="${h*2}"/>` +
+      M.items.filter(sinks).map(i => `<path class="${cls(i)}" d="${i.d}"/>`).join('') +
+      (M.other ? `<path class="dim" d="${M.other}" style="fill:var(--other)"/>` : '') + `<path class="dim" d="${M.bgland}"/>` +
+      M.items.filter(i => !sinks(i)).map(i => `<path class="${cls(i)}" d="${i.d}"/>`).join('');
   } else { // the whole world, with this place lit up
     el.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
     el.innerHTML = (M.sphere ? `<path class="dim" d="${M.sphere}" style="fill:var(--globe);stroke:none"/>` : '') +
@@ -1363,16 +1412,16 @@ $('topicChip').onclick = () => {
     const t = TOPIC[tid];
     body.innerHTML = `<p class="sect">Place</p><div class="chips pick">${REGIONS.map(x => `<button data-r="${esc(x.name)}" aria-pressed="${x===r}">${esc(x.name)}</button>`).join('')}</div>
       ${r.topics.length > 1 ? `<p class="sect">Learn about</p><div class="tabs">${r.topics.map(x => `<button data-tab="${x.id}" aria-selected="${x.id===tid}">${esc(x.tab)}</button>`).join('')}</div>` : ''}
-      ${r.parts ? `<p class="sect">Part</p>${partChips(r, part)}` : ''}
-      <p class="sect">How to play</p><div class="modelist">${modeButtons(t, null, t.id===T.id && G && (G.part || 'All') === part ? G.mode : null, part === 'All' ? null : part)}
-        <button class="modebig" data-explore="${esc(r.name)}"${EXPLORE && EXPLORE.R===r ? ' aria-current="true"' : ''}><span class="mn">Explore</span><span class="md">A map to look around, no quiz</span></button></div>`;
+      ${r.parts && t.parts ? `<p class="sect">Part</p>${partChips(r, part)}` : ''}
+      <p class="sect">How to play</p><div class="modelist">${modeButtons(t, null, t.id===T.id && G && (G.part || 'All') === part ? G.mode : null, part === 'All' || !t.parts ? null : part)}
+        <button class="modebig" data-explore="${esc(r.name)}"${t.geo ? ` data-etopic="${t.id}"` : ''}${EXPLORE && EXPLORE.R===r ? ' aria-current="true"' : ''}><span class="mn">Explore</span><span class="md">A map to look around, no quiz</span></button></div>`;
   };
   draw();
   body.addEventListener('click', e => {
     const rb = e.target.closest('[data-r]'); if(rb){ r = REGIONS.find(x => x.name === rb.dataset.r); tid = lastTab(r).id; part = getPart(r); draw(); return; }
     const pc = e.target.closest('.partrow [data-part]'); if(pc){ part = pc.dataset.part; setPart(r, part); draw(); return; }
     const tb = e.target.closest('[data-tab]'); if(tb){ tid = tb.dataset.tab; draw(); return; }
-    const ex = e.target.closest('[data-explore]'); if(ex){ popLayer(() => enterExplore(ex.dataset.explore, true)); return; }
+    const ex = e.target.closest('[data-explore]'); if(ex){ popLayer(() => enterExplore(ex.dataset.explore, true, ex.dataset.etopic)); return; }
     const mb = e.target.closest('[data-mode]'); if(mb) popLayer(() => enterGame(mb.dataset.topic, mb.dataset.mode, true, null, mb.dataset.part || null));
   });
 };
@@ -1488,19 +1537,19 @@ $('scoresBody').addEventListener('click', e => {
 
 /* ===================== 10b2. Explore map: tap anything to learn about it ===================== */
 let EXPLORE = null; // {R: the place, labels: show names on the map}
-function enterExplore(regionName, fromPicker){
+function enterExplore(regionName, fromPicker, topicId){
   saveNow(); stopClock(); hideToast();
   const R = REGIONS.find(r => r.name === regionName);
   if(!fromPicker){ returnTo = SCREENS.find(id => !$(id).hidden) || 'scrHome'; showScreen('scrPlay'); pushLayer(leaveGame); }
   endExplore(); G = null; current = null; reviewing = false;
-  EXPLORE = {R, labels: LS.get('labels') !== '0'};
+  T = topicId && TOPIC[topicId] ? TOPIC[topicId] : R.topics[0];
+  EXPLORE = {R, labels: LS.get('labels') !== '0', geo: !!T.geo};
   if(R.map !== 'world') loadFacts();
-  T = R.topics[0];
-  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>Explore the map</small>`;
+  $('chipText').innerHTML = `<span class="ct">${esc(R.name)}</span><small>${T.geo ? 'Explore mountains & water' : 'Explore the map'}</small>`;
   ['mapSheet','play','results','flash','dailyDone'].forEach(id => $(id).hidden = true);
   $('sub').textContent = 'Loading the map…'; $('tally').textContent = ''; $('clock').hidden = true;
   (async () => {
-    try{ M = await loadMap(T.map); if(R.topics.some(t => t.flags)) await loadFlags(R.map); }
+    try{ M = await loadMap(T.map); if(!T.geo && R.topics.some(t => t.flags)) await loadFlags(R.map); }
     catch(e){ $('sub').textContent = 'The map could not load. Check your internet connection, then go back and try again.'; return; }
     if(!EXPLORE || EXPLORE.R !== R) return;
     drawMap();
@@ -1530,7 +1579,7 @@ function explorePaint(){
     setPlaceClass(n, n === current ? 'sel' : '');
     els[n].setAttribute('aria-label', n);
   });
-  if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); raiseDots(current); }
+  if(current && !sinks(ITEM[current])){ svg.appendChild(els[current]); raiseDots(current); }
   // labels and the capital star stay on top
   const g = svg.querySelector('#exLabels'); if(g) svg.appendChild(g);
   let st = svg.querySelector('#exStar');
@@ -1539,7 +1588,7 @@ function explorePaint(){
   else if(st) st.remove();
   exploreScale();
 }
-function exploreTap(n){ current = n; focusItem(n); explorePaint(); exploreInfo(n); sound('tap'); if(autoSay()){ const R = EXPLORE.R, cap = capitalOf(R, n), f = factFor(n, R.map); say(...(cap ? [n, '. Its capital is', cap] : [n]), ...(f ? ['.', f] : [])); } }
+function exploreTap(n){ current = n; focusItem(n); explorePaint(); exploreInfo(n); sound('tap'); if(autoSay()){ const R = EXPLORE.R, cap = EXPLORE.geo ? null : capitalOf(R, n), f = factFor(n, R.map); say(...(cap ? [n, '. Its capital is', cap] : [n]), ...(f ? ['.', f] : [])); } }
 function exploreStep(dir){
   const i = current ? ORDER.indexOf(current) : (dir > 0 ? -1 : 0), L = ORDER.length;
   exploreTap(ORDER[((i + dir) % L + L) % L]);
@@ -1547,14 +1596,14 @@ function exploreStep(dir){
 // "Did you know?" facts, loaded the first time Explore needs one
 let FACTS = null, factsLoading = null;
 const loadFacts = () => factsLoading || (factsLoading = fetch('facts.json').then(r => { if(!r.ok) throw 0; return r.json(); }).then(f => FACTS = f).catch(() => { factsLoading = null; }));
-function factFor(n, map){ if(!FACTS) return null; if(map === 'world') return null; return (map === 'us' ? FACTS.us : FACTS.country)[n] || null; }
+function factFor(n, map){ if(!FACTS) return null; if(T && T.geo) return (FACTS.geo || {})[n] || null; if(map === 'world') return null; return (map === 'us' ? FACTS.us : FACTS.country)[n] || null; }
 function exploreInfo(n){
   const box = $('exInfo');
   if(!n){ box.innerHTML = '<p class="muted">Tap any place on the map to learn about it, or press <b>Next</b>.</p>'; return; }
   const R = EXPLORE.R, it = ITEM[n];
-  const cap = capitalOf(R, n);
-  const flags = R.topics.some(t => t.flags);
-  const extra = R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
+  const cap = EXPLORE.geo ? null : capitalOf(R, n);
+  const flags = !EXPLORE.geo && R.topics.some(t => t.flags);
+  const extra = EXPLORE.geo ? `A ${GEO_WORD[it.sub]} in ${esc(R.name)}` : R.map === 'world' ? worldSize(n, it.kind) : R.map === 'us' ? `Postal code: <b>${POSTAL[n]}</b>` : '';
   box.innerHTML = `${flags ? flagImg(n, 'exflag') : ''}<div class="exbody"><p class="exname">${esc(n)} ${sayBtn(n, cap ? [n, '. Its capital is', cap] : [n])}</p>
     ${cap ? `<p>Capital: <b>${esc(cap)}</b> <span class="exstarkey" aria-hidden="true">★</span>${CAP_NOTE[n] ? ` <span class="muted">${esc(CAP_NOTE[n])}</span>` : ''}</p>` : ''}
     ${extra ? `<p class="muted">${extra}</p>` : ''}
@@ -1567,7 +1616,7 @@ function drawLabels(){
   const g = document.createElementNS(SVGNS, 'g'); g.id = 'exLabels'; g.setAttribute('aria-hidden','true');
   M.items.forEach(i => {
     const t = document.createElementNS(SVGNS, 'text'); const [x,y] = i.dot || i.c;
-    t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('class', 'exlbl' + (i.kind === 'ocean' ? ' sea' : ''));
+    t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('class', 'exlbl' + (i.kind === 'ocean' || i.kind === 'water' ? ' sea' : ''));
     t.textContent = i.n; t.dataset.n = i.n; g.appendChild(t);
   });
   svg.appendChild(g); exploreScale();
@@ -1680,7 +1729,7 @@ async function dailyShow(){
     $('sub').textContent = 'Tap the right place on the map. You get 2 tries.';
     $('selLabel').textContent = 'Find it on the map';
     if(T.flags) fq.innerHTML = `${flagImg(q.n,'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>`;
-    else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' ? `Find the ${q.n}` : `Find ${q.n}`);
+    else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !/^Lake /.test(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else {
     $('sub').textContent = 'Look at the orange place on the map, then pick the right answer.';
@@ -1697,7 +1746,7 @@ function dailyPaint(reveal, mark){
   NAMES.forEach(n => {
     setPlaceClass(n, mark && mark[n] ? mark[n] : n === current || n === reveal ? 'sel' : '');
   });
-  if(current && ITEM[current].kind !== 'ocean'){ svg.appendChild(els[current]); raiseDots(current); }
+  if(current && !sinks(ITEM[current])){ svg.appendChild(els[current]); raiseDots(current); }
 }
 function dailyAnswer(right, msg){
   const q = DAILY.qs[DAILY.i];
@@ -1711,8 +1760,8 @@ function dailyAnswer(right, msg){
 }
 function dailyTap(n){
   const q = DAILY && DAILY.qs[DAILY.i]; if(!q || DAILY.busy || q.style !== 'find') return;
-  const thatIs = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(n)}.`;
-  if(n === q.n){ dailyAnswer(DAILY.tries === 0, `Yes! That's <b>${esc(n)}</b>.`); return; }
+  const thatIs = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(the(n))}.`;
+  if(n === q.n){ dailyAnswer(DAILY.tries === 0, `Yes! That's <b>${esc(the(n))}</b>.`); return; }
   DAILY.tries++; flashWrong(n); noteMix(q.n, n);
   if(DAILY.tries < 2){ sound('wrong'); feedback(`${thatIs} Try once more! ${mixTip(q.n, n)}`, 'bad'); return; }
   dailyAnswer(false, `${thatIs} Here is <b>${esc(q.n)}</b>. ${mixTip(q.n, n)}`);
@@ -1774,7 +1823,7 @@ const BADGES = [
       desc:`Learn all ${names.length} ${t.nouns} in ${partPhrase(t.group, part)}.`, group:t.group, topic:t.id, part, need:names.length})) : []),
   ]),
 ];
-function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : '🗺️'; }
+function badgeIcon(t){ return t.flags ? '🚩' : t.showsItem ? '🏛️' : t.geo ? '⛰️' : '🗺️'; }
 async function computeBadges(p){
   const attempts = (await DB.all('attempts')).filter(a => a.pid === p.id && TOPIC[a.topic]);
   const items = (await DB.all('items')).filter(r => r.pid === p.id);
@@ -1891,7 +1940,7 @@ $('importFile').addEventListener('change', async e => {
 function openHelp(){
   openPanel({kind:'full', title:'How to play', html:`
     <ol class="steps">
-      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, North America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b> or <b>Flags</b>. Want a shorter game? Big places like Europe, Africa, Asia and North America have a <b>Part</b> row, so you can play just one part, like West Africa or the Caribbean. Learn every one in a part to earn its badge 🏅.</p></li>
+      <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, North America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b>, <b>Flags</b>, or <b>Mountains & Water</b> for mountain ranges, seas and lakes. Want a shorter game? Big places like Europe, Africa, Asia and North America have a <b>Part</b> row, so you can play just one part, like West Africa or the Caribbean. Learn every one in a part to earn its badge 🏅.</p></li>
       <li><h3>Look around first</h3><p>Tap <b>🔍 Explore the map</b> to look around with no quiz. Tap any place to see its name, flag, capital and a fun fact. Turn <b>Show names</b> off to hide the names and quiz yourself.</p></li>
       <li><h3>Pick how to play</h3><p><b>Learn:</b> flashcards, one at a time.<br><b>Find it:</b> the game shows a name, and you tap it on the map. You get 3 tries.<br><b>Practice:</b> find out right away if you are right.<br><b>Test:</b> answer them all, then press <b>Review</b> to see your score.</p></li>
       <li><h3>Tap the map</h3><p>In Practice and Test, tap a place. It turns orange. Then start typing its name in the box. Pick the name from the list and press <b>Save</b> or <b>Check</b>. Don't worry about spelling. The list helps you. Don't like typing? Turn on <b>Easy answers</b> in <b>⚙ Settings</b> to pick from 4 answers instead. Flags games always let you pick from 4.</p></li>

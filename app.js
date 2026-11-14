@@ -1204,6 +1204,14 @@ function nextFind(){
 $('skipBtn').onclick = () => { if(G && !G.busy && findTarget()) revealFind(`Skipped. Here is <b>${esc(findTarget())}</b>.`); };
 
 /* ---- Easy answers: pick from 4 instead of typing ---- */
+// wrong choices, in the order to offer them. For mountains and water, places of the same kind come first,
+// so "Which lake is this?" offers other lakes, not the Andes
+function choiceOrder(right, list){
+  const mix = shuffle(list.filter(v => v !== right));
+  if(!(T && T.geo && ITEM[right])) return mix;
+  const r = ITEM[right], rank = v => !ITEM[v] ? 3 : ITEM[v].sub === r.sub ? 0 : ITEM[v].kind === r.kind ? 1 : 2;
+  return mix.sort((a, b) => rank(a) - rank(b));
+}
 const easy = () => !!(player && (player.prefs.easy || (T && T.flags))) && G && (G.mode === 'test' || G.mode === 'practice');
 function renderChoices(){
   const box = $('choices');
@@ -1211,8 +1219,8 @@ function renderChoices(){
   let opts = G.choices[current];
   if(!opts){ // the right answer plus 3 others, kept the same if you come back to this one
     const right = key(current);
-    const others = shuffle(pool().filter(v => v !== right)).slice(0, 3);
-    if(others.length < 3) others.push(...shuffle(NAMES.map(key).filter(v => v !== right && !others.includes(v))).slice(0, 3 - others.length));
+    const others = choiceOrder(right, pool()).slice(0, 3);
+    if(others.length < 3) others.push(...choiceOrder(right, NAMES.map(key).filter(v => !others.includes(v))).slice(0, 3 - others.length));
     opts = G.choices[current] = shuffle([right, ...others]);
   }
   box.classList.toggle('flags', !!T.flags);
@@ -1745,7 +1753,7 @@ async function dailyShow(){
     $('sub').textContent = 'Look at the orange place on the map, then pick the right answer.';
     $('selLabel').textContent = T.flags ? `Which flag belongs to this ${T.itemWord || 'country'}?` : T.showsItem ? `What is the capital of ${q.n}?` : T.ask(q.n);
     fq.hidden = true; ch.hidden = false;
-    const right = key(q.n), others = shuffle(NAMES.map(key).filter(v => v !== right)).slice(0, 3), opts = shuffle([right, ...others]);
+    const right = key(q.n), others = choiceOrder(right, NAMES.map(key)).slice(0, 3), opts = shuffle([right, ...others]);
     ch.classList.toggle('flags', !!T.flags);
     ch.innerHTML = opts.map((v,i) => T.flags ? `<button data-dv="${esc(v)}" aria-label="Flag ${i+1}">${flagImg(v)}</button>` : `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
     focusItem(q.n);
@@ -1783,7 +1791,7 @@ $('choices').addEventListener('click', e => {
   b.classList.add(right ? 'picked-ok' : 'picked-bad');
   const r = $('choices').querySelector(`[data-dv="${CSS.escape(key(q.n))}"]`); if(r && !right) r.classList.add('picked-ok');
   const w = right ? null : placeOf(v); if(w){ flashMix(w); noteMix(q.n, w); }
-  dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is <b>${esc(key(q.n))}</b>`}. ${mixTip(q.n, w)}`);
+  dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : T.geo ? `That's ${esc(the(v))}` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is ${T.geo ? esc(the(key(q.n))) : `<b>${esc(key(q.n))}</b>`}`}. ${mixTip(q.n, w)}`);
 });
 async function dailyFinish(){
   const score = DAILY.right, first = !streakNow(player).doneToday;

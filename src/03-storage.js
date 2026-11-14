@@ -46,6 +46,8 @@ const gameKey = (pid, topic, mode) => `${pid}|${topic}|${mode}`;
 // extra: more fields to store with the answer (a Test also keeps its own last result). Returns the record as it was before.
 const ITEMQ = {};
 function withItem(key, fn){ const run = (ITEMQ[key] || Promise.resolve()).then(fn); ITEMQ[key] = run.catch(() => {}); return run; }
+// resolves once every answer given so far is saved (screens that show progress wait for it)
+const itemsSaved = () => Promise.all(Object.values(ITEMQ));
 function recordItem(pid, topic, item, right, extra){ return withItem(`${pid}|${topic}|${item}`, () => recordItemNow(pid, topic, item, right, extra)); }
 async function recordItemNow(pid, topic, item, right, extra){
   const key = `${pid}|${topic}|${item}`;

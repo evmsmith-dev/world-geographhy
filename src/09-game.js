@@ -43,7 +43,8 @@ async function enterGame(topicId, mode, fromPicker, only, part){
 }
 function newGameState(mode){ return {key:gameKey(player.id, T.id, mode), pid:player.id, topic:T.id, mode, round:1, answers:{}, solved:{}, elapsed:0, reviewed:false, scored:false, active:false, queue:null, tries:0, choices:{}}; }
 let returnTo = 'scrHome';
-function leaveGame(){ endExplore(); saveNow(); stopClock(); hideToast(); G = null; showScreen(returnTo); if(returnTo === 'scrRegion') renderRegion(); else renderHome(); }
+function leaveGame(){ endExplore(); saveNow(); stopClock(); hideToast(); G = null; showScreen(returnTo); const to = returnTo;
+  itemsSaved().then(() => { if(to === 'scrRegion') renderRegion(); else renderHome(); }); } // the last answers are saved first, so the progress shown is up to date
 function afterGame(){ checkBadges(); }
 $('backHome').onclick = () => popLayer();
 

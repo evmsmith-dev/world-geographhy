@@ -118,17 +118,18 @@ $('topicChip').onclick = () => {
   const panel = openPanel({title:'What do you want to play?', html:'<div class="pbody"></div>'});
   const body = panel.querySelector('.pbody');
   const draw = () => {
-    const t = TOPIC[tid];
+    const t = TOPIC[tid], rp = withParts(r, t);
+    if(!(t.parts && t.parts[part])) part = getPart(rp); // a part this tab has
     body.innerHTML = `<p class="sect">Place</p><div class="chips pick">${REGIONS.map(x => `<button data-r="${esc(x.name)}" aria-pressed="${x===r}">${esc(x.name)}</button>`).join('')}</div>
       ${r.topics.length > 1 ? `<p class="sect">Learn about</p><div class="tabs${r.topics.length > 3 ? ' many' : ''}">${r.topics.map(x => `<button data-tab="${x.id}" aria-selected="${x.id===tid}">${esc(x.tab)}</button>`).join('')}</div>` : ''}
-      ${r.parts && t.parts ? `<p class="sect">Part</p>${partChips(r, part)}` : ''}
+      ${t.parts ? `<p class="sect">Part</p>${partChips(rp, part)}` : ''}
       <p class="sect">How to play</p><div class="modelist">${modeButtons(t, null, t.id===T.id && G && (G.part || 'All') === part ? G.mode : null, part === 'All' || !t.parts ? null : part)}
         <button class="modebig" data-explore="${esc(r.name)}"${t.geo ? ` data-etopic="${t.id}"` : ''}${EXPLORE && EXPLORE.R===r ? ' aria-current="true"' : ''}><span class="mn">Explore</span><span class="md">A map to look around, no quiz</span></button></div>`;
   };
   draw();
   body.addEventListener('click', e => {
     const rb = e.target.closest('[data-r]'); if(rb){ r = REGIONS.find(x => x.name === rb.dataset.r); tid = lastTab(r).id; part = getPart(r); draw(); return; }
-    const pc = e.target.closest('.partrow [data-part]'); if(pc){ part = pc.dataset.part; setPart(r, part); draw(); return; }
+    const pc = e.target.closest('.partrow [data-part]'); if(pc){ part = pc.dataset.part; setPart(withParts(r, TOPIC[tid]), part); draw(); return; }
     const tb = e.target.closest('[data-tab]'); if(tb){ tid = tb.dataset.tab; draw(); return; }
     const ex = e.target.closest('[data-explore]'); if(ex){ popLayer(() => enterExplore(ex.dataset.explore, true, ex.dataset.etopic)); return; }
     const mb = e.target.closest('[data-mode]'); if(mb) popLayer(() => enterGame(mb.dataset.topic, mb.dataset.mode, true, null, mb.dataset.part || null));

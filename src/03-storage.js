@@ -54,6 +54,7 @@ async function recordItemNow(pid, topic, item, right, extra){
   const r = (await DB.get('items', key)) || {key, pid, topic, item, seen:0, right:0, wrong:0};
   const before = {...r};
   r.seen++; right ? r.right++ : r.wrong++; r.last = right ? 'right' : 'wrong'; r.at = Date.now();
+  if(right && !r.firstRight) r.firstRight = r.at; // the first right answer: the date on a landmark's passport stamp (src/17-passport.js)
   r.streak = right ? itemStreak(before) + 1 : 0; // right answers in a row: the longer, the longer until it comes back in the Daily 10
   if(extra) Object.assign(r, extra);
   await DB.put('items', r);

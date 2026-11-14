@@ -239,7 +239,8 @@ function moveActive(d){
 function choose(v){ inp.value = v; openList(false); syncSubmit(); submitBtn.focus({preventScroll:true}); }
 function syncSubmit(){ const pick = exact(); submitBtn.disabled = !current || !isOpen(current) || !pick || (G.mode==='test' && G.answers[current]===pick); $('clearTxt').hidden = !inp.value; }
 inp.addEventListener('input', () => { search(); syncSubmit(); });
-inp.addEventListener('focus', () => { if(!inp.disabled) search(); });
+// the whole list opens as soon as the box is ready, except over a landmark's picture: there it waits for typing (or the down arrow)
+inp.addEventListener('focus', () => { if(!inp.disabled && (inp.value || !T.landmarks)) search(); });
 inp.addEventListener('keydown', e => {
   if(e.key==='ArrowDown'){ e.preventDefault(); opts.hidden ? search() : moveActive(1); }
   else if(e.key==='ArrowUp'){ e.preventDefault(); moveActive(-1); }

@@ -306,3 +306,62 @@ test('Landmarks have pictures: in Explore, Find it, Practice and on flashcards, 
   await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', 'assets/landmarks/colosseum.svg');
   await expect(page.locator('#choices')).toBeHidden();
 });
+
+test('the passport: a stamp for each landmark learned, kept after a miss, with a note about new ones', async ({page}) => {
+  await newPlayer(page);
+  await expect(page.locator('#passBtn')).toContainText('Learn a landmark to get your first stamp!');
+  // learn all of Oceania's landmarks in Find it
+  await openTopic(page, 'Oceania', 'oc-landmarks');
+  await expect(page.locator('#regionBody [data-passport]')).toBeVisible();
+  await startMode(page, 'find');
+  await mapSettled(page);
+  for(let i = 0; i < 6; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'oc-landmarks')); if(i < 5) await expect(page.locator('#findQ')).not.toHaveText(before); }
+  await expect(page.locator('#results')).toBeVisible();
+  await goHome(page);
+  await expect(page.locator('#passBtn')).toContainText('6 of 52 landmark stamps');
+  await expect(page.locator('#passBtn .stamp')).toHaveCount(4); // the newest few
+  // the passport: Oceania's page is full, the rest wait
+  await page.click('#passBtn');
+  await expect(page.locator('.passport')).toContainText('6 of 52 stamps');
+  await expect(page.locator('.ppage', {hasText: 'Oceania'}).locator('h3')).toContainText('6 of 6');
+  await expect(page.locator('.passport .stamp.on')).toHaveCount(6);
+  await expect(page.locator('.passport .stamp.off')).toHaveCount(46);
+  await page.click('[data-stamp="Uluru"]');
+  await expect(page.locator('.stampbig')).toContainText('A landmark in Australia');
+  await expect(page.locator('.stampbig')).toContainText('Stamped');
+  await expect(page.locator('.stampbig .fact')).toBeVisible();
+  await page.click('.stampbig [data-close]');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.passport')).toHaveCount(0);
+  // a new stamp after a game, with no new badge to announce, gets its own note
+  await page.evaluate(async () => { await recordItem(player.id, 'eu-landmarks', 'Eiffel Tower', true); await checkBadges(); });
+  await expect(page.locator('.toast')).toContainText('New passport stamp: Eiffel Tower!');
+  await page.click('.toast button:has-text("See passport")');
+  await expect(page.locator('.ppage', {hasText: 'Europe'}).locator('h3')).toContainText('1 of 10');
+  // a miss later doesn't take a stamp away
+  await page.evaluate(async () => { await recordItem(player.id, 'oc-landmarks', 'Uluru', false); });
+  await goHome(page);
+  await expect(page.locator('#passBtn')).toContainText('7 of 52 landmark stamps');
+});
+
+test('typing an answer: the list of names waits for typing over a landmark picture, and opens right away elsewhere', async ({page}) => {
+  await newPlayer(page);
+  const pick = n => page.evaluate(n => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n).dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})), n);
+  await openTopic(page, 'Europe', 'eu-landmarks');
+  await startMode(page, 'practice');
+  await pick('Big Ben');
+  await expect(page.locator('#answer')).toBeEditable();
+  await page.focus('#answer');
+  await expect(page.locator('#findQ img.lmpic')).toBeVisible();
+  await expect(page.locator('#opts'), 'the list does not cover the picture').toBeHidden();
+  await page.keyboard.type('Big');
+  await expect(page.locator('#opts')).toBeVisible();
+  await expect(page.locator('#opts li').first()).toHaveText('Big Ben');
+  await goHome(page);
+  await openTopic(page, 'Europe', 'eu-countries');
+  await startMode(page, 'practice');
+  await pick('France');
+  await expect(page.locator('#answer')).toBeEditable();
+  await page.focus('#answer');
+  await expect(page.locator('#opts')).toBeVisible();
+});

@@ -253,6 +253,7 @@ async function checkBadgesNow(){
     if(el && !$('results').hidden) el.innerHTML = `<span class="again">${b.icon} ${esc(b.name.replace(/!$/, ''))} again! That's ${b.times} times.</span> ` + el.innerHTML; }
   const rank = b => b.secret ? 0 : b.part ? 1 : b.master ? 2 : 3;
   const fresh = list.filter(b => b.earned && !had[b.id]).sort((a,b) => rank(a) - rank(b)); // show a secret or place badge first
+  await newStamps(!fresh.length); // new passport stamps (src/17-passport.js), said only when there's no new badge to say
   if(!fresh.length) return;
   player.badges = {...had}; fresh.forEach(b => player.badges[b.id] = Date.now());
   await DB.put('players', player);

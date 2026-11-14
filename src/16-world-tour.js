@@ -26,6 +26,7 @@ async function renderTour(t, draw){
   $('regionBody').innerHTML = `
     <p class="sub">Find all ${t.count} ${t.nouns}${t.id === 'world-countries' ? ' of the world' : ''}, continent by continent.
       What you learn here counts for each continent too.</p>
+    ${t.id === 'world-landmarks' ? '<button class="passlink" data-passport>🛂 See the stamps in your passport</button>' : ''}
     <div class="meter" role="img" aria-label="${st.learned} of ${t.count} learned"><i style="width:${Math.round(100*st.learned/t.count)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${t.count} learned</span>${done ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(t.name)} Master</b></span>` : ''}</p>
     <ul class="tourparts">${st.per.map(p => `<li><span>${esc(TOPIC[p.f].group)}</span> <b>${p.learned}</b> of ${p.count}</li>`).join('')}</ul>

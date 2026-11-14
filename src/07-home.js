@@ -47,8 +47,8 @@ async function renderHome(){
     for(const t of r.topics){ learned += (await DB.byPT('items', player.id, t.id)).filter(i => i.last==='right').length; total += t.count; }
     return {r, learned, total};
   }));
-  const upnext = await upNextCard();
-  $('homeGroups').innerHTML = dailyCard() + upnext +
+  const upnext = await upNextCard(), passport = await passportCard();
+  $('homeGroups').innerHTML = dailyCard() + upnext + passport +
     (games.length ? `<section class="group"><h2>Keep going</h2><div class="resumes">${games.map(g => { const t = TOPIC[g.topic]; return `
       <button class="resumebtn" data-topic="${g.topic}" data-mode="${g.mode}"${g.part ? ` data-part="${esc(g.part)}"` : ''}><span class="rt">${esc(t.name)}${g.part ? ` · ${esc(g.part)}` : ''}</span><span class="rm">${MODES[g.mode]} · ${Object.keys(g.answers).length} of ${g.part && t.parts ? t.parts[g.part].length : t.count} done${g.round>1 ? ` · round ${g.round}` : ''}</span><span class="go" aria-hidden="true">▶</span></button>`; }).join('')}</div></section>` : '') +
     `<section class="group"><h2>Pick a place</h2><div class="regions">${regions.map(({r, learned, total}) => `
@@ -98,6 +98,7 @@ async function renderRegion(){
   if(draw !== regionDraw) return; // another tab was tapped meanwhile
   $('regionBody').innerHTML = `
     <p class="sub">${esc(blurb)}</p>
+    ${t.landmarks ? '<button class="passlink" data-passport>🛂 See the stamps in your passport</button>' : ''}
     ${partChips(r, part, done)}
     <div class="meter" role="img" aria-label="${st.learned} of ${n} learned"><i style="width:${Math.round(100*st.learned/n)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(partPhrase(r.name, pp))}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>

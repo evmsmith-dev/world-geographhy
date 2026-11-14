@@ -541,3 +541,32 @@ svg.shape path.rline.hi{stroke:var(--sel);stroke-width:5}
 .map .st.landmark.off{fill:color-mix(in srgb,var(--line) 50%,var(--sheet));pointer-events:none}
 .map .st.landmark.mixup{fill:color-mix(in srgb,var(--bad) 35%,var(--sheet))} .map .st.landmark.wrongflash{fill:var(--bad)}
 svg.shape path.geolandmark{fill:color-mix(in srgb,#7b4fa0 50%,var(--land));stroke:none}
+
+/* passport (src/17-passport.js): a stamp for each landmark learned */
+.passbtn{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:12px;align-items:center;width:100%;text-align:left;padding:12px 16px;border-radius:14px;background:var(--sheet);border:1px solid var(--line);margin:12px 0 4px}
+.passbtn .pi{grid-row:1/3;font-size:1.9rem;line-height:1}
+.passbtn .pt{font-family:var(--display);font-weight:800;font-size:1.2rem;letter-spacing:.03em}
+.passbtn .pd{grid-row:2;grid-column:2;color:var(--muted);font-size:.95rem}
+.passbtn .pnew{grid-row:1/3;grid-column:3;display:flex;gap:4px}
+.passlink{display:block;margin:-2px 0 10px;padding:6px 12px;border-radius:999px;background:var(--sheet);font-weight:700;font-size:.95rem}
+.passport .meter{margin:8px 0 4px}
+.ppage{margin-top:18px}
+.ppage h3{margin:0 0 10px;font-family:var(--display);font-size:1.15rem}
+.stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:16px 12px}
+.stamp{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px;margin:0;border:3px dotted color-mix(in srgb,var(--muted) 45%,transparent);border-radius:8px;background:#fffdf7;color:#2a2a2a;font:inherit;text-align:center;min-height:0;cursor:default}
+.stamp.on{cursor:pointer;transform:rotate(var(--tilt,0deg));box-shadow:0 2px 6px rgb(0 0 0 / .14)}
+.stamp.on:hover{transform:rotate(0) scale(1.04)}
+.stamp img.lmpic{width:100%;border-radius:4px;box-shadow:none}
+.stamp.off{background:transparent;color:var(--muted)}
+.stamp.off img.lmpic{filter:grayscale(1) blur(4px);opacity:.3}
+.stamp .sn{font-weight:700;font-size:.85rem;line-height:1.15}
+.stamp.off .sn{font-size:1.2rem}
+.stamp .pmark{position:absolute;right:-6px;top:-8px;width:62px;height:62px;border:2.5px solid var(--ink);border-radius:50%;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;line-height:1.1;text-transform:uppercase;letter-spacing:.02em;transform:rotate(-14deg);background:color-mix(in srgb,#fffdf7 55%,transparent);opacity:.88;padding:4px;text-align:center}
+.stamp .pmark b{font-size:.62rem;overflow:hidden;max-width:100%;white-space:nowrap;text-overflow:ellipsis}
+.stamp.small{width:44px;padding:2px;border-width:2px;border-radius:5px}
+.stampbig{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;max-width:340px}
+.stampbig img.lmpic.big{width:min(280px,70vw);border:6px solid #fffdf7;outline:3px dotted var(--ink);border-radius:8px}
+.stampbig h2{margin:8px 0 0}
+.stampbig .fact{margin:6px 0 4px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--hi) 55%,var(--sheet));line-height:1.4;text-align:left}
+.stampbig .fact .fk{display:block;font-weight:700;font-size:.9rem;margin-bottom:2px}
+@media (max-width:420px){ .stamps{grid-template-columns:repeat(2,minmax(0,1fr))} .passbtn .pnew .stamp:nth-child(n+3){display:none} }

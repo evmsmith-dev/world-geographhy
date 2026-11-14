@@ -20,8 +20,9 @@ Plain JavaScript, no libraries and no build step: `index.html` loads these files
 | `14-explore.js` | Explore: tap anything on the map to learn about it |
 | `15-daily.js` | The Daily 10, streaks and badges |
 | `16-world-tour.js` | The World Tour: every country, or every Land & Water place, in one game on the continent maps |
-| `17-settings.js` | Settings, How to play, and backups |
-| `18-start.js` | Updates and start-up. It runs last and starts the game |
+| `17-passport.js` | The passport: a stamp for each landmark learned |
+| `18-settings.js` | Settings, How to play, and backups |
+| `19-start.js` | Updates and start-up. It runs last and starts the game |
 | `app.css` | The look |
 
 ## How the files work together
@@ -30,7 +31,7 @@ The files share one set of names: a `const` or `function` at the top of one file
 keep that working:
 
 - **Code that runs right away can only use names from its own file or earlier files.** Most code runs later (when the
-  player taps something), and that can use anything. The game starts at the end of `18-start.js`, when every file
+  player taps something), and that can use anything. The game starts at the end of `19-start.js`, when every file
   has loaded.
 - **Every top-level name must be unique across all the files.** Using the same name twice stops the game from loading;
   the automatic tests catch it.

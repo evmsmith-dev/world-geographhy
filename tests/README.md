@@ -25,7 +25,7 @@ generation) in WebKit (the engine in Safari).
 
 ## The test hook
 
-The tests read the game's data through `window.WGQ_TEST`, which `src/18-start.js` creates only when the page is opened with
+The tests read the game's data through `window.WGQ_TEST`, which `src/19-start.js` creates only when the page is opened with
 `?test` in the address. Players never see it. When the code is reorganized, keep `WGQ_TEST` working with the same names.
 
 ## The old backup file

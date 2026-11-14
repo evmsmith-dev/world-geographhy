@@ -1,0 +1,12 @@
+{
+  "name": "world-geography-quiz-tests",
+  "private": true,
+  "description": "Automatic checks for the game. The game itself doesn't use this.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

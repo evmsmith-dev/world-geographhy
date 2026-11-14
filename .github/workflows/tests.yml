@@ -1,0 +1,35 @@
+# Runs the game's automatic checks (the tests folder) on every pull request and every change to main.
+# A green check on the pull request means they all passed; a red X means something broke. Click "Details" to see what.
+name: Tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Install browsers (Chromium for the phone, WebKit, the engine in Safari, for the iPad)
+        run: npx playwright install --with-deps chromium webkit
+      - name: Run the tests
+        run: npx playwright test
+        env:
+          CI: true
+      - name: Save the report when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: tests/playwright-report
+          retention-days: 14

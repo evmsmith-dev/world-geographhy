@@ -1695,6 +1695,7 @@ let DAILY = null; // {qs:[{t,n,style}], i, right, tries, busy}
 // (1, 3, 7, 14, then 30 days after each right answer in a row), a few new ones, and some surprises.
 const REVIEW_DAYS = [0, 1, 3, 7, 14, 30];
 async function pickDaily(){
+  if(window.WGQ_TEST && WGQ_TEST.dailyQuestions){ const out = WGQ_TEST.dailyQuestions.map(([t, n, style]) => ({t, n, style})); for(const q of out){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); } return out; } // tests can set the questions
   const DAY = 864e5, now = Date.now();
   const all = (await DB.all('items')).filter(r => r.pid === player.id && TOPIC[r.topic] && r.last);
   const missed = all.filter(r => r.last === 'wrong').sort((a,b) => (b.at||0) - (a.at||0)).slice(0, 3);
@@ -2017,6 +2018,10 @@ async function applyUpdate(){
   }catch(e){}
   location.reload();
 }
+// the automatic tests read the game's data through this. It only exists when the page is opened with ?test,
+// so players never see it. Keep these names working when the code moves around.
+if(/[?&]test\b/.test(location.search)) window.WGQ_TEST = {TOPICS, TOPIC, LOOKALIKES, SAY, GEO_ALIAS, WORLD_FACT, CAP, CAP_NOTE, POSTAL, loadMap,
+  facts: async () => { await loadFacts(); return FACTS; }, zoomTo: n => zoomToItems([n]), flags: async map => { await loadFlags(map); return FLAGURL; }};
 async function start(){
   const persistent = await DB.ready();
   await migrateCentralAmerica();

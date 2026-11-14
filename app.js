@@ -125,7 +125,7 @@ function worldSize(n, kind){
 // Mountains & Water: mountain ranges, seas and lakes, on the continent's map with its countries as a gray background
 const GEO_ALIAS = {'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
-  'Mediterranean Sea':['mediterranean','med'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal']};
+  'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal']};
 const GEO_WORD = {range:'mountain range', sea:'sea', gulf:'gulf', bay:'bay', lake:'lake'};
 const geoSub = n => { const it = M && M.by && M.by[n]; return it ? it.sub : 'range'; };
 const geoAsk = n => `Which ${GEO_WORD[geoSub(n)]} is this?`;
@@ -153,7 +153,7 @@ const TOPICS = [
     ask:()=> 'Which continent or ocean is this?', flashFront:()=> 'Which continent or ocean is this?', card:'locate',
     back:(n,item)=>({answer:n, sub:worldSize(n, item.kind)}) },
   ...regionTopics('eu', 'Europe', 'europe', 44, 14, 'Find all 44 countries in Europe.', 'Name the capital of every country in Europe.', EU_ALIAS, EU_CAP_ALIAS, EU_PARTS),
-  geoTopic('eu', 'Europe', 'europe', 9, 14, 'Find 5 mountain ranges and 4 seas in Europe.'),
+  geoTopic('eu', 'Europe', 'europe', 11, 14, 'Find 5 mountain ranges and 6 seas in Europe.'),
   ...regionTopics('af', 'Africa', 'africa', 54, 10, 'Find all 54 countries in Africa.', 'Name the capital of every country in Africa.', AF_ALIAS, AF_CAP_ALIAS, AF_PARTS),
   geoTopic('af', 'Africa', 'africa', 6, 10, 'Find 2 mountain ranges, a sea and 3 big lakes in Africa.'),
   ...regionTopics('as', 'Asia', 'asia', 48, 14, 'Find all 48 countries in Asia.', 'Name the capital of every country in Asia.', AS_ALIAS, AS_CAP_ALIAS, AS_PARTS),
@@ -351,7 +351,7 @@ const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','
   'Kyiv':'keev','Czechia':'check-ee-uh','Brasília':'brah-zee-lee-ah','Bogotá':'boh-goh-tah','Asunción':'ah-soon-see-ohn','Tegucigalpa':'teh-goo-see-gal-pah',
   'Belmopan':'bel-moh-pan','Paramaribo':'pah-rah-mah-ree-boh','Antananarivo':'an-tah-nah-nah-ree-voh','Gaborone':'hah-boh-roh-nay','São Tomé and Príncipe':'sow toh-may and preen-see-pay',
   'São Tomé':'sow toh-may','Eswatini':'eh-swah-tee-nee','Djibouti':'jih-boo-tee','Timor-Leste':'tee-mor lesh-tay','Dili':'dee-lee','Bandar Seri Begawan':'bun-dar seh-ree beh-gah-wan',
-  'Vientiane':'vee-en-tee-ahn','Lake Titicaca':'lake tee-tee-kah-kah','Lake Baikal':'lake by-kahl','Lake Tanganyika':'lake tan-gan-yee-kah',
+  'Vientiane':'vee-en-tee-ahn','Lake Titicaca':'lake tee-tee-kah-kah','Lake Baikal':'lake by-kahl','Lake Tanganyika':'lake tan-gan-yee-kah','Aegean Sea':'ih-jee-un sea',
   'Tian Shan':'tee-en shahn','Pyrenees':'peer-uh-neez','Caucasus Mountains':'kaw-kuh-sus mountains','Sierra Madre':'see-air-uh mah-dray','Hindu Kush':'hin-doo koosh','Basseterre':'bass-tair','Castries':'kas-treez','Roseau':'roh-zoh','Port-au-Prince':'port oh prance','Grenada':'greh-nay-dah',
   'Belize':'beh-leez','Managua':'mah-nah-gwah','San José':'san ho-zay','Kiribati':'kee-ree-bahs','South Tarawa':'south tah-rah-wah','Ngerulmud':'neh-rool-mood',"Nuku'alofa":'noo-koo-ah-loh-fah',
   'Palikir':'pah-lee-keer','Majuro':'mah-joo-roh','Funafuti':'foo-nah-foo-tee','Tuvalu':'too-vah-loo','Nauru':'nah-oo-roo','Yaren':'yah-ren','Apia':'ah-pee-ah',

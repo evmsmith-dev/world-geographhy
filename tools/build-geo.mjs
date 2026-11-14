@@ -22,7 +22,7 @@ const PROJ = {
   samerica: {c:[-59.99, -20.05],s:1177.09, t:[462.78, 675.62], w:1000, h:1422},
 };
 // [name in the game, kind, source, names in the data]. Natural Earth splits some seas into smaller named parts
-// (the Adriatic and Aegean in the Mediterranean, the Gulf of Bothnia in the Baltic...), so those parts are joined back in. Seas sit under the land; lakes and mountains sit on top of it.
+// (the Tyrrhenian and Ionian in the Mediterranean, the Gulf of Bothnia in the Baltic...), so those parts are joined back in. Seas sit under the land; lakes and mountains sit on top of it.
 const FEATURES = {
   namerica: [['Rocky Mountains','range','mtn',['ROCKY MOUNTAINS']], ['Appalachian Mountains','range','mtn',['APPALACHIAN MTS.']],
     ['Sierra Madre','range','mtn',['SIERRA MADRE OCCIDENTAL','SIERRA MADRE ORIENTAL','Sierra Madre del Sur']],
@@ -31,7 +31,7 @@ const FEATURES = {
   samerica: [['Andes','range','mtn',['ANDES']], ['Lake Titicaca','lake','lake',['Lago Titicaca']]],
   europe: [['Alps','range','mtn',['ALPS']], ['Pyrenees','range','mtn',['PYRENEES']], ['Ural Mountains','range','mtn',['URAL MOUNTAINS']], ['Caucasus Mountains','range','mtn',['CAUCASUS MTS.','Lesser Caucasus']],
     ['Scandinavian Mountains','range','mtn',['KJØLEN MOUNTAINS']],
-    ['Mediterranean Sea','sea','sea',['Mediterranean Sea','Adriatic Sea','Aegean Sea','Alboran Sea','Balearic Sea','Golfe du Lion','Gulf of Gabès','Gulf of Sidra','Ionian Sea','Ligurian Sea','Sea of Crete','Tyrrhenian Sea']], ['Black Sea','sea','sea',['Black Sea']], ['Baltic Sea','sea','sea',['Baltic Sea','Gulf of Bothnia','Gulf of Finland','Gulf of Riga','Mecklenburger Bucht']], ['North Sea','sea','sea',['North Sea','Skagerrak']]],
+    ['Mediterranean Sea','sea','sea',['Mediterranean Sea','Alboran Sea','Balearic Sea','Golfe du Lion','Gulf of Gabès','Gulf of Sidra','Ionian Sea','Ligurian Sea','Tyrrhenian Sea']], ['Adriatic Sea','sea','sea',['Adriatic Sea']], ['Aegean Sea','sea','sea',['Aegean Sea','Sea of Crete']], ['Black Sea','sea','sea',['Black Sea']], ['Baltic Sea','sea','sea',['Baltic Sea','Gulf of Bothnia','Gulf of Finland','Gulf of Riga','Mecklenburger Bucht']], ['North Sea','sea','sea',['North Sea','Skagerrak']]],
   africa: [['Atlas Mountains','range','mtn',['ATLAS MOUNTAINS','HAUT ATLAS','ATLAS SAHARIEN','Anti Atlas','Moyen Atlas','Atlas Tellien']], ['Ethiopian Highlands','range','mtn',['ETHIOPIAN HIGHLANDS']],
     ['Red Sea','sea','sea',['Red Sea']], ['Lake Victoria','lake','lake',['Lake Victoria']], ['Lake Tanganyika','lake','lake',['Lake Tanganyika']], ['Lake Malawi','lake','lake',['Lake Malawi']]],
   asia: [['Himalayas','range','mtn',['HIMALAYAS']], ['Hindu Kush','range','mtn',['HINDU KUSH']], ['Tian Shan','range','mtn',['TIAN SHAN']],

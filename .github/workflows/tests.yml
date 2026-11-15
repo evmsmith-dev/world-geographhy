@@ -15,9 +15,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # The tests run as six jobs side by side, so the whole check takes a few minutes instead of ten or more.
-  # The long "tap every place" runs are split by place; everything else is split by device.
-  # (A data check in tests/data.spec.js makes sure every place is in one of the two "tap every place" groups.)
+  # The tests run as ten jobs side by side, so the whole check takes about three minutes instead of fifteen or more.
+  # For the phone and the iPad: "tap every place" (one test per topic) is shared out three ways with Playwright's --shard,
+  # and everything else two ways. (A data check in tests/data.spec.js makes sure each group's shards cover all of it.)
   tests:
     name: tests (${{ matrix.name }})
     runs-on: ubuntu-latest
@@ -26,24 +26,36 @@ jobs:
       fail-fast: false # finish every job, so one failure doesn't hide another
       matrix:
         include:
-          - name: phone, tap every place 1
+          - name: phone, tap every place 1 of 3
             browser: chromium
-            args: --project=phone tap-everything --grep "United States|World|Oceania|South America"
-          - name: phone, tap every place 2
+            args: --project=phone tap-everything --shard=1/3
+          - name: phone, tap every place 2 of 3
             browser: chromium
-            args: --project=phone tap-everything --grep "Europe|Africa|Asia|North America"
-          - name: iPad, tap every place 1
-            browser: webkit
-            args: --project=ipad tap-everything --grep "United States|World|Oceania|South America"
-          - name: iPad, tap every place 2
-            browser: webkit
-            args: --project=ipad tap-everything --grep "Europe|Africa|Asia|North America"
-          - name: phone, everything else
+            args: --project=phone tap-everything --shard=2/3
+          - name: phone, tap every place 3 of 3
             browser: chromium
-            args: --project=data --project=phone --grep-invert "every place can be tapped"
-          - name: iPad, everything else
+            args: --project=phone tap-everything --shard=3/3
+          - name: iPad, tap every place 1 of 3
             browser: webkit
-            args: --project=ipad --grep-invert "every place can be tapped"
+            args: --project=ipad tap-everything --shard=1/3
+          - name: iPad, tap every place 2 of 3
+            browser: webkit
+            args: --project=ipad tap-everything --shard=2/3
+          - name: iPad, tap every place 3 of 3
+            browser: webkit
+            args: --project=ipad tap-everything --shard=3/3
+          - name: phone, everything else 1 of 2
+            browser: chromium
+            args: --project=data --project=phone --grep-invert "every place can be tapped" --shard=1/2
+          - name: phone, everything else 2 of 2
+            browser: chromium
+            args: --project=data --project=phone --grep-invert "every place can be tapped" --shard=2/2
+          - name: iPad, everything else 1 of 2
+            browser: webkit
+            args: --project=ipad --grep-invert "every place can be tapped" --shard=1/2
+          - name: iPad, everything else 2 of 2
+            browser: webkit
+            args: --project=ipad --grep-invert "every place can be tapped" --shard=2/2
     defaults:
       run:
         working-directory: tests

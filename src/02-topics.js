@@ -89,7 +89,8 @@ const flagSrc = n => FLAGURL[(M && MAPDATA.us && M === MAPDATA.us ? 'us:' : '') 
 const flagImg = (n, cls='') => flagSrc(n) ? `<img class="flag ${cls}" src="${flagSrc(n)}" alt="" draggable="false">` : '';
 // Landmark drawings: one picture for each landmark in assets/landmarks/, named after it (tools/build-pictures.mjs)
 const picSrc = n => 'assets/landmarks/' + n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.svg';
-const picImg = (n, cls='') => `<img class="lmpic ${cls}" src="${picSrc(n)}" alt="" draggable="false">`;
+// alt: what a screen reader says. Where the name is the answer, it says only "A drawing of a landmark"
+const picImg = (n, cls='', alt='A drawing of a landmark') => `<img class="lmpic ${cls}" src="${picSrc(n)}" alt="${esc(alt)}" draggable="false">`;
 // size rank among its kind, and one fact a kid can remember
 const WORLD_FACT = {
   'Asia':[1,'Mount Everest, the tallest mountain on Earth, is here.'],

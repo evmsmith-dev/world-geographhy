@@ -14,7 +14,7 @@ function drawCardArt(el, n, side){
   }
   if(T.landmarks && side === 'front'){ // a drawing of the landmark; the back shows where it is
     el.setAttribute('viewBox', '0 0 200 160');
-    el.innerHTML = `<image href="${picSrc(n)}" x="0" y="0" width="200" height="160"/>`;
+    el.innerHTML = `<title>A drawing of a landmark</title><image href="${picSrc(n)}" x="0" y="0" width="200" height="160"/>`;
     return;
   }
   const it = ITEM[n];

@@ -18,11 +18,11 @@ async function passportOf(pid){
 }
 
 // one stamp: the drawing with a postmark, or a blurred drawing to look forward to
-const stampHtml = (s, small) => small ? `<span class="stamp on small" style="--tilt:${((s.n.length * 7) % 9) - 4}deg">${picImg(s.n)}</span>` // inside the home card's button
+const stampHtml = (s, small) => small ? `<span class="stamp on small" style="--tilt:${((s.n.length * 7) % 9) - 4}deg">${picImg(s.n, '', '')}</span>` // inside the home card's button
   : s.at
   ? `<button class="stamp on" data-stamp="${esc(s.n)}" aria-label="${esc(s.n)}, stamped ${esc(stampDate(s.at))}" style="--tilt:${((s.n.length * 7) % 9) - 4}deg;--ink:${s.ink}">
-      ${picImg(s.n)}<span class="pmark" aria-hidden="true"><b>${esc(s.where.replace(/^the /, ''))}</b>${esc(stampDate(s.at))}</span><span class="sn">${esc(s.n)}</span></button>`
-  : `<span class="stamp off" aria-label="A stamp not collected yet">${picImg(s.n)}<span class="sn">?</span></span>`;
+      ${picImg(s.n, '', '')}<span class="pmark" aria-hidden="true"><b>${esc(s.where.replace(/^the /, ''))}</b>${esc(stampDate(s.at))}</span><span class="sn">${esc(s.n)}</span></button>`
+  : `<span class="stamp off" role="img" aria-label="A stamp not collected yet">${picImg(s.n, '', '')}<span class="sn">?</span></span>`;
 
 // the home screen card: how many stamps, and the newest few
 async function passportCard(){
@@ -48,7 +48,7 @@ async function openPassport(){
 async function openStamp(s){
   await loadFacts();
   const fact = FACTS && FACTS.geo && FACTS.geo[s.n];
-  const panel = openPanel({kind:'center', label:s.n, html:`<div class="stampbig" style="--ink:${s.ink}">${picImg(s.n, 'big')}
+  const panel = openPanel({kind:'center', label:s.n, html:`<div class="stampbig" style="--ink:${s.ink}">${picImg(s.n, 'big', `A drawing of ${s.n}`)}
     <h2>${esc(s.n)} ${sayBtn(s.n, [s.n])}</h2><p class="muted">A landmark in ${esc(s.where)} · Stamped ${esc(stampDate(s.at))}</p>
     ${fact ? `<p class="fact"><span class="fk">💡 Did you know?</span>${esc(fact)}</p>` : ''}
     <button class="primary" data-close>OK</button></div>`});

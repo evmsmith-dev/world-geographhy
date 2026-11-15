@@ -574,3 +574,16 @@ svg.shape path.geolandmark{fill:color-mix(in srgb,#7b4fa0 50%,var(--land));strok
 .stampbig .fact{margin:6px 0 4px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--hi) 55%,var(--sheet));line-height:1.4;text-align:left}
 .stampbig .fact .fk{display:block;font-weight:700;font-size:.9rem;margin-bottom:2px}
 @media (max-width:420px){ .stamps{grid-template-columns:repeat(2,minmax(0,1fr))} .passbtn .pnew .stamp:nth-child(n+3){display:none} }
+
+/* Beat the Clock and Mystery Country (src/17-games.js) */
+.clock.low{color:var(--bad);font-weight:800}
+.passbtn.mysterybtn{margin-top:12px}
+.mysterypick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mysterypick button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:10px 12px;border-radius:10px;background:var(--sheet);font-weight:700}
+.mysterypick button small{color:var(--muted);font-weight:500}
+.mysterypick .surprise{grid-column:1 / -1}
+.findq ol.clues{font-family:"Alegreya Sans",system-ui,sans-serif;letter-spacing:0;margin:0 0 8px;padding-left:1.6em;text-align:left;max-height:30vh;overflow:auto;font-weight:500}
+.findq ol.clues li{margin:3px 0;color:var(--muted);font-size:.95rem}
+.findq ol.clues li.new{color:inherit;font-weight:700;font-size:1.05rem}
+.findq ol.clues img.flag{height:38px;width:auto;vertical-align:middle;margin-left:4px;box-shadow:0 1px 3px rgb(0 0 0 / .2)}
+.findq #nextClue{margin:0 auto;padding:6px 14px;font-size:.95rem}

@@ -210,8 +210,9 @@ test('on GitHub, each group of tests is split into shards that together cover al
     (groups[key] = groups[key] || {n: m ? +m[2] : 1, got: []}).got.push(m ? +m[1] : 1);
   }
   for(const [key, g] of Object.entries(groups)) expect(g.got.sort((a, b) => a - b), `the shards of: ${key}`).toEqual(Array.from({length: g.n}, (_, i) => i + 1));
-  // tapping every place, and everything else, on both the phone and the iPad
+  // the data checks, and tapping every place and everything else on both the phone and the iPad
   const keys = Object.keys(groups);
+  expect(keys, 'the data checks').toContain('--project=data');
   for(const p of ['phone', 'ipad']){
     expect(keys.filter(k => k.includes(`--project=${p}`) && k.includes('tap-everything')), `tap every place on the ${p}`).toHaveLength(1);
     expect(keys.filter(k => k.includes(`--project=${p}`) && k.includes('--grep-invert "every place can be tapped"')), `everything else on the ${p}`).toHaveLength(1);

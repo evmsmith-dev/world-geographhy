@@ -1,8 +1,9 @@
 # Automatic tests
 
 These tests play the game the way a kid would, on a phone and on an iPad, and check the game's data. They run on GitHub
-on every pull request (see `.github/workflows/tests.yml`). There they run as ten jobs side by side (for the phone and the iPad, the long "tap every place" tests,
-one per topic, shared out three ways, and everything else two ways), and one check named **test** passes only when all ten do. A green check on the pull request means everything passed; a
+on every pull request (see `.github/workflows/tests.yml`). There they run as twelve jobs side by side (the data checks; then for the phone and the iPad, the long "tap every
+place" tests, one per topic, shared out three ways, and everything else two or three ways), and one check named **test**
+passes only when all of them do. A green check on the pull request means everything passed; a
 red X means something broke. Click **Details** next to it to see which test failed and why.
 
 The game itself doesn't use anything in this folder.

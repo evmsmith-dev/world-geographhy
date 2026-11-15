@@ -289,6 +289,6 @@ async function checkBadgesNow(){
   if(!fresh.length) return;
   player.badges = {...had}; fresh.forEach(b => player.badges[b.id] = Date.now());
   await DB.put('players', player);
-  toast(`${fresh[0].icon} ${fresh[0].secret ? 'Secret badge unlocked' : 'New badge'}: ${fresh[0].name}!${fresh.length > 1 ? ` (and ${fresh.length-1} more)` : ''}`, [{label:'See badges', run: () => { if(!$('scrPlay').hidden) popLayer(() => openScores()); else openScores(); }}, {label:'OK', ghost:true}], 7000);
+  toast(`${fresh[0].icon} ${fresh[0].secret ? 'Secret badge unlocked' : 'New badge'}: ${fresh[0].name}!${fresh.length > 1 ? ` (and ${fresh.length-1} more)` : ''}`, [{label:'See badges', run: () => { const go = () => { openScores(); openBadges(); }; if(!$('scrPlay').hidden) popLayer(go); else go(); }}, {label:'OK', ghost:true}], 7000);
   confetti();
 }

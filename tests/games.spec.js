@@ -2,6 +2,7 @@
 import {test, expect, newPlayer, openTopic, goHome, tapPlace, mapSettled, answerRun} from './helpers.js';
 
 test('Beat the Clock: as many as you can before time runs out, then your best, and play again', async ({page}) => {
+  test.setTimeout(120_000); // a 15-second game, played by a busy test machine
   await newPlayer(page);
   await openTopic(page, 'Europe', 'eu-countries');
   await expect(page.locator('.clockbtn')).toContainText('How many can you get right in 60 seconds?');
@@ -19,8 +20,11 @@ test('Beat the Clock: as many as you can before time runs out, then your best, a
     await page.waitForFunction(q => !document.getElementById('dailyDone').hidden || ['#findQ', '#selLabel', '#choices'].map(s => document.querySelector(s).textContent).join('|') !== q, q, {timeout: 5000}).catch(() => {});
     got = Number((await page.textContent('#tally')).match(/\d+/)[0]);
   }
+  // the score is the one at the end (an answer can land in the last moment, after the last look at the tally)
+  await expect(page.locator('#dailyDoneH')).toHaveText(/^Time's up! You got \d+ right!$/);
+  got = Number((await page.textContent('#dailyDoneH')).match(/\d+/)[0]);
   expect(got, 'some answered in 15 seconds').toBeGreaterThan(1);
-  await expect(page.locator('#dailyDoneH')).toHaveText(`Time's up! You got ${got} right!`);
+  await expect(page.locator('#tally')).toHaveText(`${got} right`);
   await expect(page.locator('#clock')).toBeHidden();
   await page.click('#dailyHome');
   await expect(page.locator('.clockbtn')).toContainText(`Your best: ${got}.`);

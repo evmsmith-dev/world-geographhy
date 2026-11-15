@@ -24,15 +24,6 @@ const stampHtml = (s, small) => small ? `<span class="stamp on small" style="--t
       ${picImg(s.n, '', '')}<span class="pmark" aria-hidden="true"><b>${esc(s.where.replace(/^the /, ''))}</b>${esc(stampDate(s.at))}</span><span class="sn">${esc(s.n)}</span></button>`
   : `<span class="stamp off" role="img" aria-label="A stamp not collected yet">${picImg(s.n, '', '')}<span class="sn">?</span></span>`;
 
-// the card at the top of the Progress screen: how many stamps, and the newest few
-async function passportCard(){
-  const all = await passportOf(player.id), got = all.filter(s => s.at).sort((a, b) => b.at - a.at);
-  return `<button class="passbtn" id="passBtn"><span class="pi" aria-hidden="true">🛂</span>
-    <span class="pt">My Passport</span>
-    <span class="pd">${got.length ? `${got.length} of ${all.length} landmark stamps` : 'Learn a landmark to get your first stamp!'}</span>
-    ${got.length ? `<span class="pnew" aria-hidden="true">${got.slice(0, 4).map(s => stampHtml(s, true)).join('')}</span>` : ''}</button>`;
-}
-
 async function openPassport(){
   const all = await passportOf(player.id), got = all.filter(s => s.at).length;
   const groups = LANDMARK_TOPICS.map(t => ({t, list: all.filter(s => s.topic === t.id)}));

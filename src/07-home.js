@@ -84,6 +84,7 @@ async function renderRegion(){
   $('regionTitle').textContent = curRegion.name;
   $('regionTabs').hidden = tabs.length < 2;
   $('regionTabs').classList.toggle('many', tabs.length > 3);
+  $('regionTabs').classList.toggle('lots', tabs.length > 6);
   $('regionTabs').innerHTML = tabs.map(x => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id===curTab}">${esc(x.tab)}</button>`).join('');
   if(TOUR[curTab]) return renderTour(TOUR[curTab], draw); // the World Tour (src/16-world-tour.js)
   const t = TOPIC[curTab], r = withParts(curRegion, t); // the parts for this tab (Land & Water has none)

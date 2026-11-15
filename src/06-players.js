@@ -52,7 +52,7 @@ function editPlayer(p){
     const n = name.value.trim().replace(/\s+/g,' ');
     if(!n){ panel.querySelector('#pErr').textContent = 'Type a name first.'; name.focus(); return; }
     if(players.some(x => x.name.toLowerCase()===n.toLowerCase() && (!p || x.id!==p.id))){ panel.querySelector('#pErr').textContent = 'Someone already has that name. Try another one.'; name.focus(); return; }
-    const rec = p ? {...((await DB.get('players', p.id)) || p), name:n, avatar:pick} : {id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:n, avatar:pick, created:Date.now(), prefs:{timer:false, sound:false}};
+    const rec = p ? {...((await DB.get('players', p.id)) || p), name:n, avatar:pick} : {id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:n, avatar:pick, created:Date.now(), prefs:{sound:false}};
     await DB.put('players', rec);
     if(isNew){ await migrateOldSave(rec.id); try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){} }
     await loadPlayers();
@@ -84,7 +84,7 @@ async function migrateOldSave(pid){
   if(!old || !old.answers || !['test','practice'].includes(old.mode)) return;
   const topic = old.quiz === 'capitals' ? 'us-capitals' : 'us-states';
   if(!Object.keys(old.answers).length && !Object.keys(old.solved||{}).length) return;
-  await DB.put('games', {key:gameKey(pid,topic,old.mode), pid, topic, mode:old.mode, round:old.round||1, answers:old.answers, solved:old.solved||{}, elapsed:0, reviewed:false, scored:false});
+  await DB.put('games', {key:gameKey(pid,topic,old.mode), pid, topic, mode:old.mode, round:old.round||1, answers:old.answers, solved:old.solved||{}, reviewed:false, scored:false});
 }
 
 // One-time: Central America became the Central part of North America; carry each player's progress over.

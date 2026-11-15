@@ -197,7 +197,7 @@ $('dailyDone').addEventListener('click', e => { if(!e.target.closest('#runAgain'
 const BADGES = [
   {id:'first', icon:'🎉', name:'First Game', desc:'Finish your first Test, Practice or Find it game.'},
   {id:'perfect', icon:'⭐', name:'Perfect!', desc:'Get every answer right in a Test.'},
-  {id:'speed', icon:'⚡', name:'Speed Star', desc:'Get every answer right with the stopwatch on.'},
+  {id:'speed', icon:'⚡', name:'Speed Star', desc:'Get 10 right in one game of Beat the Clock.'},
   {id:'explorer', icon:'🧭', name:'Explorer', desc:'Finish a game in every place.'},
   {id:'daily1', icon:'📅', name:'Daily Player', desc:'Finish your first Daily 10.'},
   {id:'daily10', icon:'💯', name:'Daily Perfect', desc:'Get 10 out of 10 on a Daily 10.'},
@@ -209,7 +209,7 @@ const BADGES = [
   // secret badges: shown locked with a hint until earned
   {id:'flawless', icon:'💎', name:'Flawless', desc:'Got every answer right in a Test of one part, like West Africa.', hint:'Get every answer right in a Test of one part.', secret:true},
   {id:'sweep', icon:'🧹', name:'Clean Sweep', desc:'Got every answer right in a Test of every part of one place.', hint:'Get a perfect Test in every part of one place.', secret:true},
-  {id:'lightning', icon:'🌩️', name:'Lightning', desc:'Got every answer right in a Test of 5 or more, with 5 seconds or less for each one, stopwatch on.', hint:'Be perfect and very fast in a Test, with the stopwatch on.', secret:true},
+  {id:'lightning', icon:'🌩️', name:'Lightning', desc:'Got 30 right in one game of Beat the Clock.', hint:'Be super fast in Beat the Clock.', secret:true},
   {id:'globetrotter', icon:'✈️', name:'Globe Trotter', desc:'Got every answer right in a Test in every place.', hint:'Get a perfect Test all around the world.', secret:true},
   {id:'comeback', icon:'💪', name:'Comeback Kid', desc:'Got one right in a Test that you missed in an earlier Test.', hint:'Miss one in a Test, then get it right next time.', secret:true},
   ...TOPICS.flatMap(t => [
@@ -232,24 +232,22 @@ async function computeBadges(p){
   const has = {
     first: attempts.length > 0,
     perfect: attempts.some(a => a.mode === 'test' && a.correct === a.total),
-    speed: attempts.some(a => a.timeMs && a.correct === a.total),
     explorer: REGIONS.every(r => placesPlayed.has(r.name)),
     daily1: (d.plays||0) > 0, daily10: (d.perfect||0) > 0,
     streak3: (d.best||0) >= 3, streak7: (d.best||0) >= 7, streak30: (d.best||0) >= 30,
-    clock20: ((p.feats || {}).beatBest || 0) >= 20, detective: ((p.feats || {}).mysteryBest || 0) >= 25,
+    speed: ((p.feats || {}).beatBest || 0) >= 10, clock20: ((p.feats || {}).beatBest || 0) >= 20, detective: ((p.feats || {}).mysteryBest || 0) >= 25,
   };
   // secret badges come from perfect Tests
   const perfect = attempts.filter(a => a.mode === 'test' && a.total > 0 && a.correct === a.total);
   has.flawless = perfect.some(a => a.part);
   has.sweep = TOPICS.some(t => t.parts && Object.keys(t.parts).every(part => perfect.some(a => a.topic === t.id && a.part === part)));
-  has.lightning = perfect.some(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000);
+  has.lightning = ((p.feats || {}).beatBest || 0) >= 30;
   has.globetrotter = REGIONS.every(r => perfect.some(a => TOPIC[a.topic].group === r.name));
   has.comeback = !!(p.feats && p.feats.comeback);
   has.worldtour = !!(p.feats && p.feats.worldtour);
   // how many times a repeatable badge has been done, shown quietly as ×2, ×3…
   const sweeps = TOPICS.filter(t => t.parts && Object.keys(t.parts).every(part => perfect.some(a => a.topic === t.id && a.part === part))).length;
   const times = {perfect: perfect.length, flawless: perfect.filter(a => a.part).length, sweep: sweeps,
-    lightning: perfect.filter(a => a.total >= 5 && a.timeMs && a.timeMs <= a.total * 5000).length,
     comeback: (p.feats && (p.feats.comebackN || (p.feats.comeback ? 1 : 0))) || 0, daily10: d.perfect || 0, worldtour: (p.feats && p.feats.worldtourN) || 0};
   TOPICS.forEach(t => has['master-'+t.id] = learned[t.id] >= t.count);
   TOURS.forEach(t => has['master-'+t.id] = t.from.every(f => learned[f] >= TOPIC[f].count));

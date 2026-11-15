@@ -5,7 +5,7 @@
 /* ===================== 10b2. Explore map: tap anything to learn about it ===================== */
 let EXPLORE = null; // {R: the place, labels: show names on the map}
 function enterExplore(regionName, fromPicker, topicId){
-  saveNow(); stopClock(); hideToast();
+  saveNow(); hideToast();
   const R = REGIONS.find(r => r.name === regionName);
   if(!fromPicker){ returnTo = SCREENS.find(id => !$(id).hidden) || 'scrHome'; showScreen('scrPlay'); pushLayer(leaveGame); }
   endExplore(); G = null; current = null; reviewing = false;

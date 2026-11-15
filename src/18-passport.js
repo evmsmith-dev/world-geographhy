@@ -24,7 +24,7 @@ const stampHtml = (s, small) => small ? `<span class="stamp on small" style="--t
       ${picImg(s.n, '', '')}<span class="pmark" aria-hidden="true"><b>${esc(s.where.replace(/^the /, ''))}</b>${esc(stampDate(s.at))}</span><span class="sn">${esc(s.n)}</span></button>`
   : `<span class="stamp off" role="img" aria-label="A stamp not collected yet">${picImg(s.n, '', '')}<span class="sn">?</span></span>`;
 
-// the home screen card: how many stamps, and the newest few
+// the card at the top of the Progress screen: how many stamps, and the newest few
 async function passportCard(){
   const all = await passportOf(player.id), got = all.filter(s => s.at).sort((a, b) => b.at - a.at);
   return `<button class="passbtn" id="passBtn"><span class="pi" aria-hidden="true">🛂</span>
@@ -66,5 +66,5 @@ async function newStamps(showToast){
     [{label:'See passport', run: () => { if(!$('scrPlay').hidden) popLayer(() => openPassport()); else openPassport(); }}, {label:'OK', ghost:true}], 7000);
 }
 
-$('homeGroups').addEventListener('click', e => { if(e.target.closest('#passBtn')) openPassport(); });
+$('scoresBody').addEventListener('click', e => { if(e.target.closest('#passBtn')) openPassport(); }); // on the Progress screen
 $('regionBody').addEventListener('click', e => { if(e.target.closest('[data-passport]')) openPassport(); });

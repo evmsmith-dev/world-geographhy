@@ -1,4 +1,4 @@
-// World Geography Quiz: The Scores screen.
+// World Geography Quiz: The Progress screen (it used to be called Scores, as the ids and this file still are).
 // One of the game's script files, loaded in number order by index.html (see src/README.md).
 'use strict';
 
@@ -34,7 +34,9 @@ async function renderScores(){
     const badges = await computeBadges(player);
     const got = badges.filter(b => b.earned).length;
     const d = streakNow(player);
-    body.innerHTML = `<section class="badgesec"><h2>Badges <span class="muted">${got} of ${badges.length}</span></h2>
+    const passport = await passportCard();
+    body.innerHTML = `<section class="passsec">${passport}</section>
+      <section class="badgesec"><h2>Badges <span class="muted">${got} of ${badges.length}</span></h2>
       <p class="muted streakline">Daily 10 streak: <b>${d.streak} day${d.streak===1?'':'s'}</b> · Best: <b>${d.best} day${d.best===1?'':'s'}</b></p>
       ${badgeGroups(badges)}</section>
       <div class="cards">${parts.map(({t, items, attempts, learned, best, bestTime}) => {
@@ -57,13 +59,14 @@ async function renderScores(){
     }).join('')}</div>`;
   } else {
     // everyone's data in two reads, then grouped per player
-    const [allItems, allAttempts, allBadges] = await Promise.all([DB.all('items'), DB.all('attempts'), Promise.all(players.map(computeBadges))]);
+    const [allItems, allAttempts, allBadges, allStamps] = await Promise.all([DB.all('items'), DB.all('attempts'), Promise.all(players.map(computeBadges)),
+      Promise.all(players.map(async p => (await passportOf(p.id)).filter(s => s.at).length))]);
     const weekAgo = Date.now() - 7*864e5, weekStart = ymd(new Date(weekAgo));
     const totalItems = TOPICS.reduce((n, t) => n + t.count, 0);
     const fam = players.map((p, i) => {
       const items = allItems.filter(r => r.pid === p.id && TOPIC[r.topic]), att = allAttempts.filter(a => a.pid === p.id && TOPIC[a.topic]);
       const learned = items.filter(r => r.last === 'right').length, s = streakNow(p);
-      return {p, items, att, learned, badges: allBadges[i].filter(b => b.earned).length, streak: s.streak, best: s.best,
+      return {p, items, att, learned, badges: allBadges[i].filter(b => b.earned).length, stamps: allStamps[i], streak: s.streak, best: s.best,
         weekGames: att.filter(a => a.at >= weekAgo).length, weekDaily: ((p.daily && p.daily.days) || []).filter(d => d > weekStart).length};
     });
     if(!scoresPlace || !REGIONS.find(r => r.name === scoresPlace)) scoresPlace = REGIONS[0].name;
@@ -91,12 +94,13 @@ async function renderScores(){
             <p class="fline"><b>${f.learned}</b> of ${totalItems} learned</p>
             <div class="fstats">
               <span><b>${f.badges}</b><small>badge${f.badges===1?'':'s'}</small></span>
+              <span><b>${f.stamps}</b><small>stamp${f.stamps===1?'':'s'}</small></span>
               <span><b>🔥 ${f.streak}</b><small>day streak</small></span>
               <span><b>${f.best}</b><small>best streak</small></span>
             </div>
             <p class="fweek">${f.weekGames || f.weekDaily ? `This week: <b>${f.weekGames}</b> game${f.weekGames===1?'':'s'} · <b>${f.weekDaily}</b> Daily 10${f.weekDaily===1?'':'s'}` : 'This week: just getting started!'}</p>
           </article>`).join('')}</div>
-        ${players.length < 2 ? '<p class="muted" style="margin-top:10px">Add more players to compare scores.</p>' : ''}
+        ${players.length < 2 ? '<p class="muted" style="margin-top:10px">Add more players to see how everyone is doing.</p>' : ''}
       </section>
       <section class="famsec"><h2>By place</h2>
         <div class="chips pick" id="placeChips">${REGIONS.map(r => `<button data-place="${esc(r.name)}" aria-pressed="${r.name===scoresPlace}">${esc(r.name)}</button>`).join('')}</div>

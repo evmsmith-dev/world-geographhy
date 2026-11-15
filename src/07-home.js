@@ -47,8 +47,8 @@ async function renderHome(){
     for(const t of r.topics){ learned += (await DB.byPT('items', player.id, t.id)).filter(i => i.last==='right').length; total += t.count; }
     return {r, learned, total};
   }));
-  const upnext = await upNextCard(), passport = await passportCard();
-  $('homeGroups').innerHTML = dailyCard() + upnext + mysteryCard() + passport +
+  const upnext = await upNextCard();
+  $('homeGroups').innerHTML = dailyCard() + upnext + mysteryCard() +
     (games.length ? `<section class="group"><h2>Keep going</h2><div class="resumes">${games.map(g => { const t = TOPIC[g.topic]; return `
       <button class="resumebtn" data-topic="${g.topic}" data-mode="${g.mode}"${g.part ? ` data-part="${esc(g.part)}"` : ''}><span class="rt">${esc(t.name)}${g.part ? ` · ${esc(g.part)}` : ''}</span><span class="rm">${MODES[g.mode]} · ${Object.keys(g.answers).length} of ${g.part && t.parts ? t.parts[g.part].length : t.count} done${g.round>1 ? ` · round ${g.round}` : ''}</span><span class="go" aria-hidden="true">▶</span></button>`; }).join('')}</div></section>` : '') +
     `<section class="group"><h2>Pick a place</h2><div class="regions">${regions.map(({r, learned, total}) => `

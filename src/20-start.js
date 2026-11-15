@@ -46,7 +46,7 @@ async function start(){
   player = players.find(p => p.id === LS.get('player')) || null;
   if(player){ showScreen('scrHome'); renderHome(); }
   else { renderPlayers(false); showScreen('scrPlayers'); }
-  if(!persistent) toast("Scores can't be saved in this browser mode.", [], 6000);
+  if(!persistent) toast("Progress can't be saved in this browser mode.", [], 6000);
   if(useHistory && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
     navigator.serviceWorker.register('sw.js').catch(() => {});
     checkForUpdate(true);

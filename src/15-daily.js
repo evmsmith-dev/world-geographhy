@@ -76,7 +76,8 @@ async function countryChoices(n){
 const capFirst = s => s.charAt(0).toUpperCase() + s.slice(1);
 async function startDaily(){ return startRun({title:'Daily 10', pick:pickDaily, home:'scrHome'}); }
 // A run of questions, each on its own map: the Daily 10, and the World Tour (src/16-world-tour.js), which adds
-// tour, mode and save (where to keep its place, so it can be finished later), saved (a run to pick up) and finish
+// tour, mode and save (where to keep its place, so it can be finished later), saved (a run to pick up) and finish.
+// Beat the Clock adds clock (seconds to play), and Mystery Country asks 'mystery' questions (src/17-games.js); both add again.
 async function startRun(run){
   returnTo = run.home; showScreen('scrPlay');
   pushLayer(() => { DAILY = null; $('dailyDone').hidden = true; $('play').querySelectorAll('[data-dhide]').forEach(el => { el.hidden = false; el.removeAttribute('data-dhide'); });
@@ -90,28 +91,31 @@ async function startRun(run){
   // runs use their own controls
   ['.combo','#submit','.nav','#reviewBtn','#skipBtn'].forEach(sel => { const el = $('play').querySelector(sel); if(el && !el.hidden){ el.hidden = true; el.setAttribute('data-dhide',''); } });
   $('mapSheet').hidden = false; $('play').hidden = false; $('legend').innerHTML = '';
+  if(DAILY.clock) beatStart();
   dailyShow();
 }
 async function dailyShow(){
   const q = DAILY.qs[DAILY.i]; T = TOPIC[q.t]; M = await loadMap(T.map); drawMap();
+  if(!DAILY || DAILY.ended) return; // the clock ran out meanwhile
   DAILY.tries = 0; DAILY.busy = false; const pic = q.style === 'pick' && T.landmarks; // a landmark: "Which landmark is this?" with its picture, not its place
   current = q.style === 'pick' && !pic ? q.n : null;
-  $('chipText').innerHTML = `${esc(DAILY.title)}<small>Question ${DAILY.i+1} of ${DAILY.qs.length} · ${esc(T.name)}</small>`;
+  $('chipText').innerHTML = `${esc(DAILY.title)}<small>${DAILY.clock ? esc(T.name) : `Question ${DAILY.i+1} of ${DAILY.qs.length} · ${esc(T.name)}`}</small>`;
   $('tally').innerHTML = `<b>${DAILY.right}</b> right`;
   feedback('');
+  if(q.style === 'mystery') return mysteryShow(q);
   const fq = $('findQ'), ch = $('choices');
   if(q.style === 'find'){
-    $('sub').textContent = 'Tap the right place on the map. You get 2 tries.';
+    $('sub').textContent = DAILY.clock ? 'Tap the right place on the map. Quick!' : 'Tap the right place on the map. You get 2 tries.';
     $('selLabel').textContent = 'Find it on the map';
     if(T.flags) fq.innerHTML = `${flagImg(q.n,'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>`;
-    else if(T.landmarks) fq.innerHTML = `${picImg(q.n, 'big')}<span>${esc(noThe(q.n) ? `Find ${q.n}` : `Find the ${q.n}`)}</span>`;
+    else if(T.landmarks) fq.innerHTML = `${picImg(q.n, 'big', `A drawing of ${the(q.n)}`)}<span>${esc(noThe(q.n) ? `Find ${q.n}` : `Find the ${q.n}`)}</span>`;
     else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !noThe(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else if(q.style === 'country'){
     $('sub').textContent = `Look at the landmark, then pick the ${placeWord(q.n)} it is in.`;
     $('selLabel').textContent = `Pick the ${placeWord(q.n)}`;
     const {right, opts} = await countryChoices(q.n); DAILY.cright = right;
-    fq.innerHTML = `${picImg(q.n, 'big')}<span>Which ${placeWord(q.n)} is ${esc(the(q.n))} in?</span>`; fq.hidden = false;
+    fq.innerHTML = `${picImg(q.n, 'big', `A drawing of ${the(q.n)}`)}<span>Which ${placeWord(q.n)} is ${esc(the(q.n))} in?</span>`; fq.hidden = false;
     ch.classList.remove('flags'); ch.hidden = false;
     ch.innerHTML = opts.map(v => `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
   } else {
@@ -140,14 +144,17 @@ function dailyAnswer(right, msg){
   feedback(msg, right ? 'ok' : 'bad');
   $('tally').innerHTML = `<b>${DAILY.right}</b> right`;
   current = q.n; dailyPaint(null, {[q.n]: right ? 'ok' : 'sel'}); if(!right) focusItem(q.n);
-  setTimeout(() => { if(!DAILY) return; DAILY.i++; if(DAILY.i < DAILY.qs.length) dailyShow(); else (DAILY.finish || dailyFinish)(); }, right ? 1000 : 2200);
+  const wait = DAILY.clock ? (right ? 450 : 1300) : DAILY.mysteryOf ? (right ? 2200 : 3000) : right ? 1000 : 2200; // Beat the Clock moves on fast; a solved mystery takes a moment to read
+  setTimeout(() => { if(!DAILY || DAILY.ended) return; DAILY.i++; if(DAILY.i < DAILY.qs.length) dailyShow(); else (DAILY.finish || dailyFinish)(); }, wait);
 }
 function dailyTap(n){
-  const q = DAILY && DAILY.qs[DAILY.i]; if(!q || DAILY.busy || q.style !== 'find') return;
+  const q = DAILY && DAILY.qs[DAILY.i]; if(!q || DAILY.busy) return;
+  if(q.style === 'mystery'){ mysteryTap(n); return; }
+  if(q.style !== 'find') return;
   const thatIs = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(the(n))}.`;
   if(n === q.n){ dailyAnswer(DAILY.tries === 0, `Yes! That's <b>${esc(the(n))}</b>.`); return; }
   DAILY.tries++; flashWrong(n); noteMix(q.n, n);
-  if(DAILY.tries < 2){ sound('wrong'); feedback(`${thatIs} Try once more! ${mixTip(q.n, n)}`, 'bad'); return; }
+  if(DAILY.tries < (DAILY.clock ? 1 : 2)){ sound('wrong'); feedback(`${thatIs} Try once more! ${mixTip(q.n, n)}`, 'bad'); return; }
   dailyAnswer(false, `${thatIs} Here is <b>${esc(q.n)}</b>. ${mixTip(q.n, n)}`);
 }
 $('choices').addEventListener('click', e => {
@@ -183,6 +190,8 @@ async function dailyFinish(){
   checkBadges();
 }
 $('dailyHome').onclick = () => popLayer();
+// "Play again" on the end screen of Beat the Clock and Mystery Country
+$('dailyDone').addEventListener('click', e => { if(!e.target.closest('#runAgain') || !DAILY || !DAILY.again) return; const again = DAILY.again; popLayer(() => again()); });
 
 // ---- badges ----
 const BADGES = [
@@ -195,6 +204,8 @@ const BADGES = [
   {id:'streak3', icon:'🔥', name:'3-Day Streak', desc:'Do the Daily 10 three days in a row.'},
   {id:'streak7', icon:'🔥', name:'7-Day Streak', desc:'Do the Daily 10 seven days in a row.'},
   {id:'streak30', icon:'🏆', name:'30-Day Streak', desc:'Do the Daily 10 thirty days in a row.'},
+  {id:'clock20', icon:'⏱️', name:'Beat the Clock', desc:'Get 20 right in one game of Beat the Clock.'},
+  {id:'detective', icon:'🕵️', name:'Super Detective', desc:'Score 25 points or more in one game of Mystery Country.'},
   // secret badges: shown locked with a hint until earned
   {id:'flawless', icon:'💎', name:'Flawless', desc:'Got every answer right in a Test of one part, like West Africa.', hint:'Get every answer right in a Test of one part.', secret:true},
   {id:'sweep', icon:'🧹', name:'Clean Sweep', desc:'Got every answer right in a Test of every part of one place.', hint:'Get a perfect Test in every part of one place.', secret:true},
@@ -225,6 +236,7 @@ async function computeBadges(p){
     explorer: REGIONS.every(r => placesPlayed.has(r.name)),
     daily1: (d.plays||0) > 0, daily10: (d.perfect||0) > 0,
     streak3: (d.best||0) >= 3, streak7: (d.best||0) >= 7, streak30: (d.best||0) >= 30,
+    clock20: ((p.feats || {}).beatBest || 0) >= 20, detective: ((p.feats || {}).mysteryBest || 0) >= 25,
   };
   // secret badges come from perfect Tests
   const perfect = attempts.filter(a => a.mode === 'test' && a.total > 0 && a.correct === a.total);
@@ -275,7 +287,7 @@ async function checkBadgesNow(){
     if(el && !$('results').hidden) el.innerHTML = `<span class="again">${b.icon} ${esc(b.name.replace(/!$/, ''))} again! That's ${b.times} times.</span> ` + el.innerHTML; }
   const rank = b => b.secret ? 0 : b.part ? 1 : b.master ? 2 : 3;
   const fresh = list.filter(b => b.earned && !had[b.id]).sort((a,b) => rank(a) - rank(b)); // show a secret or place badge first
-  await newStamps(!fresh.length); // new passport stamps (src/17-passport.js), said only when there's no new badge to say
+  await newStamps(!fresh.length); // new passport stamps (src/18-passport.js), said only when there's no new badge to say
   if(!fresh.length) return;
   player.badges = {...had}; fresh.forEach(b => player.badges[b.id] = Date.now());
   await DB.put('players', player);

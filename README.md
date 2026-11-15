@@ -1,6 +1,6 @@
 # World Geography Quiz
 
-A map quiz for kids: US states, capitals, flags, regions, cities, national parks, land & water and landmarks, countries, capitals and flags of Europe, Africa, Asia, Oceania, North America and South America, their major mountain ranges, deserts, seas and lakes, famous landmarks, and the continents and oceans, plus a World Tour of all 195 countries (or all the mountains, deserts and waters, or all the landmarks) in one game. Each landmark learned earns a stamp, with its drawing, in the player's passport. It installs as an app on phones, tablets and computers, works offline, and keeps separate scores, streaks, badges and passports for each player on the device.
+A map quiz for kids: US states, capitals, flags, regions, cities, national parks, land & water and landmarks, countries, capitals and flags of Europe, Africa, Asia, Oceania, North America and South America, their major mountain ranges, deserts, seas and lakes, famous landmarks, and the continents and oceans, plus a World Tour of all 195 countries (or all the mountains, deserts and waters, or all the landmarks) in one game. Mystery Country gives clues one at a time to guess a country or state, and Beat the Clock asks for as many right answers as possible in 60 seconds. Each landmark learned earns a stamp, with its drawing, in the player's passport. It installs as an app on phones, tablets and computers, works offline, and keeps separate scores, streaks, badges and passports for each player on the device.
 
 ## Put it on GitHub Pages
 
@@ -35,7 +35,7 @@ Removing the app or clearing the browser's site data erases them, so use **⚙ S
 | `index.html` | The page. Its version stamp is filled in when the game is published |
 | `sw.js` | Offline support: the list of files saved on the device. It stays at the top level so it can serve the whole game |
 | `manifest.webmanifest` | App name, colors and icons for installing |
-| `src/` | The game's code, in numbered files (`01-helpers.js` … `19-start.js`, see `src/README.md`), and its look (`app.css`) |
+| `src/` | The game's code, in numbered files (`01-helpers.js` … `20-start.js`, see `src/README.md`), and its look (`app.css`) |
 | `data/maps/` | Map shapes: `us.json`, `world.json` and one file per continent (`europe.json`, `africa.json`, …), plus each continent's **Land & Water** places (`europe-geo.json`, …) each continent's **Landmarks** (`europe-landmarks.json`, …), and the US **Regions**, **Cities**, **National Parks**, **Land & Water** and **Landmarks** (`usregions.json`, `uscities.json`, `usparks.json`, `us-geo.json`, `us-landmarks.json`) |
 | `data/` | `flags.json` (country flags), `usflags.json` (state flags), `facts.json` (the “Did you know?” fun facts), `thumbs.json` (small map pictures for the home screen) |
 | `assets/landmarks/` | A drawing of each landmark, shown in Explore, on flashcards and in "Which landmark is this?" questions (made by `tools/build-pictures.mjs`) |

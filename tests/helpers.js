@@ -14,7 +14,7 @@ export const test = base.extend({
 });
 export { expect };
 
-// Open the game with the test hook on (see WGQ_TEST in src/19-start.js)
+// Open the game with the test hook on (see WGQ_TEST in src/20-start.js)
 export async function openGame(page){
   await page.goto('/?test');
   await page.waitForFunction(() => window.WGQ_TEST);

@@ -75,7 +75,7 @@ function paint(){
   const named = Object.keys(G.answers).length, total = PN().filter(n => !(G.solved[n] < G.round)).length;
   const verb = G.mode==='find' ? 'done' : 'answered';
   $('tally').innerHTML = G.mode==='flash' || reviewing ? '' : (G.round===1 ? `<b>${named}</b> / ${total} ${verb}` : `Round ${G.round} · <b>${named}</b> / ${total} ${verb}`);
-  if(G.mode === 'find'){ $('selLabel').textContent = 'Find it on the map'; const t = findTarget(); if(T.flags) $('findQ').innerHTML = t ? `${flagImg(t, 'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>` : ''; else { $('findQ').innerHTML = t ? (T.landmarks ? `${picImg(t, 'big')}<span>${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}</span>` : `${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}`) : ''; if(t && autoSay() && G.sayLast !== t){ G.sayLast = t; say(key(t)); } } return; }
+  if(G.mode === 'find'){ $('selLabel').textContent = 'Find it on the map'; const t = findTarget(); if(T.flags) $('findQ').innerHTML = t ? `${flagImg(t, 'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>` : ''; else { $('findQ').innerHTML = t ? (T.landmarks ? `${picImg(t, 'big', `A drawing of ${the(t)}`)}<span>${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}</span>` : `${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}`) : ''; if(t && autoSay() && G.sayLast !== t){ G.sayLast = t; say(key(t)); } } return; }
   const label = !current ? T.tapHint
     : T.showsItem ? (isSolved(current) ? `Capital of ${current}: ${key(current)}` : T.ask(current))
     : isSolved(current) ? 'You already got this one'

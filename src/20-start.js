@@ -36,7 +36,8 @@ async function applyUpdate(){
 }
 // the automatic tests read the game's data through this. It only exists when the page is opened with ?test,
 // so players never see it. Keep these names working when the code moves around.
-if(/[?&]test\b/.test(location.search)) window.WGQ_TEST = {TOPICS, TOPIC, TOURS, TOUR, LOOKALIKES, SAY, GEO_ALIAS, WORLD_FACT, CAP, CAP_NOTE, POSTAL, loadMap, picSrc,
+if(/[?&]test\b/.test(location.search)) window.WGQ_TEST = {TOPICS, TOPIC, TOURS, TOUR, LOOKALIKES, SAY, GEO_ALIAS, WORLD_FACT, CAP, CAP_NOTE, POSTAL, loadMap, picSrc, MYSTERY_PLACES, mysteryTopic,
+  mysteryClues: async (tid, n) => { T = TOPIC[tid]; M = await loadMap(T.map); ITEM = Object.fromEntries(M.items.map(i => [i.n, i])); return (await mysteryClues(n)).map(c => typeof c === 'string' ? c : 'FLAG'); },
   facts: async () => { await loadFacts(); return FACTS; }, zoomTo: n => zoomToItems([n]), flags: async map => { await loadFlags(map); return FLAGURL; }};
 async function start(){
   const persistent = await DB.ready();

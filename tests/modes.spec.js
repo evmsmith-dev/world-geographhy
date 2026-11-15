@@ -110,7 +110,10 @@ test('after playing, home suggests what to do next and the Progress screen shows
   await page.click('#homeScores');
   await expect(page.locator('#scrScores')).toBeVisible();
   await expect(page.locator('#scrScores h1')).toHaveText('Progress');
-  await expect(page.locator('#scoresBody')).toContainText('Countries of South America');
+  const group = page.locator('.pgroup', {hasText: 'South America'});
+  await expect(group).toHaveAttribute('open', ''); // the only place played starts open
+  await expect(group.locator('.trow summary')).toContainText('Countries');
+  await expect(group.locator('.trow .tl')).toHaveText('3/12');
 });
 
 test('How to play opens and covers Land & Water', async ({page}) => {
@@ -314,8 +317,7 @@ test('the passport: a stamp for each landmark learned, kept after a miss, with a
   await newPlayer(page);
   await expect(page.locator('#scrHome #passBtn'), 'the passport is on the Progress screen, not home').toHaveCount(0);
   await progress();
-  await expect(page.locator('.passsec')).toBeVisible();
-  await expect(page.locator('#scoresBody > section').first(), 'first on the Progress screen').toHaveClass('passsec');
+  await expect(page.locator('.pcards #passBtn'), 'near the top of the Progress screen').toBeVisible();
   await expect(page.locator('#passBtn')).toContainText('Learn a landmark to get your first stamp!');
   // learn all of Oceania's landmarks in Find it
   await goHome(page);
@@ -326,8 +328,8 @@ test('the passport: a stamp for each landmark learned, kept after a miss, with a
   for(let i = 0; i < 6; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'oc-landmarks')); if(i < 5) await expect(page.locator('#findQ')).not.toHaveText(before); }
   await expect(page.locator('#results')).toBeVisible();
   await progress();
-  await expect(page.locator('#passBtn')).toContainText('6 of 64 landmark stamps');
-  await expect(page.locator('#passBtn .stamp')).toHaveCount(4); // the newest few
+  await expect(page.locator('#passBtn')).toContainText('6 of 64 stamps');
+  await expect(page.locator('#passBtn .stamp')).toHaveCount(3); // the newest few
   // the passport: Oceania's page is full, the rest wait
   await page.click('#passBtn');
   await expect(page.locator('.passport')).toContainText('6 of 64 stamps');
@@ -350,7 +352,7 @@ test('the passport: a stamp for each landmark learned, kept after a miss, with a
   // a miss later doesn't take a stamp away
   await page.evaluate(async () => { await recordItem(player.id, 'oc-landmarks', 'Uluru', false); });
   await progress();
-  await expect(page.locator('#passBtn')).toContainText('7 of 64 landmark stamps');
+  await expect(page.locator('#passBtn')).toContainText('7 of 64 stamps');
   // the family's stamps on the Everyone tab
   await page.click('#tabAll');
   await expect(page.locator('.famcard.me .fstats')).toContainText('7stamps');

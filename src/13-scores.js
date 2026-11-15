@@ -33,29 +33,47 @@ async function renderScores(){
     const badges = await computeBadges(player);
     const got = badges.filter(b => b.earned).length;
     const d = streakNow(player);
-    const passport = await passportCard();
-    body.innerHTML = `<section class="passsec">${passport}</section>
-      <section class="badgesec"><h2>Badges <span class="muted">${got} of ${badges.length}</span></h2>
-      <p class="muted streakline">Daily 10 streak: <b>${d.streak} day${d.streak===1?'':'s'}</b> · Best: <b>${d.best} day${d.best===1?'':'s'}</b></p>
-      ${badgeGroups(badges)}</section>
-      <div class="cards">${parts.map(({t, items, attempts, learned, best}) => {
-      const last = attempts.slice(-10), pct = a => Math.round(100*a.correct/a.total);
+    const stamps = (await passportOf(player.id)).filter(s => s.at).length, total = LANDMARK_TOPICS.reduce((n, t) => n + t.count, 0);
+    const played = parts.filter(x => x.attempts.length || x.items.length);
+    const learnedAll = played.reduce((n, x) => n + x.learned, 0);
+    const kept = player.badges || {}, newest = badges.filter(b => b.earned).sort((a, b) => (kept[b.id] || 0) - (kept[a.id] || 0)).slice(0, 5);
+    // the ones to practice, from every topic played: the top few of each
+    const name = (t, i) => { if(!t.showsItem) return i.item; try{ return `${t.answer(i.item)}, ${i.item}`; }catch(e){ return i.item; } };
+    const trickyOf = x => x.items.filter(i => i.wrong > 0 && (i.last === 'wrong' || i.wrong >= i.right))
+      .sort((a, b) => (b.wrong - b.right) - (a.wrong - a.right) || b.wrong - a.wrong).slice(0, 6);
+    const practice = played.map(x => ({...x, tricky: trickyOf(x)})).filter(x => x.tricky.length)
+      .sort((a, b) => b.tricky.reduce((n, i) => n + i.wrong, 0) - a.tricky.reduce((n, i) => n + i.wrong, 0)); // the most missed first
+    const prow = x => `<div class="prow"><div class="pw"><h3>${esc(x.t.name)}</h3><p class="pnames">${x.tricky.map(i => esc(name(x.t, i))).join(' · ')}</p></div>
+      <button class="primary" data-practice="${x.t.id}" data-items="${esc(JSON.stringify(x.tricky.map(i => i.item)))}" aria-label="Practice these ${x.tricky.length}: ${esc(x.t.name)}">Practice ${x.tricky.length}</button></div>`;
+    // a topic: one line (name, how much is learned, best Test), and its games when opened
+    const topicRow = ({t, items, attempts, learned, best}) => {
+      const last = attempts.slice(-10), pct = a => Math.round(100 * a.correct / a.total);
       const chart = last.length
         ? `<div class="bars" role="img" aria-label="Your last ${last.length} scores: ${last.map(a => pct(a)+'%').join(', ')}">${last.map(a => `<i class="${a.mode==='practice'?'p':a.mode==='find'?'f':''}" style="height:${Math.max(4, pct(a))}%" title="${esc(dateFmt(a.at))} · ${MODES[a.mode]} · ${a.correct}/${a.total}"></i>`).join('')}</div>
            <p class="cap"><span>Your last ${last.length} game${last.length>1?'s':''}. Taller is better.</span><span><i class="k"></i>Test</span><span><i class="k p"></i>Practice</span><span><i class="k f"></i>Find it</span></p>
-           <h4>Recent games</h4><ul class="recent">${attempts.slice(-5).reverse().map(a => `<li><span>${esc(dateFmt(a.at))}</span><span>${MODES[a.mode]}${a.part ? ` · ${esc(a.part)}` : ''}</span><b>${a.correct}/${a.total}</b></li>`).join('')}</ul>`
-        : `<p class="muted">No games yet. Finish a Test or Practice game to see your scores here.</p>`;
-      const tricky = items.filter(i => i.wrong > 0 && (i.last==='wrong' || i.wrong >= i.right))
-        .sort((a,b) => (b.wrong-b.right) - (a.wrong-a.right) || b.wrong - a.wrong).slice(0, 6);
-      const name = i => { if(!t.showsItem) return i.item; try{ return `${t.answer(i.item)}, ${i.item}`; }catch(e){ return i.item; } };
-      const practice = tricky.length
-        ? `<h4>Needs practice</h4><div class="chips">${tricky.map(i => `<span class="chip">${esc(name(i))} <small>missed ${i.wrong}×</small></span>`).join('')}</div>
-           <div><button class="primary" data-practice="${t.id}" data-items="${esc(JSON.stringify(tricky.map(i => i.item)))}">Practice these ${tricky.length}</button></div>`
-        : items.length ? `<h4>Needs practice</h4><p class="muted">Nothing tricky right now. Great work!</p>` : '';
-      return `<article class="tcard"><h3>${esc(t.name)}</h3>
-        <p class="stats"><span><b>${learned}</b> of ${t.count} learned</span>${best!=null ? `<span>Best test: <b>${best}/${t.count}</b></span>` : ''}<span>Games: <b>${attempts.length}</b></span></p>
-        ${chart}${practice}</article>`;
-    }).join('')}</div>`;
+           <ul class="recent">${attempts.slice(-5).reverse().map(a => `<li><span>${esc(dateFmt(a.at))}</span><span>${MODES[a.mode]}${a.part ? ` · ${esc(a.part)}` : ''}</span><b>${a.correct}/${a.total}</b></li>`).join('')}</ul>`
+        : `<p class="muted">No games yet. Finish a game to see your scores here.</p>`;
+      return `<details class="trow"><summary><span class="tn">${esc(t.tab === t.name ? t.name : t.tab)}</span>
+          <span class="tbar" aria-hidden="true"><i style="width:${Math.round(100 * learned / t.count)}%"></i></span>
+          <span class="tl">${learned}/${t.count}</span></summary>
+        <div class="tbody"><p class="stats"><span><b>${learned}</b> of ${t.count} learned</span>${best!=null ? `<span>Best test: <b>${best}/${t.count}</b></span>` : ''}<span>Games: <b>${attempts.length}</b></span></p>${chart}</div></details>`;
+    };
+    const groups = REGIONS.map(r => ({r, list: played.filter(x => x.t.group === r.name)})).filter(g => g.list.length);
+    body.innerHTML = `<section class="psum" aria-label="Summary">
+        <div><b>${learnedAll}</b><small>learned</small></div>
+        <div><b>🔥 ${d.streak}</b><small>day streak${d.best > d.streak ? ` · best ${d.best}` : ''}</small></div>
+        <div><b>${got}</b><small>badge${got === 1 ? '' : 's'}</small></div>
+        <div><b>${stamps}</b><small>stamp${stamps === 1 ? '' : 's'}</small></div></section>
+      <section class="pcards">
+        <button class="pcard" id="passBtn"><span class="pt">🛂 My Passport</span><span class="pd">${stamps} of ${total} stamps</span>
+          <span class="pi" aria-hidden="true">${(await passportOf(player.id)).filter(s => s.at).sort((a, b) => b.at - a.at).slice(0, 3).map(s => stampHtml(s, true)).join('') || '<span class="muted">Learn a landmark to get your first stamp!</span>'}</span></button>
+        <button class="pcard" id="badgesBtn"><span class="pt">🏅 Badges</span><span class="pd">${got} of ${badges.length}</span>
+          <span class="pi bicons" aria-hidden="true">${newest.map(b => b.icon).join('') || '<span class="muted">Play a game to earn your first badge!</span>'}</span></button></section>
+      ${practice.length ? `<section class="psec"><h2>Needs practice</h2>${practice.slice(0, 3).map(prow).join('')}
+        ${practice.length > 3 ? `<details class="pmore"><summary>${practice.length - 3} more to practice</summary>${practice.slice(3).map(prow).join('')}</details>` : ''}</section>` : ''}
+      <section class="psec"><h2>Your places</h2>${groups.length ? groups.map(({r, list}) => `<details class="pgroup"${groups.length === 1 ? ' open' : ''}>
+          <summary><span class="gn">${esc(r.name)}</span><span class="gc">${list.reduce((n, x) => n + x.learned, 0)} learned</span></summary>
+          ${list.map(topicRow).join('')}</details>`).join('') : '<p class="muted">Play a game and your places show up here.</p>'}</section>`;
   } else {
     // everyone's data in two reads, then grouped per player
     const [allItems, allAttempts, allBadges, allStamps] = await Promise.all([DB.all('items'), DB.all('attempts'), Promise.all(players.map(computeBadges)),
@@ -101,14 +119,26 @@ async function renderScores(){
         ${players.length < 2 ? '<p class="muted" style="margin-top:10px">Add more players to see how everyone is doing.</p>' : ''}
       </section>
       <section class="famsec"><h2>By place</h2>
-        <div class="chips pick" id="placeChips">${REGIONS.map(r => `<button data-place="${esc(r.name)}" aria-pressed="${r.name===scoresPlace}">${esc(r.name)}</button>`).join('')}</div>
-        <div class="cards" style="margin-top:12px">${R.topics.map(topicTable).join('')}</div>
+        <div class="chips pick scrollrow" id="placeChips">${REGIONS.map(r => `<button data-place="${esc(r.name)}" aria-pressed="${r.name===scoresPlace}">${esc(r.name)}</button>`).join('')}</div>
+        ${(() => { // a table for each topic someone has played; the rest on one line
+          const started = t => fam.some(f => f.items.some(r => r.topic === t.id) || f.att.some(a => a.topic === t.id)), on = R.topics.filter(started), off = R.topics.filter(t => !started(t));
+          return `${on.length ? `<div class="cards" style="margin-top:12px">${on.map(topicTable).join('')}</div>` : ''}
+            ${off.length ? `<p class="muted notyet">${on.length ? 'Not started yet' : 'Nobody has started these yet'}: ${off.map(t => esc(t.tab === t.name ? t.name : t.tab)).join(' · ')}</p>` : ''}`; })()}
       </section>`;
   }
 }
 $('scoresBody').addEventListener('click', e => {
+  if(e.target.closest('#badgesBtn')){ openBadges(); return; }
   const pc = e.target.closest('[data-place]'); if(pc){ scoresPlace = pc.dataset.place; renderScores(); return; }
   const b = e.target.closest('[data-practice]'); if(!b) return;
   const topic = b.dataset.practice, items = JSON.parse(b.dataset.items);
   popLayer(() => enterGame(topic, 'practice', false, items));
 });
+
+// all the badges, in their groups, in a screen of their own
+async function openBadges(){
+  const badges = await computeBadges(player), got = badges.filter(b => b.earned).length, d = streakNow(player);
+  openPanel({kind:'full', title:`Badges · ${got} of ${badges.length}`, html:`<div class="badgesec">
+    <p class="muted streakline">Daily 10 streak: <b>${d.streak} day${d.streak===1?'':'s'}</b> · Best: <b>${d.best} day${d.best===1?'':'s'}</b></p>
+    ${badgeGroups(badges)}</div>`});
+}

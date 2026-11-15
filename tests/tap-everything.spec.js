@@ -25,23 +25,17 @@ async function playFindIt(page, topicId, limit = Infinity){
   return answered;
 }
 
-for(const region of REGIONS){
-  test(`${region.name}: every place can be tapped in Find it`, async ({page}) => {
+// one test per topic (not per place), so GitHub can share them out evenly between its jobs (--shard in tests.yml)
+for(const region of REGIONS) for(const id of region.topics){
+  const all = !/-(capitals|flags)$/.test(id); // capitals and flags are the countries again: a few questions is enough
+  test(`${region.name} · ${id}: every place can be tapped in Find it`, async ({page}) => {
     await newPlayer(page);
-    const mapTopics = region.topics.filter(id => !/-(capitals|flags)$/.test(id));
-    for(const id of mapTopics){
-      await goHome(page);
-      await openTopic(page, region.name, id);
-      await startMode(page, 'find');
+    await openTopic(page, region.name, id);
+    await startMode(page, 'find');
+    if(all){
       const count = await page.evaluate(id => window.WGQ_TEST.TOPIC[id].count, id);
       expect(await playFindIt(page, id), `${id}: places found`).toBe(count);
       await expect(page.locator('#tally')).toContainText(`${count} / ${count}`);
-    }
-    for(const id of region.topics.filter(id => /-(capitals|flags)$/.test(id))){
-      await goHome(page);
-      await openTopic(page, region.name, id);
-      await startMode(page, 'find');
-      expect(await playFindIt(page, id, 4), `${id}: questions answered`).toBe(4);
-    }
+    } else expect(await playFindIt(page, id, 4), `${id}: questions answered`).toBe(4);
   });
 }

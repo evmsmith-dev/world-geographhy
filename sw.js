@@ -1,7 +1,8 @@
 // World Geography Quiz: offline support.
 // Serves the saved copy right away, then refreshes it from the website in the background.
 // Only touches caches that start with "wgq-", so other apps on the same site are left alone.
-// Change the version when files move, so devices drop the old copies (v2: files moved into folders; v3: app.js split into numbered files; v4: the World Tour file; v5: the landmark drawings; v6: the passport file; v7: US Landmarks; v8: Mystery Country and Beat the Clock).
+// On GitHub, publishing renames the cache for each version (wgq-<time of the change>, see .github/workflows/tests.yml),
+// so every update arrives as one complete set of files and devices drop the old ones. 'wgq-v8' is only for testing here.
 const CACHE = 'wgq-v8';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'src/app.css',
@@ -67,7 +68,7 @@ self.addEventListener('fetch', e => {
   const key = req.mode === 'navigate' ? './' : path || './';
   e.respondWith(caches.open(CACHE).then(async cache => {
     const cached = await cache.match(key);
-    const fresh = fetch(req).then(res => {
+    const fresh = fetch(req, {cache: 'no-cache'}).then(res => { // ask the website, not the browser's own saved copy
       if (res && res.ok && res.type === 'basic') cache.put(key, res.clone());
       return res;
     }).catch(() => cached);

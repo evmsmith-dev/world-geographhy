@@ -203,10 +203,26 @@ test('every landmark has its drawing, and every drawing is up to date and saved 
   }
 });
 
-test('on GitHub, every place is in exactly one of the "tap every place" test jobs', () => {
-  const wf = read('.github/workflows/tests.yml');
-  const groups = [...new Set([...wf.matchAll(/tap-everything --grep "([^"]+)"/g)].map(m => m[1]))].map(g => new RegExp(g));
-  expect(groups.length, 'groups of places in the workflow').toBeGreaterThan(1);
-  const bad = REGIONS.map(r => r.name).filter(n => groups.filter(g => g.test(`${n}: every place can be tapped in Find it`)).length !== 1);
-  expect(bad, 'places in no group, or in two').toEqual([]);
+test('publishing gives the offline copy a new name for each version, so an update never mixes old and new files', () => {
+  const wf = read('.github/workflows/tests.yml'), publish = wf.slice(wf.indexOf('  publish:'));
+  expect(publish, 'the publish job stamps the version into index.html').toContain(`sed -i "s/WGQ_BUILD='[^']*'/WGQ_BUILD='$stamp'/" _site/index.html`);
+  expect(publish, 'and names the cache after it in sw.js').toContain(`sed -i "s/const CACHE = '[^']*'/const CACHE = 'wgq-$stamp'/" _site/sw.js`);
+  expect(read('sw.js'), 'the line it changes').toMatch(/^const CACHE = '[^']*';$/m);
+  expect(read('sw.js'), 'the background refresh asks the website, not the browser\'s saved copy').toContain("fetch(req, {cache: 'no-cache'})");
+});
+
+test('on GitHub, each group of tests is split into shards that together cover all of it', () => {
+  const args = [...read('.github/workflows/tests.yml').matchAll(/^\s*args: (.+)$/gm)].map(m => m[1].trim()), groups = {};
+  for(const a of args){
+    const m = a.match(/--shard=(\d+)\/(\d+)/), key = a.replace(/\s*--shard=\d+\/\d+/, '');
+    (groups[key] = groups[key] || {n: m ? +m[2] : 1, got: []}).got.push(m ? +m[1] : 1);
+  }
+  for(const [key, g] of Object.entries(groups)) expect(g.got.sort((a, b) => a - b), `the shards of: ${key}`).toEqual(Array.from({length: g.n}, (_, i) => i + 1));
+  // the data checks, and tapping every place and everything else on both the phone and the iPad
+  const keys = Object.keys(groups);
+  expect(keys, 'the data checks').toContain('--project=data');
+  for(const p of ['phone', 'ipad']){
+    expect(keys.filter(k => k.includes(`--project=${p}`) && k.includes('tap-everything')), `tap every place on the ${p}`).toHaveLength(1);
+    expect(keys.filter(k => k.includes(`--project=${p}`) && k.includes('--grep-invert "every place can be tapped"')), `everything else on the ${p}`).toHaveLength(1);
+  }
 });

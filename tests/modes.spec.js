@@ -1,6 +1,30 @@
 // Each way to play works: Test (and its badge), Practice, flashcards, Explore and the Daily 10.
 import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, mapSettled, answer, answerRun } from './helpers.js';
 
+test('a Test ended early shows what was right, missed and wrong, and you can keep going', async ({page}) => {
+  await newPlayer(page);
+  await openTopic(page, 'Europe', 'eu-capitals');
+  await startMode(page, 'test');
+  const cap = n => page.evaluate(n => window.WGQ_TEST.TOPIC['eu-capitals'].answer(n), n);
+  await answer(page, 'France', await cap('France'));      // right
+  await answer(page, 'Italy', await cap('Spain'));        // wrong
+  await page.click('#reviewBtn');                         // before answering the rest
+  if(await page.isVisible('#dlgYes')) await page.click('#dlgYes');
+  const total = await page.evaluate(() => window.WGQ_TEST.TOPIC['eu-capitals'].count);
+  await expect(page.locator('#score')).toContainText(`You got 1 out of ${total}.`);
+  await expect(page.locator('#goodH')).toHaveText('Right (1)');
+  await expect(page.locator('#badH')).toHaveText(`Missed (${total - 1})`);
+  await expect(page.locator('#goodList')).toContainText(await cap('France'));
+  await expect(page.locator('#badList')).toContainText(await cap('Italy'));
+  await expect(page.locator('#map path.st[data-n="France"]')).toHaveClass(/ok/);
+  await expect(page.locator('#map path.st[data-n="Italy"]')).toHaveClass(/bad|wrong/);
+  // and the game isn't stuck: try the missed ones again
+  await page.click('#retry');
+  await expect(page.locator('#reviewBtn')).toBeVisible();
+  await answer(page, 'Italy', await cap('Italy'));
+  await expect(page.locator('#map path.st[data-n="Italy"]')).toHaveClass(/answered|ok|done/);
+});
+
 test('a perfect Test earns the Master badge', async ({page}) => {
   await newPlayer(page);
   await openTopic(page, 'Europe', 'eu-geo');

@@ -62,7 +62,7 @@ function showReview(restoring){
   const thisRound = good.filter(n => G.solved[n] === G.round).length, pool = thisRound + missed.length;
   $('score').innerHTML = missed.length === 0
     ? (G.round===1 ? `<b>${PN().length} out of ${PN().length}!</b> A perfect score!` : `<b>You got all ${PN().length}!</b> It took ${G.round} rounds.`)
-    : G.round===1 ? `You got <b>${good.length}</b> out of ${PN().length}.${timeTxt}`
+    : G.round===1 ? `You got <b>${good.length}</b> out of ${PN().length}.`
     : `Round ${G.round}: <b>${thisRound}</b> of ${pool} right · ${good.length} of ${PN().length} in all`;
   $('badH').textContent = `Missed (${missed.length})`;
   $('goodH').textContent = `Right (${good.length})`;

@@ -11,9 +11,8 @@ async function topicStats(pid, t, part){
   if(part){ const inPart = new Set(t.parts[part]); items = items.filter(i => inPart.has(i.item)); }
   const scored = attempts.filter(a => (a.part || null) === (part || null)); // a West Africa score isn't a whole-Africa score
   const tests = scored.filter(a => a.mode==='test');
-  const times = scored.filter(a => a.timeMs && a.correct===a.total).map(a => a.timeMs);
   return {items, attempts, learned: items.filter(i => i.last==='right').length,
-    best: tests.length ? Math.max(...tests.map(a => a.correct)) : null, bestTime: times.length ? Math.min(...times) : null};
+    best: tests.length ? Math.max(...tests.map(a => a.correct)) : null};
 }
 function openScores(){
   scoresTab = 'me'; showScreen('scrScores');
@@ -39,12 +38,12 @@ async function renderScores(){
       <section class="badgesec"><h2>Badges <span class="muted">${got} of ${badges.length}</span></h2>
       <p class="muted streakline">Daily 10 streak: <b>${d.streak} day${d.streak===1?'':'s'}</b> · Best: <b>${d.best} day${d.best===1?'':'s'}</b></p>
       ${badgeGroups(badges)}</section>
-      <div class="cards">${parts.map(({t, items, attempts, learned, best, bestTime}) => {
+      <div class="cards">${parts.map(({t, items, attempts, learned, best}) => {
       const last = attempts.slice(-10), pct = a => Math.round(100*a.correct/a.total);
       const chart = last.length
         ? `<div class="bars" role="img" aria-label="Your last ${last.length} scores: ${last.map(a => pct(a)+'%').join(', ')}">${last.map(a => `<i class="${a.mode==='practice'?'p':a.mode==='find'?'f':''}" style="height:${Math.max(4, pct(a))}%" title="${esc(dateFmt(a.at))} · ${MODES[a.mode]} · ${a.correct}/${a.total}"></i>`).join('')}</div>
            <p class="cap"><span>Your last ${last.length} game${last.length>1?'s':''}. Taller is better.</span><span><i class="k"></i>Test</span><span><i class="k p"></i>Practice</span><span><i class="k f"></i>Find it</span></p>
-           <h4>Recent games</h4><ul class="recent">${attempts.slice(-5).reverse().map(a => `<li><span>${esc(dateFmt(a.at))}</span><span>${MODES[a.mode]}${a.part ? ` · ${esc(a.part)}` : ''}</span><b>${a.correct}/${a.total}</b><span>${a.timeMs ? fmtTime(a.timeMs) : ''}</span></li>`).join('')}</ul>`
+           <h4>Recent games</h4><ul class="recent">${attempts.slice(-5).reverse().map(a => `<li><span>${esc(dateFmt(a.at))}</span><span>${MODES[a.mode]}${a.part ? ` · ${esc(a.part)}` : ''}</span><b>${a.correct}/${a.total}</b></li>`).join('')}</ul>`
         : `<p class="muted">No games yet. Finish a Test or Practice game to see your scores here.</p>`;
       const tricky = items.filter(i => i.wrong > 0 && (i.last==='wrong' || i.wrong >= i.right))
         .sort((a,b) => (b.wrong-b.right) - (a.wrong-a.right) || b.wrong - a.wrong).slice(0, 6);
@@ -54,7 +53,7 @@ async function renderScores(){
            <div><button class="primary" data-practice="${t.id}" data-items="${esc(JSON.stringify(tricky.map(i => i.item)))}">Practice these ${tricky.length}</button></div>`
         : items.length ? `<h4>Needs practice</h4><p class="muted">Nothing tricky right now. Great work!</p>` : '';
       return `<article class="tcard"><h3>${esc(t.name)}</h3>
-        <p class="stats"><span><b>${learned}</b> of ${t.count} learned</span>${best!=null ? `<span>Best test: <b>${best}/${t.count}</b></span>` : ''}${bestTime ? `<span>Best time: <b>${fmtTime(bestTime)}</b></span>` : ''}<span>Games: <b>${attempts.length}</b></span></p>
+        <p class="stats"><span><b>${learned}</b> of ${t.count} learned</span>${best!=null ? `<span>Best test: <b>${best}/${t.count}</b></span>` : ''}<span>Games: <b>${attempts.length}</b></span></p>
         ${chart}${practice}</article>`;
     }).join('')}</div>`;
   } else {
@@ -76,14 +75,13 @@ async function renderScores(){
       const rows = fam.map(f => {
         const its = f.items.filter(r => r.topic === t.id), at = f.att.filter(a => a.topic === t.id);
         const best = m => { const xs = at.filter(a => a.mode === m && !a.part).map(a => a.correct); return xs.length ? Math.max(...xs) : null; };
-        const times = at.filter(a => a.timeMs && a.correct === a.total && !a.part).map(a => a.timeMs);
         const who = `<th scope="row"><span class="who">${avatar(f.p)}${esc(f.p.name)}</span></th>`;
-        if(!its.length && !at.length) return `<tr class="${f.p.id===player.id?'me':''}">${who}<td colspan="4" class="dim">Just getting started!</td></tr>`;
+        if(!its.length && !at.length) return `<tr class="${f.p.id===player.id?'me':''}">${who}<td colspan="3" class="dim">Just getting started!</td></tr>`;
         const b1 = best('test'), b2 = best('find');
-        return `<tr class="${f.p.id===player.id?'me':''}">${who}<td>${its.filter(r => r.last==='right').length}/${t.count}</td>${cell(b1 != null ? `${b1}/${t.count}` : null)}${cell(b2 != null ? `${b2}/${t.count}` : null)}${cell(times.length ? fmtTime(Math.min(...times)) : null)}</tr>`;
+        return `<tr class="${f.p.id===player.id?'me':''}">${who}<td>${its.filter(r => r.last==='right').length}/${t.count}</td>${cell(b1 != null ? `${b1}/${t.count}` : null)}${cell(b2 != null ? `${b2}/${t.count}` : null)}</tr>`;
       }).join('');
       return `<article class="tcard"><h3>${esc(t.tab === t.name ? t.name : t.tab)}</h3>
-        <div class="tablewrap"><table class="board"><thead><tr><th scope="col">Player</th><th scope="col">Learned</th><th scope="col" title="Best Test score">Test</th><th scope="col" title="Best Find it score">Find it</th><th scope="col" title="Best time on a perfect game">Time</th></tr></thead><tbody>${rows}</tbody></table></div></article>`;
+        <div class="tablewrap"><table class="board"><thead><tr><th scope="col">Player</th><th scope="col">Learned</th><th scope="col" title="Best Test score">Test</th><th scope="col" title="Best Find it score">Find it</th></tr></thead><tbody>${rows}</tbody></table></div></article>`;
     };
     body.innerHTML = `
       <section class="famsec"><h2>Our family</h2>

@@ -45,27 +45,23 @@ async function review(){
     if(comeback){ const f = player.feats || {}; player.feats = {...f, comeback: f.comeback || Date.now(), comebackN: (f.comebackN || (f.comeback ? 1 : 0)) + 1}; await DB.put('players', player); }
   }
   G.reviewed = true;
-  let newBest = false, time = timerOn() ? G.elapsed : null;
   const correct = PN().filter(isSolved).length;
   if(G.round === 1 && !G.scored && (!G.only || G.part)){ // tricky-ones practice doesn't count toward best scores; a part of a place does
     G.scored = true;
-    const before = (await DB.byPT('attempts', player.id, T.id)).filter(a => a.timeMs && a.correct===a.total).map(a=>a.timeMs);
-    if(time && correct === PN().length && (!before.length || time < Math.min(...before))) newBest = true;
-    await DB.put('attempts', {pid:player.id, topic:T.id, mode:G.mode, part:G.part || null, at:Date.now(), correct, total:PN().length, timeMs:time});
+    await DB.put('attempts', {pid:player.id, topic:T.id, mode:G.mode, part:G.part || null, at:Date.now(), correct, total:PN().length});
   }
   const finished = correct === PN().length;
   if(finished) await DB.del('games', G.key); else saveNow();
-  showReview(false, {newBest, time});
+  showReview(false);
   if(finished){ confetti(); sound('done'); }
   afterGame();
 }
-function showReview(restoring, extra={}){
-  reviewing = true; current = null; openList(false); stopClock();
+function showReview(restoring){
+  reviewing = true; current = null; openList(false);
   const missed = PN().filter(n => !isSolved(n)), good = PN().filter(isSolved);
   const thisRound = good.filter(n => G.solved[n] === G.round).length, pool = thisRound + missed.length;
-  const timeTxt = extra.time ? ` Time: <b>${fmtTime(extra.time)}</b>.` : '';
   $('score').innerHTML = missed.length === 0
-    ? (G.round===1 ? `<b>${PN().length} out of ${PN().length}!</b> A perfect score!${timeTxt}${extra.newBest ? ' <b>New best time!</b>' : ''}` : `<b>You got all ${PN().length}!</b> It took ${G.round} rounds.`)
+    ? (G.round===1 ? `<b>${PN().length} out of ${PN().length}!</b> A perfect score!` : `<b>You got all ${PN().length}!</b> It took ${G.round} rounds.`)
     : G.round===1 ? `You got <b>${good.length}</b> out of ${PN().length}.${timeTxt}`
     : `Round ${G.round}: <b>${thisRound}</b> of ${pool} right · ${good.length} of ${PN().length} in all`;
   $('badH').textContent = `Missed (${missed.length})`;
@@ -89,24 +85,10 @@ $('reviewBtn').onclick = async () => {
   if(left && !(await confirmDialog({title:'Finish now?', text:`You still have ${left} to answer. Blank ones count as missed.`, ok:'Review'}))) return;
   review();
 };
-$('retry').onclick = () => { G.round++; G.answers = {}; G.reviewed = false; G.queue = null; G.choices = {}; saveNow(); toPlay(); startClock(); };
+$('retry').onclick = () => { G.round++; G.answers = {}; G.reviewed = false; G.queue = null; G.choices = {}; saveNow(); toPlay(); };
 $('restart').onclick = async () => {
   if(PN().some(n => !isSolved(n)) && !(await confirmDialog({title:'Start a new game?', text:'Your answers in this game will be cleared.', ok:'New game'}))) return;
-  await DB.del('games', G.key); G = {...newGameState(G.mode), only:G.only, key:G.key, part:G.part}; toPlay(); startClock();
+  await DB.del('games', G.key); G = {...newGameState(G.mode), only:G.only, key:G.key, part:G.part}; toPlay();
 };
 
-// ---- stopwatch (when turned on in Settings) ----
-let clockInt = 0, lastTick = 0;
-function startClock(){
-  stopClock();
-  $('clock').hidden = !timerOn();
-  if(!timerOn() || reviewing) return;
-  lastTick = performance.now(); $('clock').textContent = fmtTime(G.elapsed);
-  clockInt = setInterval(() => {
-    const now = performance.now();
-    if(!document.hidden && !overlays.length && G){ G.elapsed += now - lastTick; $('clock').textContent = fmtTime(G.elapsed); }
-    lastTick = now;
-  }, 500);
-}
-function stopClock(){ clearInterval(clockInt); clockInt = 0; }
-document.addEventListener('visibilitychange', () => { if(document.hidden) saveNow(); else lastTick = performance.now(); });
+document.addEventListener('visibilitychange', () => { if(document.hidden) saveNow(); });

@@ -11,14 +11,13 @@ const remaining = () => PN().filter(n => !isSolved(n)).length;
 // "Practice these" games use only a few items; everything else on the map is greyed out
 const inPlay = n => !G || !G.only || G.only.includes(n);
 const PN = () => (G && G.only) ? NAMES.filter(inPlay) : NAMES;
-const timerOn = () => !!(player && player.prefs.timer && G && G.mode!=='flash');
 function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); }
 function saveNow(){ clearTimeout(saveTimer); if(G && G.mode!=='flash' && G.active && (!G.only || G.part)){ G.updated = Date.now(); DB.put('games', {...G}); } }
 const legend = items => $('legend').innerHTML = items.map(([c,t]) => `<span><i style="background:var(${c})"></i>${t}</span>`).join('');
 function feedback(html, cls){ const f = $('feedback'); f.innerHTML = html || ''; f.className = 'feedback' + (cls ? ' '+cls : ''); }
 
 async function enterGame(topicId, mode, fromPicker, only, part){
-  saveNow(); stopClock(); endExplore(); loadMixes();
+  saveNow(); endExplore(); loadMixes();
   T = TOPIC[topicId];
   if(part && !(T.parts && T.parts[part])) part = null;
   $('chipText').innerHTML = `<span class="ct">${esc(T.name)}</span><small>${part ? `${MODES[mode]} · ${esc(part)}` : only ? 'Practice the tricky ones' : MODES[mode]}</small>`;
@@ -39,11 +38,11 @@ async function enterGame(topicId, mode, fromPicker, only, part){
   $('mapSheet').hidden = false;
   G.busy = false; G.choices = G.choices || {};
   if(G.reviewed) showReview(true); else toPlay();
-  startClock();
+  $('clock').hidden = true; // only Beat the Clock has a clock
 }
-function newGameState(mode){ return {key:gameKey(player.id, T.id, mode), pid:player.id, topic:T.id, mode, round:1, answers:{}, solved:{}, elapsed:0, reviewed:false, scored:false, active:false, queue:null, tries:0, choices:{}}; }
+function newGameState(mode){ return {key:gameKey(player.id, T.id, mode), pid:player.id, topic:T.id, mode, round:1, answers:{}, solved:{}, reviewed:false, scored:false, active:false, queue:null, tries:0, choices:{}}; }
 let returnTo = 'scrHome';
-function leaveGame(){ endExplore(); saveNow(); stopClock(); hideToast(); G = null; showScreen(returnTo); const to = returnTo;
+function leaveGame(){ endExplore(); saveNow(); hideToast(); G = null; showScreen(returnTo); const to = returnTo;
   itemsSaved().then(() => { if(to === 'scrRegion') renderRegion(); else renderHome(); }); } // the last answers are saved first, so the progress shown is up to date
 function afterGame(){ checkBadges(); }
 $('backHome').onclick = () => popLayer();

@@ -102,7 +102,7 @@ async function renderRegion(){
     ${t.landmarks ? '<button class="passlink" data-passport>🛂 See the stamps in your passport</button>' : ''}
     ${partChips(r, part, done)}
     <div class="meter" role="img" aria-label="${st.learned} of ${n} learned"><i style="width:${Math.round(100*st.learned/n)}%"></i></div>
-    <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(partPhrase(r.name, pp))}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}${st.bestTime ? `<span>Best time: <b>${fmtTime(st.bestTime)}</b></span>` : ''}</p>
+    <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(partPhrase(r.name, pp))}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}</p>
     <div class="modelist">${modeButtons(t, saved, null, pp)}
       <button class="modebig clockbtn" data-clock="${t.id}"${pp ? ` data-part="${pp}"` : ''}><span class="mn">⏱️ Beat the Clock</span><span class="md">How many can you get right in ${BEAT_SECONDS} seconds?${beatBest(t) ? ` Your best: ${beatBest(t)}.` : ''}</span></button></div>`;
 }

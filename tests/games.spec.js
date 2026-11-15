@@ -47,7 +47,7 @@ test('Beat the Clock: one try for each, and a badge for 20 right', async ({page}
   await expect(page.locator('#feedback')).not.toContainText('Try once more');
   // the badge
   await page.evaluate(async () => { player.feats = {...(player.feats || {}), beatBest: 20}; await checkBadges(); });
-  await expect(page.locator('.toast')).toContainText('New badge: Beat the Clock!');
+  await expect(page.locator('.toast')).toContainText('New badge: Speed Star! (and 1 more)'); // 20 right earns Speed Star (10) and Beat the Clock (20)
 });
 
 test('Mystery Country: clues one at a time, fewer clues for more points, and a best score', async ({page}) => {
@@ -121,4 +121,23 @@ test('the landmark drawings have words for screen readers, which never give the 
   await page.evaluate(() => { window.WGQ_TEST.dailyQuestions = [['eu-landmarks', 'Colosseum', 'pick']]; });
   await page.click('#dailyBtn');
   await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('alt', 'A drawing of a landmark');
+});
+
+test('there is only one timer: no stopwatch in Settings or in a game, and the speed badges come from Beat the Clock', async ({page}) => {
+  await newPlayer(page);
+  await page.click('#homeSettings');
+  await expect(page.locator('.panel')).toContainText('Sounds');
+  await expect(page.locator('.panel')).not.toContainText('Stopwatch');
+  await page.keyboard.press('Escape');
+  await openTopic(page, 'Oceania', 'oc-countries');
+  await page.click('.modebig[data-mode="practice"]');
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length > 0);
+  await expect(page.locator('#clock')).toBeHidden();
+  // Speed Star at 10, Beat the Clock at 20, the secret Lightning at 30
+  const earned = async best => page.evaluate(async best => { player.feats = {...(player.feats || {}), beatBest: best}; player.badges = {};
+    return (await computeBadges(player)).filter(b => ['speed', 'clock20', 'lightning'].includes(b.id) && b.earned).map(b => b.name).sort(); }, best);
+  expect(await earned(9)).toEqual([]);
+  expect(await earned(10)).toEqual(['Speed Star']);
+  expect(await earned(20)).toEqual(['Beat the Clock', 'Speed Star']);
+  expect(await earned(30)).toEqual(['Beat the Clock', 'Lightning', 'Speed Star']);
 });

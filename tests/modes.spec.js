@@ -99,15 +99,17 @@ test('the Daily 10 works with Land & Water questions, and offers choices of the 
   await expect(page.locator('#dailyDone')).toContainText('10 out of 10');
 });
 
-test('after playing, home suggests what to do next and Scores show the progress', async ({page}) => {
+test('after playing, home suggests what to do next and the Progress screen shows it', async ({page}) => {
   await newPlayer(page);
   await openTopic(page, 'South America', 'sa-countries');
   await startMode(page, 'find');
   for(let i = 0; i < 3; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'sa-countries')); await expect(page.locator('#findQ')).not.toHaveText(before); }
   await goHome(page);
   await expect(page.locator('.upnext')).toBeVisible();
+  await expect(page.locator('#homeScores')).toHaveText(/Progress/);
   await page.click('#homeScores');
   await expect(page.locator('#scrScores')).toBeVisible();
+  await expect(page.locator('#scrScores h1')).toHaveText('Progress');
   await expect(page.locator('#scoresBody')).toContainText('Countries of South America');
 });
 
@@ -308,16 +310,22 @@ test('Landmarks have pictures: in Explore, Find it, Practice and on flashcards, 
 });
 
 test('the passport: a stamp for each landmark learned, kept after a miss, with a note about new ones', async ({page}) => {
+  const progress = async () => { await goHome(page); await page.click('#homeScores'); await expect(page.locator('#scrScores')).toBeVisible(); };
   await newPlayer(page);
+  await expect(page.locator('#scrHome #passBtn'), 'the passport is on the Progress screen, not home').toHaveCount(0);
+  await progress();
+  await expect(page.locator('.passsec')).toBeVisible();
+  await expect(page.locator('#scoresBody > section').first(), 'first on the Progress screen').toHaveClass('passsec');
   await expect(page.locator('#passBtn')).toContainText('Learn a landmark to get your first stamp!');
   // learn all of Oceania's landmarks in Find it
+  await goHome(page);
   await openTopic(page, 'Oceania', 'oc-landmarks');
   await expect(page.locator('#regionBody [data-passport]')).toBeVisible();
   await startMode(page, 'find');
   await mapSettled(page);
   for(let i = 0; i < 6; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'oc-landmarks')); if(i < 5) await expect(page.locator('#findQ')).not.toHaveText(before); }
   await expect(page.locator('#results')).toBeVisible();
-  await goHome(page);
+  await progress();
   await expect(page.locator('#passBtn')).toContainText('6 of 64 landmark stamps');
   await expect(page.locator('#passBtn .stamp')).toHaveCount(4); // the newest few
   // the passport: Oceania's page is full, the rest wait
@@ -333,15 +341,19 @@ test('the passport: a stamp for each landmark learned, kept after a miss, with a
   await page.click('.stampbig [data-close]');
   await page.keyboard.press('Escape');
   await expect(page.locator('.passport')).toHaveCount(0);
-  // a new stamp after a game, with no new badge to announce, gets its own note
+  // a new stamp after a game, with no new badge to announce, gets its own note (any badge still to announce goes first)
+  await page.evaluate(async () => { await itemsSaved(); await checkBadges(); hideToast(); });
   await page.evaluate(async () => { await recordItem(player.id, 'eu-landmarks', 'Eiffel Tower', true); await checkBadges(); });
   await expect(page.locator('.toast')).toContainText('New passport stamp: Eiffel Tower!');
   await page.click('.toast button:has-text("See passport")');
   await expect(page.locator('.ppage', {hasText: 'Europe'}).locator('h3')).toContainText('1 of 10');
   // a miss later doesn't take a stamp away
   await page.evaluate(async () => { await recordItem(player.id, 'oc-landmarks', 'Uluru', false); });
-  await goHome(page);
+  await progress();
   await expect(page.locator('#passBtn')).toContainText('7 of 64 landmark stamps');
+  // the family's stamps on the Everyone tab
+  await page.click('#tabAll');
+  await expect(page.locator('.famcard.me .fstats')).toContainText('7stamps');
 });
 
 test('typing an answer: the list of names waits for typing over a landmark picture, and opens right away elsewhere', async ({page}) => {
@@ -422,6 +434,7 @@ test('US Landmarks: "Which state is it in?" in the Daily 10, and its own page in
   await expect(page.locator('#feedback')).toContainText("Yes! That's the Space Needle.");
   await expect(page.locator('#dailyDone')).toContainText('You got 3 out of');
   await goHome(page);
+  await page.click('#homeScores');
   await page.click('#passBtn');
   await expect(page.locator('.ppage').last().locator('h3')).toContainText('United States 3 of 12');
 });

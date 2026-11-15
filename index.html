@@ -68,7 +68,7 @@ if('serviceWorker' in navigator && navigator.serviceWorker.controller){
     <div class="apphead">
       <h1>World Geography Quiz</h1>
       <button class="pchip" id="homePlayer" aria-label="Change player"></button>
-      <button class="pchip" id="homeScores"><span class="av" style="background:var(--hi)" aria-hidden="true">★</span><span>Scores</span></button>
+      <button class="pchip" id="homeScores"><span class="av" style="background:var(--hi)" aria-hidden="true">★</span><span>Progress</span></button>
       <button class="icon-btn" id="homeSettings" aria-label="Settings">⚙</button>
       <button class="icon-btn qmark" id="homeHelp" aria-label="How to play">?</button>
     </div>
@@ -87,13 +87,13 @@ if('serviceWorker' in navigator && navigator.serviceWorker.controller){
     <div id="regionBody" class="regionbody"></div>
   </section>
 
-  <!-- Scores -->
+  <!-- Progress: your games, what needs practice, badges, the passport, and everyone in the family (ids still say "scores") -->
   <section id="scrScores" hidden>
     <div class="apphead">
       <button class="icon-btn" id="scoresBack" aria-label="Back to home">←</button>
-      <h1>Scores</h1>
+      <h1>Progress</h1>
     </div>
-    <div class="tabs" role="tablist" aria-label="Whose scores">
+    <div class="tabs" role="tablist" aria-label="Whose progress">
       <button role="tab" id="tabMe" aria-selected="true" aria-controls="scoresBody">Me</button>
       <button role="tab" id="tabAll" aria-selected="false" aria-controls="scoresBody">Everyone</button>
     </div>

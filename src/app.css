@@ -108,7 +108,7 @@ button:disabled,input:disabled{opacity:.45;cursor:not-allowed}
 .fhead .av.big{width:44px;height:44px;font-size:1.5rem}
 .fname{font-family:var(--display);font-weight:800;font-size:1.3rem;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fline{font-variant-numeric:tabular-nums}
-.fstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.fstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
 .fstats span{display:flex;flex-direction:column;background:var(--bg);border-radius:8px;padding:4px 2px}
 .fstats b{font-family:var(--display);font-size:1.1rem;font-variant-numeric:tabular-nums}
 .fstats small{color:var(--muted);font-size:.78rem}

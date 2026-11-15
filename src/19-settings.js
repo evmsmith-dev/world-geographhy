@@ -13,7 +13,7 @@ function openSettings(){
     <div class="toggle"><div class="txt">Sounds<small>Play a sound for right and wrong answers.</small></div><button class="switch" role="switch" id="swSound" aria-checked="${!!p.sound}" aria-label="Sounds"></button></div>
     <p class="muted" style="margin-top:8px;font-size:.9rem">These settings are just for ${esc(player.name)}.</p>
     <p class="sect">Backup</p>
-    <p class="muted" style="font-size:.95rem;margin-bottom:10px">Scores are saved only on this device. Save a backup file to keep them safe, or to move them to a new device.</p>
+    <p class="muted" style="font-size:.95rem;margin-bottom:10px">Progress is saved only on this device. Save a backup file to keep it safe, or to move it to a new device.</p>
     <div class="rowbtns" style="justify-content:flex-start"><button id="doExport">Save a backup</button><button id="doImport">Load a backup</button></div>
     <p class="muted" style="margin-top:18px;font-size:.85rem">World Geography Quiz · version ${esc(BUILD.slice(0,16).replace('T',' '))}</p>`});
   const flip = async (id, k) => { player.prefs[k] = !player.prefs[k]; panel.querySelector('#'+id).setAttribute('aria-checked', String(player.prefs[k])); await DB.put('players', player); if(k==='sound') sound('right'); if(k==='say' && player.prefs.say) say('Hello', player.name + '!'); };
@@ -61,7 +61,7 @@ function openHelp(){
       <li><h3>Up next</h3><p>Not sure what to play? Tap <b>Up next</b> on the home screen. It picks the next step for you, from flashcards to a perfect Test. You can turn it off in <b>⚙ Settings</b>.</p></li>
       <li><h3>World Tour</h3><p>Open <b>the World</b> and pick <b>All Countries</b>, <b>All Land & Water</b> or <b>All Landmarks</b> to play every place in the world in one game, one continent at a time. <b>Find it</b> and <b>Name it</b> go through all of them and remember where you stopped. <b>World 20</b> is a quick round from all over. What you learn here counts for each continent too.</p></li>
       <li><h3>Daily 10</h3><p>Every day, tap <b>Daily 10</b> at the top of the home screen for 10 quick questions. It brings back ones you missed and ones you might be forgetting, so they stick. Play every day to grow your streak 🔥 and earn badges.</p></li>
-      <li><h3>Your scores</h3><p>Each player has their own scores. Tap <b>★ Scores</b> on the home screen to see your games, your badges, the ones that need practice, and everyone's scores. Some badges are secret ❓. Get a perfect Test to find out what they are! Tap your name to switch players. <b>⚙ Settings</b> also turns on the stopwatch and sounds.</p></li>
+      <li><h3>Your progress</h3><p>Each player has their own progress. Tap <b>★ Progress</b> on the home screen to see your passport stamps, your badges, your games, the ones that need practice, and how everyone in the family is doing. Some badges are secret ❓. Get a perfect Test to find out what they are! Tap your name to switch players. <b>⚙ Settings</b> also turns on the stopwatch and sounds.</p></li>
     </ol>
     <p class="note">Your games are saved. Stop any time, and find them later under <b>Keep going</b> on the home screen.</p>
     <button class="primary" id="helpOk">Let's play!</button>`});

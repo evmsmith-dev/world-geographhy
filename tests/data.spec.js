@@ -203,6 +203,14 @@ test('every landmark has its drawing, and every drawing is up to date and saved 
   }
 });
 
+test('publishing gives the offline copy a new name for each version, so an update never mixes old and new files', () => {
+  const wf = read('.github/workflows/tests.yml'), publish = wf.slice(wf.indexOf('  publish:'));
+  expect(publish, 'the publish job stamps the version into index.html').toContain(`sed -i "s/WGQ_BUILD='[^']*'/WGQ_BUILD='$stamp'/" _site/index.html`);
+  expect(publish, 'and names the cache after it in sw.js').toContain(`sed -i "s/const CACHE = '[^']*'/const CACHE = 'wgq-$stamp'/" _site/sw.js`);
+  expect(read('sw.js'), 'the line it changes').toMatch(/^const CACHE = '[^']*';$/m);
+  expect(read('sw.js'), 'the background refresh asks the website, not the browser\'s saved copy').toContain("fetch(req, {cache: 'no-cache'})");
+});
+
 test('on GitHub, each group of tests is split into shards that together cover all of it', () => {
   const args = [...read('.github/workflows/tests.yml').matchAll(/^\s*args: (.+)$/gm)].map(m => m[1].trim()), groups = {};
   for(const a of args){

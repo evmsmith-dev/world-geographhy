@@ -137,7 +137,9 @@ const LANDMARK_ALIAS = {'Eiffel Tower':['eiffel'], 'Colosseum':['coliseum'], 'Le
   'Neuschwanstein Castle':['neuschwanstein'], 'Pyramids of Giza':['pyramids','great pyramid','giza'], 'Mount Kilimanjaro':['kilimanjaro'], 'Great Mosque of Djenné':['djenne','great mosque of djenne'],
   'Rock Churches of Lalibela':['lalibela'], 'Great Wall of China':['great wall'], 'Mount Everest':['everest'], 'Mount Fuji':['fuji'], 'Chichén Itzá':['chichen itza'],
   'Christ the Redeemer':['cristo redentor'], 'Iguazu Falls':['iguazu','iguacu falls'], 'Mitad del Mundo':['middle of the world'], 'Hollywood Sign':['hollywood'],
-  'Waitomo Glowworm Caves':['waitomo','glowworm caves'], 'Twelve Apostles':['12 apostles']};
+  'Waitomo Glowworm Caves':['waitomo','glowworm caves'], 'Twelve Apostles':['12 apostles'],
+  'Gateway Arch':['st louis arch','arch'], 'Kennedy Space Center':['kennedy','cape canaveral'], 'Willis Tower':['sears tower'], 'Empire State Building':['empire state'],
+  'Cape Hatteras Lighthouse':['cape hatteras','hatteras lighthouse'], 'Devils Tower':["devil's tower"], 'Pearl Harbor':['uss arizona memorial','arizona memorial']};
 const GEO_ALIAS = {'Mississippi River':['mississippi'],'Missouri River':['missouri'],'Ohio River':['ohio'],'Colorado River':['colorado'],'Rio Grande':['rio grande river','the rio grande'],'Rocky Mountains':['rockies','rocky'],'Appalachian Mountains':['appalachians'],'Ural Mountains':['urals'],'Caucasus Mountains':['caucasus'],
   'Atlas Mountains':['atlas'],'Scandinavian Mountains':['scandes','kjolen'],'Himalayas':['himalaya'],'Great Dividing Range':['great dividing'],
   'Mediterranean Sea':['mediterranean','med'],'Adriatic Sea':['adriatic'],'Aegean Sea':['aegean'],'Caribbean Sea':['caribbean'],'Caspian Sea':['caspian'],'Lake Titicaca':['titicaca'],'Lake Baikal':['baikal'],
@@ -185,6 +187,7 @@ const TOPICS = [
     tapHint:'Tap a national park', tapWhat:'Tap a national park, find its name', ask:geoAsk, flashFront:geoAsk,
     back:n=>({answer:n, sub:`A national park in ${esc(MAPDATA.usparks.by[n].where)}`}) },
   geoTopic('us', 'United States', 'us', 31, 12),
+  landmarkTopic('us', 'United States', 'us', 12, 12), // US Landmarks: none of North America's again (tools/build-landmarks.mjs)
   { id:'world', group:'World', tab:'Continents & Oceans', name:'Continents & Oceans', blurb:'Find the 7 continents and 5 oceans.', map:'world', count:12,
     answer:n=>n, nouns:'places', listWord:'continents and oceans', alias:WORLD_ALIAS, maxZoom:5,
     tapWhat:'Tap a continent or ocean, find its name', tapHint:'Tap a continent or ocean',

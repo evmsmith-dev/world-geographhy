@@ -5,7 +5,7 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import {frame, slug} from './pictures/common.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url)), out = path.join(here, '..', 'assets', 'landmarks');
-const parts = ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica'];
+const parts = ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica', 'usa'];
 fs.mkdirSync(out, {recursive: true});
 let n = 0;
 for(const p of parts){

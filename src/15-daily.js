@@ -64,10 +64,12 @@ async function pickDaily(){
 const runStyle = t => { const r = Math.random(); return t.landmarks ? (r < 1/3 ? 'find' : r < 2/3 ? 'pick' : 'country') : r < 0.5 ? 'find' : 'pick'; };
 // "Which country is this landmark in?": its country (one of the two, for a landmark between two countries) and 3 more
 // from the same continent, the countries of its other landmarks first
+// (a US landmark asks which state it's in)
+const placesOf = it => it.country || it.state, placeWord = n => ITEM[n].state ? 'state' : 'country';
 async function countryChoices(n){
-  const it = ITEM[n], base = await loadMap(M.base), theirs = new Set(it.country);
-  const right = it.country[Math.floor(Math.random() * it.country.length)];
-  const near = shuffle([...new Set(M.items.flatMap(i => i.country))].filter(c => !theirs.has(c)));
+  const it = ITEM[n], base = await loadMap(M.base), theirs = new Set(placesOf(it));
+  const right = placesOf(it)[Math.floor(Math.random() * placesOf(it).length)];
+  const near = shuffle([...new Set(M.items.flatMap(placesOf))].filter(c => !theirs.has(c)));
   const rest = shuffle(base.items.map(i => i.n).filter(c => !theirs.has(c) && !near.includes(c)));
   return {right, opts: shuffle([right, ...[...near, ...rest].slice(0, 3)])};
 }
@@ -106,10 +108,10 @@ async function dailyShow(){
     else fq.textContent = T.showsItem ? `Which ${T.itemWord} has the capital ${key(q.n)}?` : (ITEM[q.n].kind==='ocean' || (T.geo && !noThe(q.n)) ? `Find the ${q.n}` : `Find ${q.n}`);
     fq.hidden = false; ch.hidden = true; ch.innerHTML = '';
   } else if(q.style === 'country'){
-    $('sub').textContent = 'Look at the landmark, then pick the country it is in.';
-    $('selLabel').textContent = 'Pick the country';
+    $('sub').textContent = `Look at the landmark, then pick the ${placeWord(q.n)} it is in.`;
+    $('selLabel').textContent = `Pick the ${placeWord(q.n)}`;
     const {right, opts} = await countryChoices(q.n); DAILY.cright = right;
-    fq.innerHTML = `${picImg(q.n, 'big')}<span>Which country is ${esc(the(q.n))} in?</span>`; fq.hidden = false;
+    fq.innerHTML = `${picImg(q.n, 'big')}<span>Which ${placeWord(q.n)} is ${esc(the(q.n))} in?</span>`; fq.hidden = false;
     ch.classList.remove('flags'); ch.hidden = false;
     ch.innerHTML = opts.map(v => `<button data-dv="${esc(v)}">${esc(v)}</button>`).join('');
   } else {
@@ -150,7 +152,7 @@ function dailyTap(n){
 }
 $('choices').addEventListener('click', e => {
   const b = e.target.closest('[data-dv]'); if(!b || !DAILY || DAILY.busy) return;
-  const q = DAILY.qs[DAILY.i], v = b.dataset.dv, cq = q.style === 'country', right = cq ? ITEM[q.n].country.includes(v) : v === key(q.n);
+  const q = DAILY.qs[DAILY.i], v = b.dataset.dv, cq = q.style === 'country', right = cq ? placesOf(ITEM[q.n]).includes(v) : v === key(q.n);
   $('choices').querySelectorAll('button').forEach(x => x.disabled = true);
   b.classList.add(right ? 'picked-ok' : 'picked-bad');
   const r = $('choices').querySelector(`[data-dv="${CSS.escape(cq ? DAILY.cright : key(q.n))}"]`); if(r && !right) r.classList.add('picked-ok');

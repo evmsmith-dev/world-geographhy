@@ -5,7 +5,7 @@
 /* ===================== 10e. passport ===================== */
 // A landmark gets its stamp the first time it's answered right in Find it, Practice, a Test, the Daily 10 or the World Tour
 // (flashcards don't count, as with badges). A stamp is never taken away, even after a later miss.
-const LANDMARK_TOPICS = TOPICS.filter(t => t.landmarks);
+const LANDMARK_TOPICS = TOPICS.filter(t => t.landmarks).sort((a, b) => (a.group === 'United States') - (b.group === 'United States')); // the continents, then US Landmarks
 const STAMP_INK = ['#c0392b', '#2c5aa0', '#2e7d4f', '#7b4fa0', '#b5651d']; // each continent's postmark has its own ink
 const stampDate = ms => new Date(ms).toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'});
 

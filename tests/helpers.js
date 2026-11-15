@@ -31,7 +31,7 @@ export async function newPlayer(page, name = 'Ama'){
 }
 
 export const REGIONS = [
-  {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags', 'us-regions', 'us-cities', 'us-parks', 'us-geo']},
+  {name: 'United States', topics: ['us-states', 'us-capitals', 'us-flags', 'us-regions', 'us-cities', 'us-parks', 'us-geo', 'us-landmarks']},
   {name: 'World', topics: ['world']},
   {name: 'Europe', topics: ['eu-countries', 'eu-capitals', 'eu-flags', 'eu-geo', 'eu-landmarks']},
   {name: 'Africa', topics: ['af-countries', 'af-capitals', 'af-flags', 'af-geo', 'af-landmarks']},
@@ -160,8 +160,8 @@ export async function answerRun(page){
     const t = W.TOPICS.find(t => chip.includes(t.name));
     const pic = document.querySelector('#findQ:not([hidden]) img.lmpic'); // "Which landmark is this?" shows a picture, not the place
     const shown = pic && (await W.loadMap(t.map)).items.find(i => W.picSrc(i.n) === pic.getAttribute('src'));
-    const country = document.getElementById('selLabel').textContent === 'Pick the country'
-      ? [...document.querySelectorAll('#choices button')].map(b => b.dataset.dv).find(c => shown.country.includes(c)) : null; // the landmark's country
+    const country = /^Pick the (country|state)$/.test(document.getElementById('selLabel').textContent)
+      ? [...document.querySelectorAll('#choices button')].map(b => b.dataset.dv).find(c => (shown.country || shown.state).includes(c)) : null; // the landmark's country (or state)
     return {topic: t && t.id, pick: !document.getElementById('choices').hidden, sel: country || document.querySelector('#map path.sel')?.dataset.n || (shown && shown.n)};
   });
   expect(info.topic, 'the question says which topic it is from').toBeTruthy();

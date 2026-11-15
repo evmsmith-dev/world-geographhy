@@ -40,11 +40,13 @@ region and the list of cities are at the top of the script.
 
 ## build-landmarks.mjs: Landmarks
 
-Builds `data/maps/<continent>-landmarks.json`: famous landmarks on each continent's map, each a tap circle. Each landmark is a
+Builds `data/maps/<continent>-landmarks.json`: famous landmarks on each continent's map, each a tap circle, and
+`data/maps/us-landmarks.json`: US Landmarks on the United States map, each checked against its state (none of them also on
+North America's tab). Each landmark is a
 longitude/latitude written in the script, with the country it's in; the script checks that it lands inside that country on the map
 (a few in the water, like the Statue of Liberty, are placed on the shore next to them). The map projections are shared with
 `build-geo.mjs` in `projections.mjs`. To add a landmark, add a line to `LANDMARKS`, then its fun fact to `data/facts.json` (under
-`geo`), and change the count on its continent's `landmarkTopic` line in `src/02-topics.js`.
+`geo`), and change the count on its continent's `landmarkTopic` line in `src/02-topics.js`. Then draw it (below).
 
 In a folder with `d3-geo` installed: `node tools/build-landmarks.mjs data/maps`
 
@@ -52,7 +54,7 @@ In a folder with `d3-geo` installed: `node tools/build-landmarks.mjs data/maps`
 
 Builds `assets/landmarks/`: one small SVG drawing for each landmark (200 by 160, with rounded corners and its own sky, so it
 looks the same in light and dark mode). Each drawing is written by hand as shapes in `tools/pictures/` (one file per
-continent, with shared pieces like clouds and arches in `common.mjs`). The file name comes from the landmark's name
+continent, plus `usa.mjs` for US Landmarks, with shared pieces like clouds and arches in `common.mjs`). The file name comes from the landmark's name
 (`Chichén Itzá` → `chichen-itza.svg`).
 
 1. Edit a drawing in `tools/pictures/<continent>.mjs` (or add one, named exactly like the landmark).

@@ -149,15 +149,18 @@ test('the World Tour covers every country once, and every Land & Water place onc
   expect([...tour('world-countries').from].sort(), 'every continent').toEqual(allCountries);
 });
 
-test('every national park and city is placed inside its own state', () => {
+test('every national park, city and US landmark is placed inside its own state, and US Landmarks repeats none of North America\'s', () => {
   const us = Object.fromEntries(JSON.parse(read('data/maps/us.json')).items.map(i => [i.n, i.d]));
   const inside = (d, x, y) => { let r = false; for(const ring of d.split('Z').filter(Boolean)){ const p = ring.slice(1).split('L').map(q => q.split(',').map(Number));
     for(let i = 0, j = p.length - 1; i < p.length; j = i++) if((p[i][1] > y) !== (p[j][1] > y) && x < p[i][0] + (y - p[i][1]) * (p[j][0] - p[i][0]) / (p[j][1] - p[i][1])) r = !r; } return r; };
-  for(const f of ['usparks', 'uscities']){
+  for(const f of ['usparks', 'uscities', 'us-landmarks']){
     const wrong = JSON.parse(read(`data/maps/${f}.json`)).items.filter(i => !/District of Columbia/.test(i.where))
       .filter(i => !i.where.split(/, | and /).some(s => us[s] && inside(us[s], i.dot[0], i.dot[1]))).map(i => `${i.n} (${i.where})`);
     expect(wrong, `${f}: places outside the state they say`).toEqual([]);
   }
+  const usl = JSON.parse(read('data/maps/us-landmarks.json')).items, na = JSON.parse(read('data/maps/namerica-landmarks.json')).items.map(i => i.n);
+  expect(usl.filter(i => !i.state.every(s => us[s])).map(i => i.n), 'US landmarks with a state not on the map').toEqual([]);
+  expect(usl.filter(i => na.includes(i.n)).map(i => i.n), 'US landmarks also on North America\'s tab').toEqual([]);
 });
 
 test('a topic with parts puts every one of its places in exactly one part', () => {
@@ -183,7 +186,7 @@ test('every landmark is placed inside its country (or in the sea off it), and th
 
 test('every landmark has its drawing, and every drawing is up to date and saved for offline use', async () => {
   const dir = path.join(ROOT, 'assets/landmarks'), files = fs.readdirSync(dir).sort(), sw = read('sw.js');
-  expect(Object.keys(D.pics).length, 'landmarks').toBe(D.tours.find(t => t.id === 'world-landmarks').count);
+  expect(Object.keys(D.pics).length, 'landmarks').toBe(D.tours.find(t => t.id === 'world-landmarks').count + D.topics.find(t => t.id === 'us-landmarks').count);
   const missing = Object.entries(D.pics).filter(([, src]) => !fs.existsSync(path.join(ROOT, src))).map(([n, src]) => `${n} (${src})`);
   expect(missing, 'landmarks with no drawing').toEqual([]);
   const used = new Set(Object.values(D.pics).map(src => path.basename(src)));
@@ -191,7 +194,7 @@ test('every landmark has its drawing, and every drawing is up to date and saved 
   expect(files.filter(f => !sw.includes(`'assets/landmarks/${f}'`)), 'drawings missing from the offline list in sw.js').toEqual([]);
   // each file is what tools/build-pictures.mjs makes from tools/pictures/, so a change there was built
   const {frame} = await import(path.join(ROOT, 'tools/pictures/common.mjs'));
-  for(const part of ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica']){
+  for(const part of ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica', 'usa']){
     const drawings = (await import(path.join(ROOT, `tools/pictures/${part}.mjs`))).default;
     for(const [n, [sky, body]] of Object.entries(drawings)){
       expect(D.pics[n], `${part}.mjs draws "${n}", which isn't a landmark`).toBeTruthy();

@@ -187,13 +187,13 @@ test.describe(() => {
 });
 });
 
-test('the United States tabs: Regions, Cities and Land & Water work in Explore, and every tab name fits', async ({page}) => {
+test('the United States tabs: Regions, Cities, Land & Water and Landmarks work in Explore, and every tab name fits', async ({page}) => {
   await newPlayer(page);
   await page.click('.rtile[data-region="United States"]');
-  await expect(page.locator('#regionTabs button')).toHaveText(['States', 'Capitals', 'Flags', 'Regions', 'Cities', 'National Parks', 'Land & Water']);
+  await expect(page.locator('#regionTabs button')).toHaveText(['States', 'Capitals', 'Flags', 'Regions', 'Cities', 'National Parks', 'Land & Water', 'Landmarks']);
   const cut = await page.$$eval('#regionTabs button', bs => bs.filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
   expect(cut, 'tab names that are cut off').toEqual([]);
-  for(const [topic, count, place, detail] of [['us-regions', 5, 'Southwest', '4 states: Arizona, New Mexico, Texas and Oklahoma'], ['us-cities', 25, 'Houston', 'A city in Texas'], ['us-geo', 31, 'Mississippi River', 'A river in the United States']]){
+  for(const [topic, count, place, detail] of [['us-regions', 5, 'Southwest', '4 states: Arizona, New Mexico, Texas and Oklahoma'], ['us-cities', 25, 'Houston', 'A city in Texas'], ['us-geo', 31, 'Mississippi River', 'A river in the United States'], ['us-landmarks', 12, 'Gateway Arch', 'A landmark in Missouri']]){
     await goHome(page);
     await openTopic(page, 'United States', topic);
     await expect(page.locator('#regionBody .stats')).toContainText(`0 of ${count} learned`);
@@ -318,14 +318,14 @@ test('the passport: a stamp for each landmark learned, kept after a miss, with a
   for(let i = 0; i < 6; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'oc-landmarks')); if(i < 5) await expect(page.locator('#findQ')).not.toHaveText(before); }
   await expect(page.locator('#results')).toBeVisible();
   await goHome(page);
-  await expect(page.locator('#passBtn')).toContainText('6 of 52 landmark stamps');
+  await expect(page.locator('#passBtn')).toContainText('6 of 64 landmark stamps');
   await expect(page.locator('#passBtn .stamp')).toHaveCount(4); // the newest few
   // the passport: Oceania's page is full, the rest wait
   await page.click('#passBtn');
-  await expect(page.locator('.passport')).toContainText('6 of 52 stamps');
+  await expect(page.locator('.passport')).toContainText('6 of 64 stamps');
   await expect(page.locator('.ppage', {hasText: 'Oceania'}).locator('h3')).toContainText('6 of 6');
   await expect(page.locator('.passport .stamp.on')).toHaveCount(6);
-  await expect(page.locator('.passport .stamp.off')).toHaveCount(46);
+  await expect(page.locator('.passport .stamp.off')).toHaveCount(58);
   await page.click('[data-stamp="Uluru"]');
   await expect(page.locator('.stampbig')).toContainText('A landmark in Australia');
   await expect(page.locator('.stampbig')).toContainText('Stamped');
@@ -341,7 +341,7 @@ test('the passport: a stamp for each landmark learned, kept after a miss, with a
   // a miss later doesn't take a stamp away
   await page.evaluate(async () => { await recordItem(player.id, 'oc-landmarks', 'Uluru', false); });
   await goHome(page);
-  await expect(page.locator('#passBtn')).toContainText('7 of 52 landmark stamps');
+  await expect(page.locator('#passBtn')).toContainText('7 of 64 landmark stamps');
 });
 
 test('typing an answer: the list of names waits for typing over a landmark picture, and opens right away elsewhere', async ({page}) => {
@@ -396,4 +396,32 @@ test('"Which country is this landmark in?" in the Daily 10: the picture and name
   await expect(page.locator('#findQ')).toContainText('Which country is the Statue of Liberty in?');
   await page.click('#choices button[data-dv="United States"]');
   await expect(page.locator('#feedback')).toContainText('Yes! The Statue of Liberty is in the United States.');
+});
+
+test('US Landmarks: "Which state is it in?" in the Daily 10, and its own page in the passport', async ({page}) => {
+  await newPlayer(page);
+  await page.evaluate(() => { window.WGQ_TEST.dailyQuestions = [['us-landmarks', 'Alamo', 'country'], ['us-landmarks', 'Hoover Dam', 'country'], ['us-landmarks', 'Space Needle', 'pick']]; });
+  await page.click('#dailyBtn');
+  await expect(page.locator('#selLabel')).toHaveText('Pick the state');
+  await expect(page.locator('#findQ')).toContainText('Which state is the Alamo in?');
+  await expect(page.locator('#findQ img.lmpic')).toHaveAttribute('src', 'assets/landmarks/alamo.svg');
+  const opts = await page.$$eval('#choices button', bs => bs.map(b => b.dataset.dv));
+  const states = await page.evaluate(async () => (await window.WGQ_TEST.loadMap('us')).items.map(i => i.n));
+  expect(opts).toHaveLength(4);
+  expect(opts.filter(c => !states.includes(c)), 'every choice is a state').toEqual([]);
+  await page.click('#choices button[data-dv="Texas"]');
+  await expect(page.locator('#feedback')).toContainText('Yes! The Alamo is in Texas.');
+  await expect(page.locator('#chipText')).toContainText('Question 2 of 3');
+  const two = await page.$$eval('#choices button', bs => bs.map(b => b.dataset.dv).filter(c => c === 'Nevada' || c === 'Arizona'));
+  expect(two, 'one of Nevada and Arizona').toHaveLength(1);
+  await page.click(`#choices button[data-dv="${two[0]}"]`);
+  await expect(page.locator('#feedback')).toContainText('Yes! The Hoover Dam is in Nevada and Arizona.');
+  await expect(page.locator('#chipText')).toContainText('Question 3 of 3');
+  await expect(page.locator('#selLabel')).toHaveText('Which landmark is this?');
+  await page.click('#choices button[data-dv="Space Needle"]');
+  await expect(page.locator('#feedback')).toContainText("Yes! That's the Space Needle.");
+  await expect(page.locator('#dailyDone')).toContainText('You got 3 out of');
+  await goHome(page);
+  await page.click('#passBtn');
+  await expect(page.locator('.ppage').last().locator('h3')).toContainText('United States 3 of 12');
 });

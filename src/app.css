@@ -461,6 +461,10 @@ svg.shape .star{fill:var(--sel);stroke:var(--ink);stroke-width:1.2;vector-effect
 /* tabs fill their column, with equal parts (place screen and Scores) */
 #scrRegion .tabs,#scrScores .tabs{display:flex}
 #scrRegion .tabs button,#scrScores .tabs button{flex:1 1 0;min-width:0}
+/* seven or more tabs (the United States) don't fit in one row on a tablet or computer either: two rows of four */
+#scrRegion .tabs.lots{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+#scrRegion .tabs.lots button{background:var(--sheet);padding:9px 8px;white-space:nowrap}
+#scrRegion .tabs.lots button[aria-selected="true"]{background:var(--btn)}
 /* four tabs don't fit in one row on a phone: show them as a 2×2 grid instead */
 @media (max-width:600px){
   #scrRegion .tabs.many,.tabs.many{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}

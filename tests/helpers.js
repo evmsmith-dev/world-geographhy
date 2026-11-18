@@ -153,8 +153,10 @@ export async function answer(page, name, typed = name){
   await page.click('#submit');
 }
 
-// Answer one question of a Daily 10 or World Tour correctly, whatever kind it is
-export async function answerRun(page){
+// Answer one question of a Daily 10 or World Tour correctly, whatever kind it is.
+// quick: pick the place with the keyboard instead of a finger tap (the same select() a tap calls, without zooming
+// to make room for a finger; the "tap every place" tests already tap every place for real)
+export async function answerRun(page, {quick = false} = {}){
   const info = await page.evaluate(async () => {
     const chip = document.getElementById('chipText').textContent, W = window.WGQ_TEST;
     const t = W.TOPICS.find(t => chip.includes(t.name));
@@ -173,7 +175,19 @@ export async function answerRun(page){
     }, info);
     await page.click(`#choices button[data-dv="${right.replace(/"/g, '\\"')}"]`);
   } else {
-    await tapPlace(page, await findTarget(page, info.topic));
+    const name = await findTarget(page, info.topic);
+    if(quick){
+      // pick it with the keyboard and wait for the game to count it; a pick that comes before the question is ready
+      // is ignored, so pick again, but only while this question is still waiting (the next one can come quickly)
+      const before = await page.evaluate(() => DAILY.right);
+      const pick = () => page.evaluate(n => [...document.querySelectorAll('#map path.st')].find(p => p.dataset.n === n).dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true})), name);
+      await expect(async () => {
+        if(await page.evaluate(b => DAILY.right === b && !DAILY.busy, before)) await pick();
+        expect(await page.evaluate(() => DAILY.right), `${name} counted as right`).toBeGreaterThan(before);
+      }).toPass({timeout: 10_000});
+      return info;
+    }
+    await tapPlace(page, name);
   }
   await expect(page.locator('#feedback')).toContainText(/yes/i);
   return info;

@@ -1,5 +1,5 @@
 // Each way to play works: Test (and its badge), Practice, flashcards, Explore and the Daily 10.
-import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, mapSettled, answer, answerRun } from './helpers.js';
+import { test, expect, newPlayer, goHome, openTopic, startMode, tapPlace, findTarget, mapSettled, answer, answerRun, savedAnswers } from './helpers.js';
 
 test('a Test ended early shows what was right, missed and wrong, and you can keep going', async ({page}) => {
   await newPlayer(page);
@@ -128,6 +128,7 @@ test('after playing, home suggests what to do next and the Progress screen shows
   await openTopic(page, 'South America', 'sa-countries');
   await startMode(page, 'find');
   for(let i = 0; i < 3; i++){ const before = await page.textContent('#findQ'); await tapPlace(page, await findTarget(page, 'sa-countries')); await expect(page.locator('#findQ')).not.toHaveText(before); }
+  await savedAnswers(page, 'sa-countries', 3); // saving happens a moment after each answer
   await goHome(page);
   await expect(page.locator('.upnext')).toBeVisible();
   await expect(page.locator('#homeScores')).toHaveText(/Progress/);

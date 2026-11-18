@@ -155,7 +155,8 @@ function dailyAnswer(right, msg){
   feedback(msg, right ? 'ok' : 'bad');
   $('tally').innerHTML = `<b>${DAILY.right}</b> right`;
   current = q.n; dailyPaint(null, {[q.n]: right ? 'ok' : 'sel'}); if(!right) focusItem(q.n);
-  const wait = DAILY.clock ? (right ? 450 : 1300) : DAILY.mysteryOf ? (right ? 2200 : 3000) : right ? 1000 : 2200; // Beat the Clock moves on fast; a solved mystery takes a moment to read
+  let wait = DAILY.clock ? (right ? 450 : 1300) : DAILY.mysteryOf ? (right ? 2200 : 3000) : right ? 1000 : 2200; // Beat the Clock moves on fast; a solved mystery takes a moment to read
+  if(window.WGQ_TEST && WGQ_TEST.quickNext) wait = 60; // only in the automatic checks (?test), for long runs
   setTimeout(() => { if(!DAILY || DAILY.ended) return; DAILY.i++; if(DAILY.i < DAILY.qs.length) dailyShow(); else (DAILY.finish || dailyFinish)(); }, wait);
 }
 function dailyTap(n){

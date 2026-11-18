@@ -59,14 +59,14 @@ test('a World Tour can be stopped and picked up later where it was left', async 
   await expect(page.locator('#chipText')).toContainText('Question 4 of 195');
 });
 
-test('a whole Land & Water World Tour, every place tapped, earns the badges', async ({page}) => {
-  test.setTimeout(300_000);
+test('a whole Land & Water World Tour, all 79 places, earns the badges', async ({page}) => {
   await newPlayer(page);
   await openTour(page, 'world-geo');
   await startTourMode(page, 'find');
   for(let i = 1; i <= 79; i++){
     await expect(page.locator('#chipText')).toContainText(`Question ${i} of 79`);
-    await answerRun(page);
+    if(i === 6) await page.evaluate(() => { window.WGQ_TEST.quickNext = true; }); // after five at the real pace, move on without the one-second pause
+    await answerRun(page, {quick: i > 5}); // the first five tapped like a finger, the rest picked quickly
   }
   await expect(page.locator('#dailyDone')).toContainText('79 out of 79! Perfect!');
   await expect(page.locator('.toast')).toContainText('badge');

@@ -79,8 +79,10 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ matrix.browser }}-${{ hashFiles('tests/package-lock.json') }}
+      # Chromium runs on the system libraries GitHub's machines already have (they come with Google Chrome).
+      # Only WebKit needs extra ones from Ubuntu's package server, which is sometimes very slow (once over four minutes).
       - name: Install the browser (Chromium for the phone, WebKit, the engine in Safari, for the iPad)
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+        run: npx playwright install ${{ matrix.browser == 'webkit' && '--with-deps' || '' }} ${{ matrix.browser }}
       - name: Run the tests
         run: npx playwright test ${{ matrix.args }}
         env:

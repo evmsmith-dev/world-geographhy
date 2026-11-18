@@ -110,3 +110,18 @@ test('the Daily 10 keeps its place for the day, and a new player gets starter qu
   expect(await page.evaluate(() => JSON.stringify(DAILY.qs.map(q => q.t + '|' + q.n))), 'the same questions').toBe(before);
   await expect(page.locator('#tally')).toHaveText('2 right');
 });
+
+test('country cards and Explore show other names and two-continent notes, and the World tour explains the count', async ({page}) => {
+  await newPlayer(page);
+  await openTopic(page, 'Asia', 'as-countries');
+  await page.click('#exploreBtn');
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st').length > 40);
+  await pick(page, 'Turkey');
+  await expect(page.locator('#exInfo')).toContainText('Also called Türkiye. It is in two continents, Asia and Europe.');
+  await goHome(page);
+  await page.click('.rtile[data-region="World"]');
+  await page.click('#regionTabs [data-tab="world-countries"]');
+  await page.click('[data-countcard]');
+  await expect(page.locator('.countcard')).toContainText('the 193 members of the United Nations, plus Vatican City and Taiwan');
+  await expect(page.locator('.countcard')).toContainText('Crimea is part of Ukraine');
+});

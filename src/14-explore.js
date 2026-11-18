@@ -74,6 +74,7 @@ function exploreInfo(n){
   box.innerHTML = `${flags ? flagImg(n, 'exflag') : T.landmarks ? picImg(n, 'expic', `A drawing of ${the(n)}`) : ''}<div class="exbody"><p class="exname">${esc(n)} ${sayBtn(n, cap ? [n, '. Its capital is', cap] : [n])}</p>
     ${cap ? `<p>Capital: <b>${esc(cap)}</b> <span class="exstarkey" aria-hidden="true">★</span>${CAP_NOTE[n] ? ` <span class="muted">${esc(CAP_NOTE[n])}</span>` : ''}</p>` : ''}
     ${extra ? `<p class="muted">${extra}</p>` : ''}
+    ${!EXPLORE.geo && R.map !== 'world' && R.map !== 'us' && COUNTRY_NOTE[n] ? `<p class="muted">${esc(COUNTRY_NOTE[n])}</p>` : ''}
     ${factFor(n, R.map) ? `<p class="fact"><span class="fk">💡 Did you know? ${sayBtn('the fact', [factFor(n, R.map)])}</span>${esc(factFor(n, R.map))}</p>` : ''}</div>`;
   if(!FACTS && R.map !== 'world') loadFacts().then(() => { if(EXPLORE && current === n && FACTS) exploreInfo(n); });
 }

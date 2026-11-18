@@ -77,8 +77,8 @@ function paint(){
   if(G.mode === 'find'){ $('selLabel').textContent = 'Find it on the map'; const t = findTarget(); if(T.flags) $('findQ').innerHTML = t ? `${flagImg(t, 'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>` : ''; else { $('findQ').innerHTML = t ? (T.landmarks ? `${picImg(t, 'big', `A drawing of ${the(t)}`)}<span>${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}</span>` : `${esc(findAsk(t))} ${sayBtn(key(t), [key(t)])}`) : ''; if(t && autoSay() && G.sayLast !== t){ G.sayLast = t; say(key(t)); } } return; }
   const label = !current ? T.tapHint
     : T.showsItem ? (isSolved(current) ? `Capital of ${current}: ${key(current)}` : T.ask(current))
-    : isSolved(current) ? 'You already got this one'
-    : (G.mode==='practice' && G.answers[current]) ? 'Already answered'
+    : isSolved(current) ? 'Got it!'
+    : (G.mode==='practice' && G.answers[current]) ? 'Not this time'
     : G.answers[current] ? 'Change your answer?' : T.ask(current);
   $('selLabel').textContent = label;
   if(T.landmarks){ const fq = $('findQ'), show = !!current && !reviewing; fq.hidden = !show; fq.innerHTML = show ? picImg(current, 'big') : ''; } // the picture of the landmark that's picked
@@ -168,7 +168,7 @@ function select(n){
     paint(); return;
   }
   if(!sinks(ITEM[n])){ svg.appendChild(els[n]); raiseDots(n); } // bring to front so its outline shows, but keep tap dots on top
-  if(isSolved(n)) feedback(T.showsItem ? `<b>${esc(key(n))}</b>. You already got this one.` : `That's <b>${esc(the(n))}</b>. You already got this one.`, 'ok');
+  if(isSolved(n)) feedback(T.showsItem ? `<b>${esc(key(n))}</b>. You got this one!` : `That's <b>${esc(the(n))}</b>. You got this one!`, 'ok');
   else if(G.mode==='practice' && G.answers[n]) feedback(`You said ${esc(G.answers[n])}. ${T.showsItem ? `The capital is <b>${esc(key(n))}</b>` : `This is <b>${esc(n)}</b>`}.`, 'bad');
   else feedback('');
   setInput(); paint();
@@ -194,8 +194,12 @@ async function submit(){
   }
   for(const k in G.answers) if(G.answers[k] === v && k !== current) delete G.answers[k]; // each answer fits only one place
   G.answers[current] = v; sound('tap');
-  feedback(`Saved ${esc(v)}.`); paint(); saveSoon();
-  if(!step(1, true)){ setInput(); feedback(`Every one has an answer. Press <b>Review</b> when you're ready!`); }
+  // the map stays where it is and nothing is picked: tap the next place (or press Next). It used to jump to the next
+  // place by itself, and a tap made while it moved could land on a different place, saving an answer to the wrong one.
+  current = null; setInput(); paint(); saveSoon();
+  if(inp === document.activeElement) inp.blur();
+  const left = PN().some(n => isOpen(n) && !G.answers[n]);
+  feedback(left ? `Saved ${esc(v)}. Tap the next place, or press <b>Next ▶</b>.` : `Saved ${esc(v)}. Every one has an answer. Press <b>Review</b> when you're ready!`);
 }
 submitBtn.onclick = submit;
 function step(dir, quiet){

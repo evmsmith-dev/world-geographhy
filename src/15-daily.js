@@ -10,7 +10,7 @@ const yesterday = () => { const d = new Date(); d.setDate(d.getDate()-1); return
 function streakNow(p){ const d = p.daily || {}; const alive = d.last === today() || d.last === yesterday(); return {streak: alive ? (d.streak||0) : 0, best: d.best||0, doneToday: d.last === today(), lastScore: d.lastScore}; }
 function dailyCard(){
   const s = streakNow(player);
-  const status = s.doneToday ? `Done today! You got ${s.lastScore} of 10. Play again for fun.` : '10 quick questions, picked to help you remember what you learned.';
+  const status = s.doneToday ? `Done today! You got ${s.lastScore} of 10. Play again for fun.` : !(player.daily || {}).last ? '10 quick questions to get you started. After that, they help you remember what you learn.' : '10 quick questions, picked to help you remember what you learned.';
   return `<button class="dailybtn${s.doneToday?' done':''}" id="dailyBtn">
     <span class="dt">Daily 10${s.doneToday ? ' ✓' : ''}</span><span class="dd">${esc(status)}</span>
     <span class="streak" aria-label="${s.streak} day streak"><span aria-hidden="true">🔥</span> ${s.streak}<small>day${s.streak===1?'':'s'}</small></span>
@@ -45,9 +45,12 @@ async function pickDaily(){
     const fresh = shuffle(m.items.map(i => i.n).filter(n => !known.has(tid + '|' + n) && !seen.has(tid + '|' + n)));
     if(fresh.length){ seen.add(tid + '|' + fresh[0]); qs.push({t: tid, n: fresh[0]}); }
   }
+  // the rest: mostly from the topics the player plays, and otherwise (or for a new player) from the starting topics
+  // (the continents and oceans, and the countries and states), not capitals or flags of places they've never played
+  const starter = TOPICS.filter(t => t.id === 'world' || /-(countries|states)$/.test(t.id)).map(t => t.id);
   let guard = 0;
   while(qs.length < room && guard++ < 200){
-    const pool = played.length && Math.random() < 0.6 ? played : TOPICS.map(t => t.id);
+    const pool = played.length && Math.random() < 0.85 ? played : starter;
     const tid = pool[Math.floor(Math.random()*pool.length)], t = TOPIC[tid];
     const m = await loadMap(t.map);
     const n = m.items[Math.floor(Math.random()*m.items.length)].n;
@@ -74,7 +77,15 @@ async function countryChoices(n){
   return {right, opts: shuffle([right, ...[...near, ...rest].slice(0, 3)])};
 }
 const capFirst = s => s.charAt(0).toUpperCase() + s.slice(1);
-async function startDaily(){ return startRun({title:'Daily 10', pick:pickDaily, home:'scrHome'}); }
+// today's Daily 10 keeps its place: leave partway and it picks up at the same question (it used to start over with new ones)
+async function startDaily(){
+  const save = `daily:${player.id}:${today()}`;
+  for(const g of await DB.all('games')) if(g.pid === player.id && /^daily:/.test(g.key) && g.key !== save) await DB.del('games', g.key); // an unfinished one from another day
+  let saved = (window.WGQ_TEST && WGQ_TEST.dailyQuestions) ? null : await DB.get('games', save);
+  if(saved && !(saved.i < saved.qs.length && saved.qs.every(q => TOPIC[q.t]))) saved = null;
+  if(saved) for(const q of saved.qs.slice(saved.i)){ await loadMap(TOPIC[q.t].map); if(TOPIC[q.t].flags) await loadFlags(TOPIC[q.t].map); }
+  return startRun({title:'Daily 10', pick:pickDaily, home:'scrHome', save, saved, tour:'daily', mode:'daily'});
+}
 // A run of questions, each on its own map: the Daily 10, and the World Tour (src/16-world-tour.js), which adds
 // tour, mode and save (where to keep its place, so it can be finished later), saved (a run to pick up) and finish.
 // Beat the Clock adds clock (seconds to play), and Mystery Country asks 'mystery' questions (src/17-games.js); both add again.
@@ -168,6 +179,7 @@ $('choices').addEventListener('click', e => {
   dailyAnswer(right, right ? `Yes! ${T.flags ? `That's the flag of <b>${esc(q.n)}</b>` : T.geo ? `That's ${esc(the(v))}` : `<b>${esc(v)}</b> is right`}.` : `Not quite. ${T.flags ? `The flag of ${esc(q.n)} is the one with the green outline` : `The answer is ${T.geo ? esc(the(key(q.n))) : `<b>${esc(key(q.n))}</b>`}`}. ${mixTip(q.n, w)}`);
 });
 async function dailyFinish(){
+  if(DAILY.save) DB.del('games', DAILY.save); // done: tomorrow's is new
   const score = DAILY.right, first = !streakNow(player).doneToday;
   const d = player.daily || {};
   if(first){

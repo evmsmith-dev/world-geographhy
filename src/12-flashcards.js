@@ -7,14 +7,14 @@ const card = $('card'), cardin = card.querySelector('.cardin');
 let deck = [], fi = 0, flipped = false, again = [], firstKnew = 0, fround = 1, deckSize = 0;
 const starPts = (cx,cy,r) => Array.from({length:10}, (_,i) => { const a = -Math.PI/2 + i*Math.PI/5, q = i%2 ? r*0.45 : r; return (cx+q*Math.cos(a)).toFixed(2)+','+(cy+q*Math.sin(a)).toFixed(2); }).join(' ');
 function drawCardArt(el, n, side){
-  if(T.card === 'flag' && side === 'front'){ // just the flag, in a 4:3 frame
+  if(T.card === 'flag'){ // just the flag, in a 4:3 frame: on the back too, next to its name and where it is
     el.setAttribute('viewBox', '0 0 400 300');
     el.innerHTML = `<image href="${flagSrc(n)}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/><rect x=".5" y=".5" width="399" height="299" fill="none" class="flagframe"/>`;
     return;
   }
-  if(T.landmarks && side === 'front'){ // a drawing of the landmark; the back shows where it is
+  if(T.landmarks){ // a drawing of the landmark: on the back too, next to its name and where it is
     el.setAttribute('viewBox', '0 0 200 160');
-    el.innerHTML = `<title>A drawing of a landmark</title><image href="${picSrc(n)}" x="0" y="0" width="200" height="160"/>`;
+    el.innerHTML = `<title>${side === 'front' ? 'A drawing of a landmark' : `A drawing of ${esc(the(n))}`}</title><image href="${picSrc(n)}" x="0" y="0" width="200" height="160"/>`;
     return;
   }
   const it = ITEM[n];
@@ -69,12 +69,16 @@ function reveal(){
     const b = T.back(n, ITEM[n]);
     $('fAnswer').textContent = b.answer; $('fSub').innerHTML = b.sub;
     if(autoSay()) cardSay();
-    const hasLoc = T.card === 'shape' || T.card === 'flag';
+    const hasLoc = T.card === 'shape' || T.card === 'flag' || T.landmarks;
     const loc = $('fLoc'); loc.toggleAttribute('hidden', !hasLoc); // svg elements have no .hidden property
     if(hasLoc){
+      const it = ITEM[n], [x0, y0, x1, y1] = it.b, small = Math.max(x1 - x0, y1 - y0) < VW / 12, at = it.dot || it.c || [(x0 + x1) / 2, (y0 + y1) / 2];
       loc.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
-      loc.innerHTML = (M.other ? `<path class="o" d="${M.other}"/>` : '') + M.items.map(i => `<path class="${i.n===n?'hi':''}" d="${i.d}"/>`).join('') +
-        (ITEM[n].dot ? `<circle class="hi" cx="${ITEM[n].dot[0]}" cy="${ITEM[n].dot[1]}" r="${VW/60}"/>` : '');
+      loc.innerHTML = T.landmarks // the land, with the landmark marked
+        ? `<path class="o" d="${M.bgland}"/><circle class="hi" cx="${at[0]}" cy="${at[1]}" r="${VW/45}"/><circle class="ring" cx="${at[0]}" cy="${at[1]}" r="${VW/18}"/>`
+        : (M.other ? `<path class="o" d="${M.other}"/>` : '') + M.items.map(i => `<path class="${i.n===n?'hi':''}" d="${i.d}"/>`).join('') +
+          (it.dot ? `<circle class="hi" cx="${it.dot[0]}" cy="${it.dot[1]}" r="${VW/60}"/>` : '') +
+          (small ? `<circle class="ring" cx="${at[0]}" cy="${at[1]}" r="${VW/18}"/>` : ''); // a ring, so a small place can be found on the little map
     }
   }
   setFlip(!flipped);

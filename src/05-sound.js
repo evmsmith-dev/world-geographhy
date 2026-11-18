@@ -9,7 +9,7 @@ const CAN_SAY = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in win
 if(!CAN_SAY) document.documentElement.classList.add('nosay');
 // sound-it-out spellings for names that device voices often get wrong
 const SAY = {"Côte d'Ivoire":'coat dee-vwahr','Ouagadougou':'wah-gah-doo-goo','Yamoussoukro':'yah-moo-sook-roh','Nouakchott':'nwak-shot',"N'Djamena":'en-jah-may-nah',
-  'Lesotho':'leh-soo-too','Mbabane':'em-bah-bah-nay','Bujumbura':'boo-jum-boo-rah','Gitega':'gee-tay-gah','Niamey':'nee-ah-may','Bamako':'bah-mah-koh','Malabo':'mah-lah-boh',
+  'Lesotho':'leh-soo-too','Mbabane':'em-bah-bah-nay','Bujumbura':'boo-jum-boo-rah','Gitega':'gee-tay-gah','Niamey':'nee-ah-may','Bamako':'bah-mah-koh','Malabo':'mah-lah-boh','Ciudad de la Paz':'see-oo-dahd day lah pahs',
   'Libreville':'lee-bruh-veel','Porto-Novo':'portoh noh-voh','Lomé':'loh-may','Asmara':'ahs-mah-rah','Moroni':'moh-roh-nee','Thimphu':'tim-poo','Malé':'mah-lay',
   'Naypyidaw':'nay-pyee-daw','Ulaanbaatar':'oo-lahn bah-tar','Sri Jayawardenepura Kotte':'shree jaya-wardeena-poora koh-tay','Bishkek':'bish-kek','Dushanbe':'doo-shahn-bay',
   'Ashgabat':'ash-gah-baht',"Sana'a":'sah-nah','Qatar':'kah-tar','Doha':'doh-hah','Tbilisi':'tuh-bee-lee-see','Reykjavík':'rake-yah-veek','Chișinău':'kee-shee-now',

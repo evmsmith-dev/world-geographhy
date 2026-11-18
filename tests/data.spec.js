@@ -241,3 +241,39 @@ test('every country and US state has its real area and middle (for Mystery Count
   expect(area('us', 'Alaska'), 'Alaska, about 1.7 million km²').toBeGreaterThan(1.4e6);
   expect(area('us', 'Rhode Island')).toBeLessThan(area('us', 'Delaware'));
 });
+
+// ---- corrections from the November 2026 geography review ----
+const ringsOf = d => d.split(/(?=M)/).map(r => { const p = r.match(/-?\d+(\.\d+)?/g).map(Number), pts = []; for(let i = 0; i < p.length; i += 2) pts.push([p[i], p[i+1]]); return pts; });
+const inShape = (pt, d) => ringsOf(d).some(pts => { let c = false; for(let i = 0, j = pts.length - 1; i < pts.length; j = i++){ const [xi, yi] = pts[i], [xj, yj] = pts[j]; if((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; });
+
+test('borders follow the UN: Crimea is part of Ukraine, and Western Sahara is apart from Morocco', async () => {
+  const eu = JSON.parse(read('data/maps/europe.json')), af = JSON.parse(read('data/maps/africa.json'));
+  const by = (m, n) => m.items.find(i => i.n === n);
+  // Simferopol, Sevastopol and Kerch, placed on the Europe map with tools/projections.mjs
+  const crimea = [[796.2, 599.3], [789.3, 610.1], [830.5, 577.8]];
+  for(const pt of crimea){ expect(inShape(pt, by(eu, 'Ukraine').d), `${pt} in Ukraine`).toBe(true); expect(inShape(pt, by(eu, 'Russia').d), `${pt} not in Russia`).toBe(false); }
+  expect(by(af, 'Morocco').b[3], 'Morocco stops at 27°40′N').toBeLessThan(125);
+  expect(by(af, 'Morocco').area).toBe(446550);
+  expect(by(eu, 'Ukraine').area, 'Ukraine with Crimea, about 600,000 km²').toBeGreaterThan(590000);
+});
+
+test('things that changed: Syria\'s flag (2025) and Equatorial Guinea\'s capital (2026)', () => {
+  const syria = JSON.parse(read('data/flags.json')).Syria;
+  expect((syria.match(/<polygon fill="#ce1126"/g) || []).length, 'three red stars').toBe(3);
+  expect(syria, 'green on top').toContain('fill="#007a3d" d="M0 0h640v160H0Z"');
+  expect(read('src/10-find-it.js'), 'no look-alike tips about the old flag').not.toMatch(/'flag','Syria'/);
+  const eg = JSON.parse(read('data/maps/africa.json')).items.find(i => i.n === 'Equatorial Guinea');
+  expect(eg.cap).toBe('Ciudad de la Paz');
+  expect(read('src/02-topics.js')).toContain("'Equatorial Guinea':'The capital moved here from Malabo");
+});
+
+test('the facts the geography expert found wrong are corrected', () => {
+  const f = JSON.parse(read('data/facts.json')), topics = read('src/02-topics.js');
+  expect(f.geo['Mitad del Mundo']).toContain('the real equator is about 240 meters away');
+  expect(f.geo['Atlas Mountains']).not.toContain('keep the Sahara Desert so dry');
+  expect(f.geo['Petrified Forest National Park']).toContain('after being buried');
+  expect(f.country['North Korea']).toContain('1948');
+  expect(f.geo['Big Bend National Park']).toContain('between Texas and Mexico');
+  expect(f.country['Albania']).toContain('170,000');
+  expect(topics).not.toContain('It is also called Oceania');
+});

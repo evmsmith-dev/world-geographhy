@@ -29,6 +29,7 @@ async function renderTour(t, draw){
     <p class="sub">Find all ${t.count} ${t.nouns}${t.id === 'world-countries' ? ' of the world' : ''}, continent by continent.
       What you learn here counts for each continent too.</p>
     ${t.id === 'world-landmarks' ? '<button class="passlink" data-passport>🛂 See the stamps in your passport</button>' : ''}
+    ${t.id === 'world-countries' ? '<button class="passlink" data-countcard>🌐 How many countries are there?</button>' : ''}
     <div class="meter" role="img" aria-label="${st.learned} of ${t.count} learned"><i style="width:${Math.round(100*st.learned/t.count)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${t.count} learned</span>${done ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(t.name)} Master</b></span>` : ''}</p>
     <ul class="tourparts">${st.per.map(p => `<li><span>${esc(TOPIC[p.f].group)}</span> <b>${p.learned}</b> of ${p.count}</li>`).join('')}</ul>
@@ -98,3 +99,19 @@ $('dailyDone').addEventListener('click', e => {
   const t = TOUR[DAILY.tour], mode = DAILY.mode, again = DAILY.missed.map(q => ({...q}));
   popLayer(() => startTour(t, mode, again));
 });
+
+// why the game has 195 countries, and what the gray places on the maps are
+function openCountryCount(){
+  openPanel({kind:'sheet', title:'How many countries are there?', html:`<div class="countcard">
+    <p>This game has <b>195</b>: the 193 members of the United Nations, plus Vatican City and Taiwan. People don't all agree on the number, because a few places are disputed:</p>
+    <ul>
+      <li><b>Taiwan</b> governs itself like a country, but only about a dozen countries recognize it, and China says it is part of China. This game counts it.</li>
+      <li><b>Palestine</b> (the West Bank and Gaza) is recognized by about three-quarters of the world's countries, but it isn't a full UN member. It is gray on the maps here. Many school lists count it instead of Taiwan.</li>
+      <li><b>Kosovo</b> said it was independent from Serbia in 2008. About half the world's countries recognize it. It is gray here.</li>
+      <li><b>Western Sahara</b>: Morocco controls most of it, but the UN says its future hasn't been decided yet. It is gray here.</li>
+      <li><b>Crimea</b> is part of Ukraine, as the UN says, though Russia has controlled it since 2014.</li>
+    </ul>
+    <p>Other gray land belongs to a country without being one, like <b>Greenland</b> (part of Denmark, and the world's biggest island), <b>Puerto Rico</b> (United States) and <b>French Guiana</b> (France).</p>
+    </div>`});
+}
+$('regionBody').addEventListener('click', e => { if(e.target.closest('[data-countcard]')) openCountryCount(); });

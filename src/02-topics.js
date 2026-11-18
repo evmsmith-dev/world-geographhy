@@ -17,7 +17,7 @@ const EU_CAP_ALIAS = {'Kyiv':['kiev'],'Luxembourg City':['luxembourg'],'Vatican 
 const SA_CAP_ALIAS = {'Sucre':['la paz']};
 const AF_ALIAS = {"Côte d'Ivoire":['ivory coast'],'Eswatini':['swaziland'],'Cape Verde':['cabo verde'],'DR Congo':['democratic republic of the congo','drc','congo kinshasa'],
   'Republic of the Congo':['congo brazzaville'],'São Tomé and Príncipe':['sao tome'],'Gambia':['the gambia'],'Central African Republic':['car']};
-const AF_CAP_ALIAS = {'Pretoria':['cape town','bloemfontein']};
+const AF_CAP_ALIAS = {'Pretoria':['cape town','bloemfontein'],'Ciudad de la Paz':['malabo','oyala']}; // Malabo was the capital until 2026
 // the five African Union regions, for shorter games
 const AF_PARTS = {
   North:['Algeria','Egypt','Libya','Mauritania','Morocco','Tunisia'],
@@ -72,11 +72,15 @@ const CAP_NOTE = {'Bolivia':'The government meets in La Paz.',
   'South Africa':'South Africa has three capitals: Pretoria, Cape Town and Bloemfontein.',"Côte d'Ivoire":'Abidjan is the biggest city.',
   'Tanzania':'Dar es Salaam is the biggest city.','Benin':'The government works in Cotonou.','Eswatini':'Lobamba is the royal capital.',
   'Burundi':'The capital moved here from Bujumbura in 2019.',
-  'Israel':'Many countries keep their embassies in Tel Aviv.','Sri Lanka':'Colombo is the biggest city, and the government works in both.',
+  'Equatorial Guinea':'The capital moved here from Malabo, on the island of Bioko, in 2026.',
+  'Nigeria':'Lagos is the biggest city.','Morocco':'Casablanca is the biggest city.',
+  'Israel':"Israel's government is in Jerusalem, but most countries don't call it the capital, because Israelis and Palestinians both claim the city.",
+  'Yemen':'Because of a war, the government has been working from Aden.','Pakistan':'Karachi is the biggest city.','Vietnam':'Ho Chi Minh City is the biggest city.','Sri Lanka':'Colombo is the biggest city, and the government works in both.',
   'Malaysia':'The government works in nearby Putrajaya.','Myanmar':'Yangon is the biggest city.','Kazakhstan':'It was called Nur-Sultan from 2019 to 2022.',
   'Nauru':'Nauru has no official capital. The government works in Yaren.','Tuvalu':'The government works on Funafuti, a ring of tiny islands.',
   'Palau':'It took over from Koror in 2006.','Australia':'Sydney is the biggest city.','New Zealand':'Auckland is the biggest city.',
-  'United States':'New York City is the biggest city.','Canada':'Toronto is the biggest city.',
+  'United States':'New York City is the biggest city.','Canada':'Toronto is the biggest city.','Brazil':'São Paulo is the biggest city, and Rio de Janeiro was the capital until 1960.',
+  'Netherlands':'The government and the king work in The Hague.','Switzerland':'Bern is called the "federal city". Zürich is the biggest city.',
   'Indonesia':'A new capital, Nusantara, is being built on the island of Borneo.','Turkey':'Istanbul is the biggest city.'};
 const MAPDATA = {}; // map files once loaded, with items indexed by name
 // country flags live in flags.json; US state flags in usflags.json, kept as "us:Georgia" so the state and the country don't mix up
@@ -99,7 +103,7 @@ const WORLD_FACT = {
   'South America':[4,'The Amazon, the biggest rainforest, is here.'],
   'Antarctica':[5,'The coldest place on Earth. Flat maps make it look bigger than it really is.'],
   'Europe':[6,'It has more than 40 countries.'],
-  'Australia':[7,'Kangaroos live here. It is also called Oceania.'],
+  'Australia':[7,'Kangaroos live here. Australia, New Zealand and the Pacific islands together are called Oceania.'],
   'Pacific Ocean':[1,'It is also the deepest ocean.'],
   'Atlantic Ocean':[2,'It lies between the Americas and Europe and Africa.'],
   'Indian Ocean':[3,'It is the warmest ocean.'],
@@ -158,7 +162,7 @@ const noThe = n => /^Lake |^Patagonia$| National Park$/.test(n) || (typeof ITEM 
 const inPlace = g => g === 'United States' ? 'the United States' : g;
 const the = n => T && T.geo && !noThe(n) ? 'the ' + n : n;
 const TOPICS = [
-  { id:'us-states', group:'United States', tab:'States', name:'US States', blurb:'Name all 50 states on the map.', map:'us', count:50,
+  { id:'us-states', group:'United States', tab:'States', name:'US States', blurb:'Name all 50 states on the map. Alaska and Hawaii are drawn smaller, in their own boxes.', map:'us', count:50,
     answer:n=>n, nouns:'states', listWord:'state names', alias:STATE_ALIAS, maxZoom:10,
     tapWhat:'Tap a state, find its name', tapHint:'Tap a state on the map',
     ask:()=> 'Which state is this?', flashFront:()=> 'Which state is this?', card:'shape',
@@ -243,15 +247,24 @@ function regionTopics(id, region, map, count, maxZoom, alias, capAlias, parts){
   return [
     {...base, id:id+'-countries', tab:'Countries', name:`Countries of ${region}`, blurb, answer:n=>n, nouns:'countries', listWord:'countries', alias,
       tapWhat:'Tap a country, find its name', ask:()=>'Which country is this?', flashFront:()=>'Which country is this?',
-      back:n=>({answer:n, sub:`Capital: <b>${esc(cap(n))}</b> ★${note(n)}`})},
+      back:n=>({answer:n, sub:`Capital: <b>${esc(cap(n))}</b> ★${note(n)}${countryNote(n)}`})},
     {...base, id:id+'-capitals', tab:'Capitals', name:region === 'Oceania' ? 'Capitals of Oceania' : `${({'Europe':'European','Africa':'African','Asia':'Asian','South America':'South American','North America':'North American'})[region]} Capitals`, blurb:capBlurb, answer:cap, nouns:'capitals', listWord:'capitals', alias:capAlias, showsItem:true,
       tapWhat:'Tap a country, find its capital', ask:n=>`What is the capital of ${n}?`, flashFront:n=>`${n}: what is its capital?`,
       back:n=>({answer:cap(n), sub:`Capital of <b>${esc(n)}</b> ★${note(n)}`})},
     {...base, id:id+'-flags', tab:'Flags', name:`Flags of ${region}`, blurb:`Learn the flag of every country in ${region}.`, flags:true, card:'flag', answer:n=>n, nouns:'flags', listWord:'countries', alias,
       tapWhat:'Tap a country, then pick its flag', ask:()=>'Which flag belongs to this country?', flashFront:()=>'Which country has this flag?',
-      back:n=>({answer:n, sub:`Capital: <b>${esc(cap(n))}</b> ★`})},
+      back:n=>({answer:n, sub:`Capital: <b>${esc(cap(n))}</b> ★${countryNote(n)}`})},
   ];
 }
+// the other names kids will meet, and countries in two continents (shown on cards and in Explore)
+const COUNTRY_NOTE = {'Turkey':'Also called Türkiye. It is in two continents, Asia and Europe.', 'Cape Verde':'Also called Cabo Verde.', 'Myanmar':'Also called Burma.',
+  'Eswatini':'It used to be called Swaziland.', 'Czechia':'Also called the Czech Republic.', "Côte d'Ivoire":'Also called Ivory Coast.', 'Timor-Leste':'Also called East Timor.',
+  'North Macedonia':'It used to be called Macedonia.', 'Netherlands':'Often called Holland.', 'Russia':'It is in two continents, Europe and Asia.',
+  'Kazakhstan':'It is in two continents, Asia and Europe.', 'Egypt':'It is in two continents, Africa and Asia.', 'Azerbaijan':'It is in two continents, Asia and Europe.',
+  'Georgia':'It is in two continents, Asia and Europe.', 'Cyprus':'It is in Asia, but it is part of the European Union.', 'DR Congo':'Also called the Democratic Republic of the Congo.'};
+const countryNote = n => COUNTRY_NOTE[n] ? `<br><span class="muted">${esc(COUNTRY_NOTE[n])}</span>` : '';
+// names the US government now uses, so a US classroom's answer is accepted too
+Object.assign(GEO_ALIAS, {'Gulf of Mexico': [...(GEO_ALIAS['Gulf of Mexico'] || []), 'gulf of america']});
 const TOPIC = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
 const REGIONS = [...new Set(TOPICS.map(t => t.group))].map(g => ({name:g, topics:TOPICS.filter(t => t.group === g), map:TOPICS.find(t => t.group === g).map, parts:TOPICS.find(t => t.group === g).parts}));
 // which part of a big place (like West Africa) the player last chose; 'All' plays everything

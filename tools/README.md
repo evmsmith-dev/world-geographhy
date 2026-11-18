@@ -50,6 +50,18 @@ longitude/latitude written in the script, with the country it's in; the script c
 
 In a folder with `d3-geo` installed: `node tools/build-landmarks.mjs data/maps`
 
+## borders.mjs: borders as the UN draws them
+
+Natural Earth's maps show who controls a place. Where that differs from the UN and almost every school atlas, this
+redraws it:
+- **Crimea** moves from Russia to Ukraine on the Europe map (UN General Assembly Resolution 68/262), joined to mainland
+  Ukraine, and comes out of Russia's flashcard shape.
+- **Western Sahara**: Morocco is cut at its recognised southern border (27°40'N), and the part south of it becomes gray
+  land, like the rest of Western Sahara (the UN lists it as a territory whose future hasn't been decided).
+
+`node tools/borders.mjs <folder with d3-geo and polygon-clipping installed>`, then `tools/add-areas.mjs`. It is safe to run
+more than once. A data test checks Simferopol, Sevastopol and Kerch are in Ukraine and Morocco stops at the border.
+
 ## add-areas.mjs: real sizes and positions, for Mystery Country
 
 Adds two fields to every country (the six continent maps) and every state (`data/maps/us.json`): `area`, its real area in

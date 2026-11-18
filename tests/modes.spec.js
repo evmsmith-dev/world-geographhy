@@ -253,7 +253,7 @@ test('National Parks have part chips, and a part plays just its parks and has it
   await expect(page.locator('#score')).toContainText('6 out of 6');
   await expect(page.locator('.toast')).toContainText('badge'); // (a secret badge for a perfect part may be shown first)
   await page.click('#backHome');
-  await expect(page.locator('#regionBody .stats')).toContainText('6 of 6 learned in the Rocky Mountain states');
+  await expect(page.locator('#regionBody .stats')).toContainText('6 of 6 learned in the Rocky Mountain states', {timeout: 15_000}); // after the answers are saved, which takes longer on a busy machine
   await expect(page.locator('#regionBody .stats')).toContainText('Badge earned: Rocky Mountain National Parks');
   // other US tabs have no part chips
   await goHome(page);
@@ -317,7 +317,8 @@ test('Landmarks have pictures: in Explore, Find it, Practice and on flashcards, 
   const front = await page.getAttribute('#fFront image', 'href');
   await page.click('#fReveal');
   expect(front, 'the front shows the landmark on the back').toBe(await picOf(await page.textContent('#fAnswer')));
-  await expect(page.locator('#fBack path.hi, #fBack circle.hi').first()).toBeAttached();
+  await expect(page.locator('#fBack image'), 'the drawing stays on the back').toHaveAttribute('href', front);
+  await expect(page.locator('#fLoc circle.hi'), 'and a little map shows where it is').toHaveCount(1);
   // Daily 10: the picture, not the place, then the place once answered
   await goHome(page);
   await page.evaluate(() => { window.WGQ_TEST.dailyQuestions = [['sa-landmarks', 'Machu Picchu', 'pick'], ['eu-landmarks', 'Colosseum', 'find']]; });

@@ -629,3 +629,13 @@ svg.shape path.geolandmark{fill:color-mix(in srgb,#7b4fa0 50%,var(--land));strok
 .chips.scrollrow::-webkit-scrollbar{display:none}
 .chips.scrollrow button{flex:none}
 .notyet{margin-top:12px;line-height:1.5}
+
+/* a picked place that has just been answered shows right (green) or wrong (red) at once, keeping a thick outline to say
+   it's the picked one (the picked colour used to hide the answer until another place was tapped) */
+.map .st.sel.ok:not(.river),.map .st.sel.ok:not(.river):hover{fill:var(--ok)}
+.map .st.sel.bad:not(.river),.map .st.sel.bad:not(.river):hover{fill:var(--bad)}
+.map .st.sel.ok,.map .st.sel.bad{stroke:var(--sel);stroke-width:3}
+.map .st.river.sel.ok{stroke:var(--ok)} .map .st.river.sel.bad{stroke:var(--bad)}
+/* the little map on a flashcard's back: a ring around a small place, so it can be found */
+.locator .ring{fill:none;stroke:var(--sel);stroke-width:3;vector-effect:non-scaling-stroke}
+.map line.leader{stroke:var(--ink);stroke-width:1;opacity:.55;vector-effect:non-scaling-stroke;pointer-events:none}

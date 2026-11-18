@@ -33,6 +33,10 @@ function drawMap(){
     M.items.filter(i => !sinks(i)).map(path).join('');
   els = {}; svg.querySelectorAll('path.st').forEach(p => els[p.dataset.n] = p);
   DOTS = {};
+  // a tap circle placed outside its own place (Rhode Island's sits just offshore, off Massachusetts) gets a thin line to it
+  M.items.filter(i => i.dot && i.c && (i.dot[0] < i.b[0] || i.dot[0] > i.b[2] || i.dot[1] < i.b[1] || i.dot[1] > i.b[3])).forEach(i => {
+    const l = document.createElementNS(SVGNS, 'line'); l.setAttribute('class', 'leader'); l.setAttribute('aria-hidden', 'true');
+    [['x1', i.dot[0]], ['y1', i.dot[1]], ['x2', i.c[0]], ['y2', i.c[1]]].forEach(([a, v]) => l.setAttribute(a, v)); svg.appendChild(l); });
   M.items.filter(i => i.dot).forEach(i => { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('cx', i.dot[0]); c.setAttribute('cy', i.dot[1]); c.dataset.n = i.n; c.setAttribute('aria-hidden','true'); svg.appendChild(c); DOTS[i.n] = c; });
   // tall maps (South America) shouldn't run off the bottom of the screen
   fitMap();
@@ -179,13 +183,18 @@ svg.addEventListener('wheel', e => { // trackpad pinch or ctrl+scroll; plain scr
 const ABBR = {st:'saint', ste:'sainte', mt:'mount', ft:'fort', n:'north', s:'south', w:'west', e:'east', no:'north', so:'south'};
 const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[.,'&\-/]/g,' ').replace(/\s+/g,' ').trim(); // "Bogota" finds Bogotá
 const expand = q => q.split(' ').map(w => ABBR[w] || w).join(' ');
+// how many typing slips apart two words are: a letter added, missed, changed, or two letters swapped ("madird")
 function lev(a, b, max){
   if(Math.abs(a.length-b.length) > max) return max+1;
-  let prev = Array.from({length:b.length+1}, (_,i) => i);
+  let prev2 = null, prev = Array.from({length:b.length+1}, (_,i) => i);
   for(let i=1; i<=a.length; i++){
     const cur = [i]; let best = i;
-    for(let j=1; j<=b.length; j++){ cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1]?0:1)); if(cur[j] < best) best = cur[j]; }
-    if(best > max) return max+1; prev = cur;
+    for(let j=1; j<=b.length; j++){
+      cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1]?0:1));
+      if(prev2 && i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) cur[j] = Math.min(cur[j], prev2[j-2] + 1); // swapped letters count once
+      if(cur[j] < best) best = cur[j];
+    }
+    if(best > max) return max+1; prev2 = prev; prev = cur;
   }
   return prev[b.length];
 }
@@ -202,7 +211,7 @@ function rank(v, q){
 // forgiving spelling, used only when nothing matches the normal way ("Pacfic" finds Pacific Ocean)
 function fuzzy(v, q){
   const name = norm(v), words = name.split(' ');
-  const tol = q.length >= 8 ? 2 : q.length >= 4 ? 1 : 0;
+  const tol = q.length >= 7 ? 2 : q.length >= 4 ? 1 : 0;
   if(tol){
     const starts = words.map((_,i) => words.slice(i).join(' '));
     for(const s of starts) for(let L=q.length-1; L<=q.length+1; L++) if(L>0 && lev(q, s.slice(0,L), tol) <= tol) return 4;

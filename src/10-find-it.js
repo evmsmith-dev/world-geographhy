@@ -161,7 +161,8 @@ function findTap(n){
     current = t; paint(); G.busy = true; setTimeout(nextFind, 900); return;
   }
   if(isSolved(n) || G.answers[n]){ feedback(`That's ${esc(the(n))}. You already did that one. Keep looking!`); flashWrong(n); return; }
-  G.tries++; if(!G.firstWrong) G.firstWrong = n; sound('wrong'); flashWrong(n); noteMix(t, n);
+  if(n === G.lastWrong){ feedback(`That's ${esc(the(n))} again. Try another place!`, 'bad'); flashWrong(n); return; } // a second tap on the same wrong place (often by accident) doesn't use up a try
+  G.tries++; G.lastWrong = n; if(!G.firstWrong) G.firstWrong = n; sound('wrong'); flashWrong(n); noteMix(t, n);
   const hint = T.showsItem ? `That's ${esc(n)}. Its capital is ${esc(key(n))}.` : `That's ${esc(the(n))}.`;
   if(G.tries < 3) feedback(`${hint} Try again! ${3-G.tries} ${3-G.tries === 1 ? 'try' : 'tries'} left. ${mixTip(t, n)}`, 'bad');
   else revealFind(`${hint} Here is <b>${esc(t)}</b>. ${mixTip(t, n)}`);
@@ -174,7 +175,7 @@ function revealFind(msg){
   G.busy = true; setTimeout(nextFind, 2000);
 }
 function nextFind(){
-  G.queue.shift(); G.tries = 0; G.firstWrong = null; G.busy = false; current = null;
+  G.queue.shift(); G.tries = 0; G.firstWrong = null; G.lastWrong = null; G.busy = false; current = null;
   saveSoon();
   if(!G.queue.length){ feedback('That was the last one!', 'ok'); paint(); setTimeout(() => { if(G && G.mode==='find' && !reviewing) review(); }, 700); return; }
   paint();

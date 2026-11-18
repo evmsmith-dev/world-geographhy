@@ -50,6 +50,18 @@ longitude/latitude written in the script, with the country it's in; the script c
 
 In a folder with `d3-geo` installed: `node tools/build-landmarks.mjs data/maps`
 
+## add-areas.mjs: real sizes and positions, for Mystery Country
+
+Adds two fields to every country (the six continent maps) and every state (`data/maps/us.json`): `area`, its real area in
+km², and `ll`, the longitude and latitude of the middle of its biggest piece of land. Mystery Country's size clue ranks on
+`area`, and its direction clue uses `ll` where the game has no named part for a place (South America, Oceania, and
+Canada, the US and Mexico). The map shapes can't be used for this: Russia is cut off at the map's edge, and Alaska is drawn
+at about a third of its size. Shapes are measured on the globe with d3-geo, from world-atlas (Natural Earth) for countries
+and us-atlas (US Census) for states. Vatican City is too small for the atlas to measure, so it gets its official 0.49 km².
+
+`node tools/add-areas.mjs <folder with world-atlas, us-atlas, topojson-client and d3-geo installed>`. Run it again after
+rebuilding a country or state map. A data test checks every place has both fields.
+
 ## build-pictures.mjs: the landmark drawings
 
 Builds `assets/landmarks/`: one small SVG drawing for each landmark (200 by 160, with rounded corners and its own sky, so it

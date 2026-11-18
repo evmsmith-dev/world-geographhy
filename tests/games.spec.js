@@ -63,13 +63,14 @@ test('Mystery Country: clues one at a time, fewer clues for more points, and a b
   await expect(page.locator('#chipText')).toContainText('Mystery 1 of 2');
   await expect(page.locator('#selLabel')).toHaveText('Clue 1 of 6 · worth 6 points');
   await expect(page.locator('.clues li')).toHaveCount(1);
-  await expect(page.locator('.clues li').first()).toHaveText(/^It's in the .+ of Africa\.$/);
+  await expect(page.locator('.clues li').first()).toHaveText("It's in East Africa."); // the game's own parts of Africa
   await expect(page.locator('#map path.sel, #map path.ok')).toHaveCount(0);
   // a wrong guess shows the next clue
   await mapSettled(page);
   await tapPlace(page, 'Nigeria');
   await expect(page.locator('#feedback')).toContainText("That's Nigeria, not the mystery country. Here's another clue.");
-  await expect(page.locator('#selLabel')).toHaveText('Clue 2 of 6 · worth 5 points');
+  await expect(page.locator('#selLabel')).toHaveText(/^Clue 2 of \d · worth \d points$/);
+  await expect(page.locator('#map path.st[data-n="Nigeria"]'), 'a wrong guess stays red').toHaveClass(/\bbad\b/);
   await page.click('#nextClue');
   await expect(page.locator('#selLabel')).toHaveText('Clue 3 of 6 · worth 4 points');
   await expect(page.locator('#findQ'), "the clues don't give it away").not.toContainText('Kenya');
@@ -92,25 +93,60 @@ test('Mystery Country: clues one at a time, fewer clues for more points, and a b
   await expect(page.locator('[data-mystery="Africa"]')).toContainText('Best: 4');
 });
 
-test('Mystery Country: every country and state has its clues, and none gives away the name', async ({page}) => {
+test('Mystery Country: every clue for every country and state is true, readable and doesn\'t give the name away', async ({page}) => {
   test.setTimeout(120_000);
   await newPlayer(page);
   const bad = await page.evaluate(async () => {
     const W = window.WGQ_TEST, out = [];
     for(const r of W.MYSTERY_PLACES){
-      const t = W.mysteryTopic(r), m = await W.loadMap(t.map);
+      const t = W.mysteryTopic(r), m = await W.loadMap(t.map), byArea = [...m.items].sort((a, b) => b.area - a.area).map(i => i.n);
       for(const it of m.items){
-        const clues = await W.mysteryClues(t.id, it.n);
+        const clues = await W.mysteryClues(t.id, it.n), text = clues.filter(c => c !== 'FLAG');
         if(clues.length < 5) out.push(`${it.n}: only ${clues.length} clues`);
-        // a word of its name, as a whole word (not "Rica" in "America"), and not the continent's own name ("South Africa" is in Africa)
+        // the name (as a whole word: not "Rica" in "America"), except in the last two clues (its letters, its flag)
         const words = it.n.split(/[\s-]+/).filter(w => w.length > 3 && !r.split(' ').includes(w) && !/^(saint|south|north|east|west|republic|islands|united|states|democratic|central|new|and)$/i.test(w));
         const give = clues.slice(0, -2).find(c => words.some(w => new RegExp(`(^|[^\\p{L}])${w}($|[^\\p{L}])`, 'iu').test(c)));
-        if(give) out.push(`${it.n}: "${give}"`);
+        if(give) out.push(`${it.n}: names it: "${give}"`);
+        // garbled sentences from hiding the name
+        const garbled = text.find(c => /this (country|state)('s)? (River|Lake|Canal|City|Islands?|Sea|Gulf)\b/.test(c) || /\b(Lake|Great|ancient|Gulf of|Wall of|called) this (country|state)|this (country|state) (are|were)\b|\.\.$/i.test(c));
+        if(garbled) out.push(`${it.n}: garbled: "${garbled}"`);
+        // size: the real biggest quarter is "biggest", the smallest quarter "smallest"
+        const rank = byArea.indexOf(it.n) / byArea.length, size = text[1];
+        const want = rank < .25 ? 'one of the biggest' : rank >= .75 ? 'one of the smallest' : 'not one of the biggest or the smallest';
+        if(!size.includes(want)) out.push(`${it.n}: size clue "${size}" (real rank ${byArea.indexOf(it.n) + 1} of ${byArea.length})`);
+        // where: the game's own part, when the place has one
+        const part = t.parts && Object.keys(t.parts).find(p => t.parts[p].includes(it.n));
+        if(part && !['North America|Northern'].includes(`${r}|${part}`) && !text[0].includes(part.replace('Middle East', 'the Middle East').split(' ')[0])) out.push(`${it.n}: "${text[0]}" isn't its part (${part})`);
       }
     }
     return out;
   });
   expect(bad).toEqual([]);
+});
+
+test('Mystery Country: a few clues the reviewers flagged, now right', async ({page}) => {
+  await newPlayer(page);
+  const clue = (t, n) => page.evaluate(([t, n]) => window.WGQ_TEST.mysteryClues(t, n), [t, n]);
+  expect((await clue('us-states', 'Alaska')).slice(0, 2)).toEqual(["It's in the West.", "It's one of the biggest states in the United States."]);
+  expect((await clue('us-states', 'Ohio'))[1]).toBe("It's not one of the biggest or the smallest states in the United States.");
+  expect((await clue('us-states', 'Georgia')).join(' '), "the state, not the country's alphabet").not.toContain('alphabet');
+  expect((await clue('eu-countries', 'Latvia'))[0]).toBe("It's in Northern Europe.");
+  expect((await clue('na-countries', 'Canada'))[0]).toBe("It's in the far north of North America.");
+  expect((await clue('as-countries', 'Israel'))[0]).toBe("It's in the Middle East.");
+  expect((await clue('na-countries', 'United States')).join(' '), 'no double full stop').not.toContain('..');
+  expect((await clue('eu-countries', 'Moldova'))[1]).toBe("It's not one of the biggest or the smallest countries in Europe.");
+  const iran = (await clue('as-countries', 'Iran')).join(' '), chad = (await clue('af-countries', 'Chad')).join(' ');
+  expect(iran).not.toContain('called this country');
+  expect(chad).not.toContain('Lake this country');
+});
+
+test('Mystery Country: the place picker can be closed without choosing', async ({page}) => {
+  await newPlayer(page);
+  await page.click('#mysteryBtn');
+  await expect(page.locator('.mysterypick')).toBeVisible();
+  await page.click('.panel .x');
+  await expect(page.locator('.mysterypick')).toHaveCount(0);
+  await expect(page.locator('#scrHome')).toBeVisible();
 });
 
 test('the landmark drawings have words for screen readers, which never give the answer away', async ({page}) => {

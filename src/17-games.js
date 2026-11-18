@@ -60,7 +60,7 @@ function mysteryCard(){
 }
 function openMysteryPicker(){
   const best = player.mystery || {};
-  const panel = openPanel({kind:'center', title:'Mystery Country', html:`<p class="muted">Where should the mystery places be?</p>
+  const panel = openPanel({kind:'sheet', title:'Mystery Country', html:`<p class="muted">Where should the mystery places be?</p>
     <div class="mysterypick">${MYSTERY_PLACES.map(r => `<button data-mystery="${esc(r)}"><span>${esc(r === 'United States' ? 'United States (states)' : r)}</span>${best[r] ? `<small>Best: ${best[r]}</small>` : ''}</button>`).join('')}
     <button data-mystery="*" class="surprise"><span>🎲 Surprise me</span>${best['*'] ? `<small>Best: ${best['*']}</small>` : ''}</button></div>`});
   panel.addEventListener('click', e => { const b = e.target.closest('[data-mystery]'); if(b) popLayer(() => startMystery(b.dataset.mystery)); });
@@ -81,36 +81,68 @@ async function startMystery(region){
     finish: mysteryFinish, again: () => startMystery(region)});
 }
 
-// The clues, hardest first: where it is, its size, a fun fact (with its name hidden), its capital, its letters, its flag
-const ringArea = d => d.split(/M/).filter(Boolean).reduce((sum, ring) => {
-  const p = ring.match(/-?\d+(\.\d+)?/g).map(Number); let a = 0;
-  for(let i = 0; i + 3 < p.length; i += 2) a += p[i] * p[i+3] - p[i+2] * p[i+1];
-  return sum + Math.abs(a) / 2; }, 0);
+// The clues, hardest first: where it is, its size, a fun fact (with its name hidden), its capital, its letters, its flag.
+// Where and how big come from real geography (each place's `area` in km² and middle `ll`, added by tools/add-areas.mjs),
+// and "where" uses the parts of the world the game already teaches ("It's in West Africa"), so a clue never contradicts them.
+const NA_DIR = {Canada: 'the far north of North America', 'United States': 'the middle of North America, between Canada and Mexico', Mexico: 'the south of North America, just north of Central America'};
+// which way a place lies from the middle of all the others on its map, using real latitude and longitude
+function compass(n){
+  const lon = l => T.group === 'Oceania' && l < 0 ? l + 360 : l; // Oceania crosses the 180° line
+  const pts = M.items.map(i => [lon(i.ll[0]), i.ll[1]]), me = [lon(ITEM[n].ll[0]), ITEM[n].ll[1]];
+  const [x0, x1, y0, y1] = [Math.min(...pts.map(p => p[0])), Math.max(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[1]))];
+  const col = Math.min(2, Math.floor(3 * (me[0] - x0) / (x1 - x0 || 1))), row = Math.min(2, Math.floor(3 * (y1 - me[1]) / (y1 - y0 || 1)));
+  return [['north-west', 'north', 'north-east'], ['west', 'middle', 'east'], ['south-west', 'south', 'south-east']][row][col];
+}
+async function whereClue(n){
+  if(T.group === 'United States'){ // the five regions; each lists its states in a sentence ("Maine, New Hampshire, … and Maryland")
+    const r = (await loadMap('usregions')).items.find(i => (i.where || '').replace(/ and /g, ', ').split(', ').includes(n)); if(r) return `It's in the ${r.n}.`; }
+  if(NA_DIR[n]) return `It's in ${NA_DIR[n]}.`;
+  const part = T.parts && Object.keys(T.parts).find(p => T.parts[p].includes(n));
+  if(part) return `It's in ${partPhrase(T.group, part)}.`;
+  const dir = compass(n);
+  return `It's in the ${dir} of ${inPlace(T.group)}.`;
+}
+// words that would give the name away: the name's own words, and what its people are called (Irish, Korean)
+const DEMONYM = {Ireland: 'Irish', France: 'French', Netherlands: 'Dutch', Switzerland: 'Swiss', Greece: 'Greek', Spain: 'Spanish', Portugal: 'Portuguese',
+  Denmark: 'Danish', Sweden: 'Swedish', Finland: 'Finnish', Norway: 'Norwegian', Poland: 'Polish', Turkey: 'Turkish', Thailand: 'Thai', Philippines: 'Filipino',
+  'United Kingdom': 'British', Germany: 'German', Iceland: 'Icelandic', 'New Zealand': 'Kiwi', Peru: 'Peruvian', China: 'Chinese', Japan: 'Japanese'};
+const COMMON = /^(saint|south|north|east|west|republic|islands|united|states|democratic|central|new|and|the|of)$/i;
+const nameWords = n => n.split(/[\s-]+/).filter(w => w.length > 3 && !COMMON.test(w));
+const reEsc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function givesAway(text, n){
+  const words = [...nameWords(n), DEMONYM[n]].filter(Boolean);
+  return words.some(w => new RegExp(`(^|[^\\p{L}])${reEsc(w)}`, 'iu').test(text)) // the word, or the start of a longer one (Korea → Korean)
+    || nameWords(n).some(w => w.length >= 5 && new RegExp(`(^|[^\\p{L}])${reEsc(w.slice(0, 4))}\\p{L}*(an|ian|ese|ish)\\b`, 'iu').test(text))
+    || nameWords(n).some(w => w.length >= 6 && new RegExp(`(^|[^\\p{L}])${reEsc(w.slice(0, 5))}`, 'iu').test(text)); // the Namib Desert (Namibia)
+}
+// a fun fact with the place's name hidden ("This country…"), or nothing if hiding it would garble the sentence
+// ("Lake this country", "this country River") or something else in it still gives the name away
 function hideName(text, n, word){
-  const names = [n, ...((T.alias && T.alias[n]) || [])].filter(x => x.length > 3).sort((a, b) => b.length - a.length).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const out = text.replace(new RegExp(`\\b(the\\s+)?(${names.join('|')})('s)?\\b`, 'gi'), (_, the, name, s) => `this ${word}${s ? "'s" : ''}`);
-  return out.replace(/(^|[.!?]\s+)this/g, (_, a) => `${a}This`);
+  const names = [n, ...((T.alias && T.alias[n]) || [])].filter(x => x.length > 3).sort((a, b) => b.length - a.length).map(reEsc);
+  const re = new RegExp(`(\\S+\\s+)?\\b(the\\s+)?(${names.join('|')})\\b('s)?(\\s+\\S+)?`, 'gi');
+  let garbled = new RegExp(`\\b[A-Z][a-z]+ of (the )?(${names.join('|')})\\b`).test(text); // the Great Wall of China, the Gulf of Mexico
+  const out = text.replace(re, (all, before = '', the, name, s, after = '') => {
+    const b = before.trim(), a = after.trim();
+    // part of a longer name: Lake Chad, Great Zimbabwe, ancient Greece, Panama Canal, New York City; or "once called Persia"
+    if(/^(lake|great|ancient|mount|gulf|sea|bay|south|north|east|west|new|old|called|named)$/i.test(b.replace(/[^\p{L}]/gu, ''))) garbled = true;
+    if(/^(River|Lake|Canal|City|Islands?|Sea|Gulf|Mountains?|Desert|Basin|Valley|Plateau|Falls)\b/.test(a)) garbled = true;
+    return `${before}this ${word}${s ? "'s" : ''}${after}`;
+  });
+  if(garbled || /this (country|state) (are|were)\b/i.test(out) || givesAway(out, n)) return null;
+  return out.replace(/\bthe this (country|state)/gi, 'this $1').replace(/\bon this country\b(?!')/g, 'in this country').replace(/^this (country|state) means\b/i, "This $1's name means").replace(/(^|[.!?]\s+)this/g, (_, x) => `${x}This`);
 }
 async function mysteryClues(n){
-  const it = ITEM[n], word = T.itemWord || 'state', place = inPlace(T.group), clues = [];
-  // where: which part of the map its middle is in
-  const xs = M.items.flatMap(i => [i.b[0], i.b[2]]), ys = M.items.flatMap(i => [i.b[1], i.b[3]]);
-  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const col = Math.min(2, Math.floor(3 * (it.c[0] - x0) / (x1 - x0))), row = Math.min(2, Math.floor(3 * (it.c[1] - y0) / (y1 - y0)));
-  const dir = [['north-west', 'north', 'north-east'], ['west', 'middle', 'east'], ['south-west', 'south', 'south-east']][row][col];
-  clues.push(`It's in the ${dir} of ${place}.`);
-  // size, from the area of its shape on the map
-  const sizes = M.items.map(i => [i.n, ringArea(i.d)]).sort((a, b) => b[1] - a[1]), rank = sizes.findIndex(s => s[0] === n) / sizes.length;
-  clues.push(rank < .25 ? `It's one of the biggest ${word === 'country' ? 'countries' : 'states'} in ${place}.` : rank >= .75 ? `It's one of the smallest ${word === 'country' ? 'countries' : 'states'} in ${place}.` : `It's not one of the biggest or the smallest ${word === 'country' ? 'countries' : 'states'} in ${place}.`);
-  // a clue mustn't say the name: a fact that still does (like "DR Congo" for the Republic of the Congo) is left out,
-  // and a capital named after its country (Mexico City, Kuwait City) is told without its name
-  const words = n.split(/[\s-]+/).filter(w => w.length > 3 && !/^(saint|south|north|east|west|republic|islands|united|states|democratic|central|new|and)$/i.test(w));
-  const says = text => words.some(w => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text));
+  const it = ITEM[n], word = T.itemWord || 'state', words = word === 'country' ? 'countries' : 'states', place = inPlace(T.group), clues = [];
+  clues.push(await whereClue(n));
+  // size, from real area: the biggest quarter, the smallest quarter, or in between
+  const rank = [...M.items].sort((a, b) => b.area - a.area).findIndex(i => i.n === n) / M.items.length;
+  clues.push(rank < .25 ? `It's one of the biggest ${words} in ${place}.` : rank >= .75 ? `It's one of the smallest ${words} in ${place}.` : `It's not one of the biggest or the smallest ${words} in ${place}.`);
   await loadFacts();
-  const fact = FACTS && (FACTS.country || {})[n] || (FACTS.us || {})[n], hidden = fact && hideName(fact, n, word);
-  if(hidden && !says(hidden)) clues.push(`Fun fact: ${hidden}`);
+  const fact = FACTS && (T.group === 'United States' ? FACTS.us : FACTS.country || {})[n], hidden = fact && hideName(fact, n, word); // (Georgia the state isn't Georgia the country)
+  if(hidden) clues.push(`Fun fact: ${hidden}`);
+  // a capital named after its place (Mexico City, Kuwait City, Oklahoma City) is told without its name
   const capTopic = TOPICS.find(t => t.group === T.group && t.showsItem), cap = capTopic && capTopic.answer(n);
-  if(cap) clues.push(says(cap) || cap.split(/[\s-]+/).some(w => w.length > 3 && n.includes(w)) ? `Its capital has the same name as the ${word}, or almost!` : `Its capital is ${cap}.`);
+  if(cap) clues.push(givesAway(cap, n) || cap.split(/[\s-]+/).some(w => w.length > 3 && n.includes(w)) ? `Its capital has the same name as the ${word}, or almost!` : `Its capital is ${cap}${/[.!?]$/.test(cap) ? '' : '.'}`);
   const letters = n.replace(/[^\p{L}]/gu, '').length;
   clues.push(`Its name starts with ${n.charAt(0)} and has ${letters} letters.`);
   const flagTopic = TOPICS.find(t => t.group === T.group && t.flags);
@@ -121,7 +153,7 @@ const clueHtml = c => typeof c === 'string' ? esc(c) : `Its flag: ${flagImg(c.fl
 
 async function mysteryShow(q){
   const R = DAILY, word = T.itemWord || 'state';
-  R.clues = await mysteryClues(q.n); R.clue = 0;
+  R.clues = await mysteryClues(q.n); R.clue = 0; R.guessed = [];
   if(DAILY !== R) return;
   $('chipText').innerHTML = `${esc(R.title)}<small>Mystery ${R.i + 1} of ${R.qs.length} · ${esc(T.group)}</small>`;
   $('tally').innerHTML = `<b>${R.points}</b> points`;
@@ -145,7 +177,9 @@ function mysteryMore(guess){
   const R = DAILY, q = R.qs[R.i];
   if(R.clue + 1 >= R.clues.length){ mysteryDone(false, guess); return; }
   R.clue++;
-  if(guess){ sound('wrong'); flashWrong(guess); feedback(`That's ${esc(the(guess))}, not the mystery ${T.itemWord || 'state'}. Here's another clue.`, 'bad'); }
+  if(guess){ sound('wrong'); flashWrong(guess); feedback(`That's ${esc(the(guess))}, not the mystery ${T.itemWord || 'state'}. Here's another clue.`, 'bad');
+    if(!R.guessed.includes(guess)) R.guessed.push(guess);
+    dailyPaint(null, Object.fromEntries(R.guessed.map(g => [g, 'bad']))); } // places already guessed stay red, so they needn't be remembered
   else feedback('');
   mysteryClue();
 }

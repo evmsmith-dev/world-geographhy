@@ -226,3 +226,18 @@ test('on GitHub, each group of tests is split into shards that together cover al
     expect(keys.filter(k => k.includes(`--project=${p}`) && k.includes('--grep-invert "every place can be tapped"')), `everything else on the ${p}`).toHaveLength(1);
   }
 });
+
+test('every country and US state has its real area and middle (for Mystery Country), from tools/add-areas.mjs', () => {
+  const bad = [];
+  for(const m of ['europe', 'africa', 'asia', 'oceania', 'namerica', 'samerica', 'us']){
+    for(const i of JSON.parse(read(`data/maps/${m}.json`)).items){
+      if(!(i.area > 0)) bad.push(`${m}: ${i.n} has no area`);
+      if(!(Array.isArray(i.ll) && Math.abs(i.ll[0]) <= 180 && Math.abs(i.ll[1]) <= 90)) bad.push(`${m}: ${i.n} has no middle`);
+    }
+  }
+  expect(bad).toEqual([]);
+  const area = (m, n) => JSON.parse(read(`data/maps/${m}.json`)).items.find(i => i.n === n).area;
+  expect(area('europe', 'Russia'), 'Russia, about 17 million km²').toBeGreaterThan(16e6);
+  expect(area('us', 'Alaska'), 'Alaska, about 1.7 million km²').toBeGreaterThan(1.4e6);
+  expect(area('us', 'Rhode Island')).toBeLessThan(area('us', 'Delaware'));
+});

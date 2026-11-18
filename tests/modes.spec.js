@@ -245,6 +245,7 @@ test('National Parks have part chips, and a part plays just its parks and has it
   // a perfect Test of the part: its 6 parks, then the part badge
   await page.click('.modebig[data-mode="test"]');
   await page.waitForFunction(() => document.querySelectorAll('#map path.st').length === 45);
+  await page.waitForFunction(() => document.querySelectorAll('#map path.st:not(.off)').length === 6); // once the others are hidden
   const names = await page.evaluate(() => [...document.querySelectorAll('#map path.st')].filter(p => !p.classList.contains('off')).map(p => p.dataset.n));
   expect(names.length).toBe(6);
   for(const n of names) await answer(page, n);

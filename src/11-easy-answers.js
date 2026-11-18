@@ -58,6 +58,7 @@ async function review(){
 }
 function showReview(restoring){
   reviewing = true; current = null; openList(false);
+  if(!restoring) animateTo({x:0, y:0, w:VW}); // the whole map, so the green and red can be seen together
   const missed = PN().filter(n => !isSolved(n)), good = PN().filter(isSolved);
   const thisRound = good.filter(n => G.solved[n] === G.round).length, pool = thisRound + missed.length;
   $('score').innerHTML = missed.length === 0
@@ -68,7 +69,9 @@ function showReview(restoring){
   $('goodH').textContent = `Right (${good.length})`;
   const meta = n => [T.showsItem ? n : '', G.round>1 && isSolved(n) ? `round ${G.solved[n]}` : ''].filter(Boolean).join(' · ');
   if(G.mode === 'find') $('badList').innerHTML = missed.length ? missed.map(n => `<li data-n="${esc(n)}"><span class="right">${esc(T.showsItem ? `${key(n)} (${n})` : n)}</span>${sayBtn(key(n), [key(n)])}${G.answers[n] && G.answers[n] !== 'skipped' ? `<span class="rnd">you tapped ${esc(G.answers[n])}</span>` : G.answers[n]==='skipped' ? '<span class="rnd">skipped</span>' : ''}</li>`).join('') : '<li class="empty">None. Great job!</li>';
-  else $('badList').innerHTML = missed.length ? missed.map(n => `<li data-n="${esc(n)}">${T.flags ? flagImg(n, 'tiny') : ''}<span class="you">${G.answers[n] ? esc(G.answers[n]) : 'blank'}</span> <span aria-hidden="true">→</span> <span class="right">${esc(key(n))}</span>${sayBtn(key(n), [key(n)])}${meta(n) ? `<span class="rnd">${esc(meta(n))}</span>` : ''}${mixTip(n, placeOf(G.answers[n]))}</li>`).join('') : '<li class="empty">None. Great job!</li>';
+  else { const said = missed.filter(n => G.answers[n]), blank = missed.filter(n => !G.answers[n]); // ones never answered fold into one line
+    $('badList').innerHTML = missed.length ? said.map(n => `<li data-n="${esc(n)}">${T.flags ? flagImg(n, 'tiny') : ''}<span class="you">${G.answers[n] ? esc(G.answers[n]) : 'blank'}</span> <span aria-hidden="true">→</span> <span class="right">${esc(key(n))}</span>${sayBtn(key(n), [key(n)])}${meta(n) ? `<span class="rnd">${esc(meta(n))}</span>` : ''}${mixTip(n, placeOf(G.answers[n]))}</li>`).join('') 
+      + (blank.length ? `<li class="blanks"><details><summary>Not answered (${blank.length})</summary><p>${blank.map(n => esc(key(n))).join(', ')}</p></details></li>` : '') : '<li class="empty">None. Great job!</li>'; }
   $('goodList').innerHTML = good.length ? good.map(n => `<li data-n="${esc(n)}">${T.flags ? flagImg(n, 'tiny') : ''}<span class="right">${esc(key(n))}</span>${meta(n) ? `<span class="rnd">${esc(meta(n))}</span>` : ''}</li>`).join('') : '<li class="empty">None yet. Keep trying!</li>';
   $('retry').hidden = missed.length === 0;
   $('retry').textContent = `Try the ${missed.length} missed`;

@@ -47,14 +47,16 @@ async function renderHome(){
     for(const t of r.topics){ learned += (await DB.byPT('items', player.id, t.id)).filter(i => i.last==='right').length; total += t.count; }
     return {r, learned, total};
   }));
-  const upnext = await upNextCard();
-  $('homeGroups').innerHTML = dailyCard() + upnext + mysteryCard() +
+  // a brand-new player starts with Up next ("Start here"), not a Daily 10 about things they haven't met yet
+  const isNew = !regions.some(x => x.learned) && !games.length && !(player.daily || {}).last;
+  const upnext = (await upNextCard()).replace('<h2>Up next</h2>', isNew ? '<h2>Start here</h2>' : '<h2>Up next</h2>');
+  $('homeGroups').innerHTML = (isNew ? upnext + dailyCard() : dailyCard() + upnext) + mysteryCard() +
     (games.length ? `<section class="group"><h2>Keep going</h2><div class="resumes">${games.map(g => { const t = TOPIC[g.topic]; return `
       <button class="resumebtn" data-topic="${g.topic}" data-mode="${g.mode}"${g.part ? ` data-part="${esc(g.part)}"` : ''}><span class="rt">${esc(t.name)}${g.part ? ` · ${esc(g.part)}` : ''}</span><span class="rm">${MODES[g.mode]} · ${Object.keys(g.answers).length} of ${g.part && t.parts ? t.parts[g.part].length : t.count} done${g.round>1 ? ` · round ${g.round}` : ''}</span><span class="go" aria-hidden="true">▶</span></button>`; }).join('')}</div></section>` : '') +
     `<section class="group"><h2>Pick a place</h2><div class="regions">${regions.map(({r, learned, total}) => `
       <button class="rtile" data-region="${esc(r.name)}">${thumbSvg(r.map)}
         <span class="rname">${esc(r.name)}</span>
-        <span class="rsub">${r.topics.map(t => esc(t.tab)).join(' · ')}</span>
+        <span class="rsub">${[...r.topics, ...(r.name === 'World' ? TOURS : [])].map(t => esc(t.tab)).join(' · ')}</span>
         <span class="meter" aria-hidden="true"><i style="width:${Math.round(100*learned/total)}%"></i></span>
         <span class="rprog">${learned} of ${total} learned</span>
       </button>`).join('')}</div></section>`;

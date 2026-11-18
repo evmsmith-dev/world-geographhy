@@ -46,7 +46,15 @@ $('importFile').addEventListener('change', async e => {
   });
 });
 function openHelp(){
+  // the short version first (most kids won't read more before playing); everything else is under "More help"
   openPanel({kind:'full', title:'How to play', html:`
+    <ol class="quick">
+      <li><b>Pick a place</b>, like Europe or the United States, then what to learn: countries, capitals, flags and more.</li>
+      <li><b>Play in this order:</b> Learn (flashcards), then Find it, Practice and Test. Not sure? Tap <b>Up next</b> and the game picks for you.</li>
+      <li><b>Come back every day</b> for the <b>Daily 10</b>. It brings back what you're about to forget.</li>
+    </ol>
+    <button class="primary" id="helpOk">Let's play!</button>
+    <details class="morehelp"><summary>More help</summary>
     <ol class="steps">
       <li><h3>Pick a place</h3><p>On the home screen, tap a place: the United States, the World, Europe, Africa, Asia, Oceania, North America or South America. Then pick what to learn: <b>Countries</b>, <b>Capitals</b>, <b>Flags</b>, or <b>Land & Water</b> for mountain ranges, deserts, seas and lakes, or <b>Landmarks</b> like the Eiffel Tower and Machu Picchu. The United States also has <b>Regions</b>, <b>Cities</b>, <b>National Parks</b> and its own <b>Land & Water</b>. Want a shorter game? Big places like Europe, Africa, Asia and North America, and the National Parks, have a <b>Part</b> row, so you can play just one part, like West Africa or the Caribbean. Learn every one in a part to earn its badge 🏅.</p></li>
       <li><h3>Look around first</h3><p>Tap <b>🔍 Explore the map</b> to look around with no quiz. Tap any place to see its name, flag, capital and a fun fact. Turn <b>Show names</b> off to hide the names and quiz yourself.</p></li>
@@ -62,7 +70,7 @@ function openHelp(){
       <li><h3>Your progress</h3><p>Each player has their own progress. Tap <b>★ Progress</b> on the home screen to see your passport stamps, your badges, your games, the ones that need practice, and how everyone in the family is doing. Some badges are secret ❓. Get a perfect Test to find out what they are! Tap your name to switch players. <b>⚙ Settings</b> also turns on sounds.</p></li>
     </ol>
     <p class="note">Your games are saved. Stop any time, and find them later under <b>Keep going</b> on the home screen.</p>
-    <button class="primary" id="helpOk">Let's play!</button>`});
+    </details>`});
   document.getElementById('helpOk').onclick = () => popLayer();
   LS.set('help-seen','1');
 }

@@ -142,7 +142,7 @@ jobs:
           sed -i "s/const CACHE = '[^']*'/const CACHE = 'wgq-$stamp'/" _site/sw.js
           grep -o "const CACHE = '[^']*'" _site/sw.js
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deploy

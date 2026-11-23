@@ -16,7 +16,7 @@ const RACE_FIREBASE = apiKey: "AIzaSyBlMVV6AeSHYOl7teunY1Ef4zMog3PH8mw",
   messagingSenderId: "586568693845",
   appId: "1:586568693845:web:55e9bb8f564c076615fcdc";
 // App Check (recommended): the reCAPTCHA site key, "6L…", and "enterprise" or "v3" (see docs/firebase-setup.md). null = off.
-const RACE_APP_CHECK_KEY = null;
+const RACE_APP_CHECK_KEY = "6Lc-2C0uAAAAAGUPeamuRXY6qMpJVUfsUyPWKU7L";
 const RACE_APP_CHECK_PROVIDER = 'enterprise';
 
 // How a race goes. database.rules.json holds the same limits: change them together.

@@ -48,7 +48,8 @@ if('serviceWorker' in navigator && navigator.serviceWorker.controller){
 <script src="src/17-games.js" defer></script>
 <script src="src/18-passport.js" defer></script>
 <script src="src/19-settings.js" defer></script>
-<script src="src/20-start.js" defer></script>
+<script src="src/20-race.js" defer></script>
+<script src="src/21-start.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -191,6 +192,9 @@ if('serviceWorker' in navigator && navigator.serviceWorker.controller){
       <button id="reviewBtn">Review</button>
       <p class="feedback" id="feedback" aria-live="polite"></p>
     </div>
+
+    <!-- Race a friend: before the start, and the end (src/20-race.js) -->
+    <section id="raceBox" class="sheetbox racebox" hidden aria-live="polite"></section>
 
     <section id="dailyDone" class="sheetbox dailydone" hidden aria-live="polite">
       <h2 id="dailyDoneH"></h2>

@@ -6,7 +6,7 @@
 const CACHE = 'wgq-v8';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'src/app.css',
-  'src/01-helpers.js', 'src/02-topics.js', 'src/03-storage.js', 'src/04-screens.js', 'src/05-sound.js', 'src/06-players.js', 'src/07-home.js', 'src/08-map.js', 'src/09-game.js', 'src/10-find-it.js', 'src/11-easy-answers.js', 'src/12-flashcards.js', 'src/13-scores.js', 'src/14-explore.js', 'src/15-daily.js', 'src/16-world-tour.js', 'src/17-games.js', 'src/18-passport.js', 'src/19-settings.js', 'src/20-start.js',
+  'src/01-helpers.js', 'src/02-topics.js', 'src/03-storage.js', 'src/04-screens.js', 'src/05-sound.js', 'src/06-players.js', 'src/07-home.js', 'src/08-map.js', 'src/09-game.js', 'src/10-find-it.js', 'src/11-easy-answers.js', 'src/12-flashcards.js', 'src/13-scores.js', 'src/14-explore.js', 'src/15-daily.js', 'src/16-world-tour.js', 'src/17-games.js', 'src/18-passport.js', 'src/19-settings.js', 'src/20-race.js', 'src/race-online.js', 'src/21-start.js',
   'data/facts.json', 'data/flags.json', 'data/usflags.json', 'data/thumbs.json',
   'data/maps/us.json', 'data/maps/world.json', 'data/maps/europe.json', 'data/maps/africa.json', 'data/maps/asia.json',
   'data/maps/oceania.json', 'data/maps/namerica.json', 'data/maps/samerica.json',

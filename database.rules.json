@@ -1,0 +1,110 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "races": {
+      ".indexOn": [
+        "expires"
+      ],
+      ".read": "auth != null && query.orderByChild == 'expires' && query.endAt <= now && query.limitToFirst <= 25",
+      "$code": {
+        ".read": "auth != null && $code.matches(/^[A-HJKMNP-Z2-9]{6}$/)",
+        ".write": "auth != null && $code.matches(/^[A-HJKMNP-Z2-9]{6}$/) && ((!data.exists() && newData.child('seats/a').val() === auth.uid && newData.child('status').val() === 'waiting') || (data.exists() && (data.child('seats/a').val() === auth.uid || data.child('seats/b').val() === auth.uid) && (newData.exists() || data.child('status').val() !== 'playing')) || (data.exists() && newData.exists() && data.child('status').val() === 'waiting' && !data.child('seats/b').exists() && newData.child('seats/b').val() === auth.uid && data.child('expires').val() > now) || (data.exists() && !newData.exists() && data.child('expires').val() < now))",
+        ".validate": "newData.hasChildren(['v', 'created', 'expires', 'topic', 'items', 'seats', 'avatars', 'status'])",
+        "v": {
+          ".validate": "newData.val() === 1"
+        },
+        "created": {
+          ".validate": "newData.isNumber() && (newData.val() === data.val() || (!data.exists() && newData.val() >= now - 60000 && newData.val() <= now + 60000))"
+        },
+        "expires": {
+          ".validate": "newData.isNumber() && (newData.val() === data.val() || (!data.exists() && newData.val() <= now + 1860000) || (data.exists() && data.parent().child('status').val() === 'joined' && newData.parent().child('status').val() === 'playing' && newData.val() <= now + 86460000))"
+        },
+        "topic": {
+          ".validate": "newData.isString() && newData.val().matches(/^(world|[a-z][a-z]-(countries|states|flags))$/) && (!data.exists() || newData.val() === data.val())"
+        },
+        "items": {
+          ".validate": "newData.hasChildren(['0'])",
+          "$i": {
+            ".validate": "$i.matches(/^[0-9]$/) && newData.isString() && newData.val().length > 0 && newData.val().length <= 60 && (newData.val() === data.val() || !root.child('races/' + $code).exists())"
+          }
+        },
+        "seats": {
+          "a": {
+            ".validate": "newData.isString() && newData.val().length <= 128 && (!data.exists() || newData.val() === data.val())"
+          },
+          "b": {
+            ".validate": "newData.isString() && newData.val().length <= 128 && newData.val() !== newData.parent().child('a').val() && (!data.exists() || newData.val() === data.val())"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "avatars": {
+          "$s": {
+            ".validate": "$s.matches(/^(a|b)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 11 && newData.val() % 1 === 0 && (!data.exists() || newData.val() === data.val())"
+          }
+        },
+        "head": {
+          "$s": {
+            ".validate": "$s.matches(/^(a|b)$/) && newData.isNumber() && (newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6) && (newData.val() === data.val() || !root.child('races/' + $code).exists() || (auth.uid === root.child('races/' + $code + '/seats/a').val() && (root.child('races/' + $code + '/status').val() === 'waiting' || root.child('races/' + $code + '/status').val() === 'joined')))"
+          }
+        },
+        "ready": {
+          "$s": {
+            ".validate": "$s.matches(/^(a|b)$/) && newData.isBoolean() && (newData.val() === data.val() || auth.uid === root.child('races/' + $code + '/seats/' + $s).val())"
+          }
+        },
+        "presence": {
+          "$s": {
+            ".validate": "$s.matches(/^(a|b)$/) && newData.isBoolean()"
+          }
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === data.val() || (!data.exists() && newData.val() === 'waiting') || (data.val() === 'waiting' && newData.val() === 'joined' && newData.parent().child('seats/b').val() === auth.uid) || (data.val() === 'joined' && newData.val() === 'playing' && auth.uid === newData.parent().child('seats/a').val() && newData.parent().child('ready/a').val() === true && newData.parent().child('ready/b').val() === true && newData.parent().child('rounds/0/at').exists()) || ((data.val() === 'waiting' || data.val() === 'joined') && newData.val() === 'canceled' && newData.parent().child('canceledBy').exists()) || (data.val() === 'playing' && newData.val() === 'over'))"
+        },
+        "canceledBy": {
+          ".validate": "newData.isString() && newData.val().matches(/^(a|b)$/) && (newData.val() === data.val() || (!data.exists() && auth.uid === newData.parent().child('seats/' + newData.val()).val()))"
+        },
+        "left": {
+          ".validate": "newData.isString() && newData.val().matches(/^(a|b)$/) && (newData.val() === data.val() || (!data.exists() && data.parent().child('status').val() === 'playing' && auth.uid === newData.parent().child('seats/' + newData.val()).val()))"
+        },
+        "rematch": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-HJKMNP-Z2-9]{6}$/) && (!data.exists() || newData.val() === data.val())"
+        },
+        "rounds": {
+          "$i": {
+            ".validate": "$i.matches(/^[0-9]$/) && newData.hasChildren(['at'])",
+            "at": {
+              ".validate": "newData.isNumber() && (newData.val() === data.val() || (!data.exists() && newData.val() >= now - 5000 && newData.val() <= now + 15000))"
+            },
+            "end": {
+              ".validate": "newData.isNumber() && (newData.val() === data.val() || (!data.exists() && newData.val() >= now - 30000 && newData.val() <= now + 5000 && newData.val() >= newData.parent().child('at').val()))"
+            },
+            "$s": {
+              ".validate": "$s.matches(/^(a|b)$/) && newData.hasChildren(['found', 'ms', 'tries', 't']) && (data.exists() || (auth.uid === root.child('races/' + $code + '/seats/' + $s).val() && !data.parent().child('end').exists() && root.child('races/' + $code + '/status').val() === 'playing'))",
+              "found": {
+                ".validate": "newData.isBoolean() && (!data.exists() || newData.val() === data.val())"
+              },
+              "ms": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20000 && newData.val() % 1 === 0 && (newData.val() >= 250 || newData.parent().child('found').val() === false) && (!data.exists() || newData.val() === data.val())"
+              },
+              "tries": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3 && newData.val() % 1 === 0 && (!data.exists() || newData.val() === data.val())"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && (newData.val() === data.val() || (!data.exists() && newData.val() >= now - 10000 && newData.val() <= now + 10000 && newData.val() >= newData.parent().parent().child('at').val()))"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

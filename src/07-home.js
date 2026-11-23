@@ -50,7 +50,7 @@ async function renderHome(){
   // a brand-new player starts with Up next ("Start here"), not a Daily 10 about things they haven't met yet
   const isNew = !regions.some(x => x.learned) && !games.length && !(player.daily || {}).last;
   const upnext = (await upNextCard()).replace('<h2>Up next</h2>', isNew ? '<h2>Start here</h2>' : '<h2>Up next</h2>');
-  $('homeGroups').innerHTML = (isNew ? upnext + dailyCard() : dailyCard() + upnext) + mysteryCard() +
+  $('homeGroups').innerHTML = (isNew ? upnext + dailyCard() : dailyCard() + upnext) + mysteryCard() + raceCard() +
     (games.length ? `<section class="group"><h2>Keep going</h2><div class="resumes">${games.map(g => { const t = TOPIC[g.topic]; return `
       <button class="resumebtn" data-topic="${g.topic}" data-mode="${g.mode}"${g.part ? ` data-part="${esc(g.part)}"` : ''}><span class="rt">${esc(t.name)}${g.part ? ` · ${esc(g.part)}` : ''}</span><span class="rm">${MODES[g.mode]} · ${Object.keys(g.answers).length} of ${g.part && t.parts ? t.parts[g.part].length : t.count} done${g.round>1 ? ` · round ${g.round}` : ''}</span><span class="go" aria-hidden="true">▶</span></button>`; }).join('')}</div></section>` : '') +
     `<section class="group"><h2>Pick a place</h2><div class="regions">${regions.map(({r, learned, total}) => `
@@ -60,6 +60,7 @@ async function renderHome(){
         <span class="meter" aria-hidden="true"><i style="width:${Math.round(100*learned/total)}%"></i></span>
         <span class="rprog">${learned} of ${total} learned</span>
       </button>`).join('')}</div></section>`;
+  raceFromLink(); // a race link, or a race left open (src/20-race.js)
 }
 $('homeGroups').addEventListener('click', e => {
   if(e.target.closest('#dailyBtn')){ startDaily(); return; }
@@ -106,7 +107,7 @@ async function renderRegion(){
     <div class="meter" role="img" aria-label="${st.learned} of ${n} learned"><i style="width:${Math.round(100*st.learned/n)}%"></i></div>
     <p class="stats"><span><b>${st.learned}</b> of ${n} learned${pp ? ` in ${esc(partPhrase(r.name, pp))}` : ''}</span>${done[part] ? `<span class="gotbadge">🏅 Badge earned: <b>${esc(pp ? partTitle(r.name, pp) + ' ' + t.tab : t.name + ' Master')}</b></span>` : ''}${st.best!=null ? `<span>Best test: <b>${st.best}/${n}</b></span>` : ''}</p>
     <div class="modelist">${modeButtons(t, saved, null, pp)}
-      <button class="modebig clockbtn" data-clock="${t.id}"${pp ? ` data-part="${pp}"` : ''}><span class="mn">⏱️ Beat the Clock</span><span class="md">How many can you get right in ${BEAT_SECONDS} seconds?${beatBest(t) ? ` Your best: ${beatBest(t)}.` : ''}</span></button></div>`;
+      <button class="modebig clockbtn" data-clock="${t.id}"${pp ? ` data-part="${pp}"` : ''}><span class="mn">⏱️ Beat the Clock</span><span class="md">How many can you get right in ${BEAT_SECONDS} seconds?${beatBest(t) ? ` Your best: ${beatBest(t)}.` : ''}</span></button>${raceModeButton(t)}</div>`;
 }
 const modeButtons = (t, saved, current, part) => Object.keys(MODES).map((m,i) => `
   <button class="modebig" data-topic="${t.id}" data-mode="${m}"${part ? ` data-part="${part}"` : ''}${current===m ? ' aria-current="true"' : ''}>

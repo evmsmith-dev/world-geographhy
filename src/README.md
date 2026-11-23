@@ -23,7 +23,11 @@ Plain JavaScript, no libraries and no build step: `index.html` loads these files
 | `17-games.js` | Mystery Country and Beat the Clock |
 | `18-passport.js` | The passport: a stamp for each landmark learned |
 | `19-settings.js` | Settings, How to play, and backups |
-| `20-start.js` | Updates and start-up. It runs last and starts the game |
+| `20-race.js` | Race a friend: the race itself, its lobby (with Cancel), the end screen, and its Firebase settings (`RACE_FIREBASE`) |
+| `race-online.js` | Race a friend's connection to Firebase. A module, loaded only when someone races, so it's not in `index.html` |
+| `race-local.js` | A stand-in for Firebase that only the automatic tests use (two tabs race each other through it) |
+| `vendor/firebase.js` | The parts of Firebase that `race-online.js` uses, made by `tools/build-firebase.mjs`. Don't edit by hand |
+| `21-start.js` | Updates and start-up. It runs last and starts the game |
 | `app.css` | The look |
 
 ## How the files work together
@@ -32,7 +36,7 @@ The files share one set of names: a `const` or `function` at the top of one file
 keep that working:
 
 - **Code that runs right away can only use names from its own file or earlier files.** Most code runs later (when the
-  player taps something), and that can use anything. The game starts at the end of `20-start.js`, when every file
+  player taps something), and that can use anything. The game starts at the end of `21-start.js`, when every file
   has loaded.
 - **Every top-level name must be unique across all the files.** Using the same name twice stops the game from loading;
   the automatic tests catch it.

@@ -141,7 +141,7 @@ jobs:
           # (old code never meets new styles), with no need to remember to change CACHE in sw.js by hand
           sed -i "s/const CACHE = '[^']*'/const CACHE = 'wgq-$stamp'/" _site/sw.js
           grep -o "const CACHE = '[^']*'" _site/sw.js
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

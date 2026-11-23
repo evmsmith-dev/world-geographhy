@@ -16,6 +16,7 @@ test('How to play starts with three short steps; the rest is under More help', a
 
 test('a new player starts at Up next ("Start here"), and the World tile names the World Tour', async ({page}) => {
   await newPlayer(page);
+  await expect(page.locator('#homeGroups .upnextsec')).toBeVisible(); // the home screen fills in a moment after it shows
   const firsts = await page.$$eval('#homeGroups > *', els => els.slice(0, 2).map(e => e.id || e.className));
   expect(firsts[0], 'Start here first').toContain('upnextsec');
   await expect(page.locator('.upnextsec h2')).toHaveText('Start here');

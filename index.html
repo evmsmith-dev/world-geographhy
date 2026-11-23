@@ -74,6 +74,12 @@ if('serviceWorker' in navigator && navigator.serviceWorker.controller){
       <button class="icon-btn qmark" id="homeHelp" aria-label="How to play">?</button>
     </div>
     <p class="hello" id="hello" style="margin:10px 0 4px"></p>
+    <!-- Install the game (src/19-settings.js): shown until it's installed, or until someone taps Not now -->
+    <section class="installcard" id="installCard" aria-labelledby="installTitle" hidden>
+      <span class="ii" aria-hidden="true">📲</span>
+      <div class="it"><h2 id="installTitle">Install the game</h2><p>Play from your home screen, even with no internet.</p></div>
+      <div class="ia"><button class="primary" id="installBtn">Install</button><button id="installLater">Not now</button></div>
+    </section>
     <div id="homeGroups"></div>
   </section>
 

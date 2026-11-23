@@ -22,7 +22,7 @@ Plain JavaScript, no libraries and no build step: `index.html` loads these files
 | `16-world-tour.js` | The World Tour: every country, or every Land & Water place, in one game on the continent maps |
 | `17-games.js` | Mystery Country and Beat the Clock |
 | `18-passport.js` | The passport: a stamp for each landmark learned |
-| `19-settings.js` | Settings, How to play, and backups |
+| `19-settings.js` | Settings, How to play, backups, and the offer to install the game (the home screen card and the Settings button) |
 | `20-race.js` | Race a friend: the race itself, its lobby (with Cancel), the end screen, and its Firebase settings (`RACE_FIREBASE`) |
 | `race-online.js` | Race a friend's connection to Firebase. A module, loaded only when someone races, so it's not in `index.html` |
 | `race-local.js` | A stand-in for Firebase that only the automatic tests use (two tabs race each other through it) |

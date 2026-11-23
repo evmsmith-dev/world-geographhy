@@ -14,6 +14,7 @@ function openSettings(){
     <p class="sect">Backup</p>
     <p class="muted" style="font-size:.95rem;margin-bottom:10px">Progress is saved only on this device. Save a backup file to keep it safe, or to move it to a new device.</p>
     <div class="rowbtns" style="justify-content:flex-start"><button id="doExport">Save a backup</button><button id="doImport">Load a backup</button></div>
+    ${canInstall() ? `<p class="sect">App</p><p class="muted" style="font-size:.95rem;margin-bottom:10px">Put the game on your home screen. It opens like an app and works with no internet.</p><div class="rowbtns" style="justify-content:flex-start"><button id="doInstall">📲 Install the game</button></div>` : ''}
     <p class="muted" style="margin-top:18px;font-size:.85rem">World Geography Quiz · version ${esc(BUILD.slice(0,16).replace('T',' '))}</p>`});
   const flip = async (id, k) => { player.prefs[k] = !player.prefs[k]; panel.querySelector('#'+id).setAttribute('aria-checked', String(player.prefs[k])); await DB.put('players', player); if(k==='sound') sound('right'); if(k==='say' && player.prefs.say) say('Hello', player.name + '!'); };
   panel.querySelector('#swSound').onclick = () => flip('swSound','sound');
@@ -22,6 +23,7 @@ function openSettings(){
   panel.querySelector('#swUpnext').onclick = async () => { player.prefs.upnext = player.prefs.upnext === false; panel.querySelector('#swUpnext').setAttribute('aria-checked', String(player.prefs.upnext)); await DB.put('players', player); renderHome(); };
   panel.querySelector('#doExport').onclick = exportData;
   panel.querySelector('#doImport').onclick = () => $('importFile').click();
+  const inst = panel.querySelector('#doInstall'); if(inst) inst.onclick = installGame;
 }
 async function exportData(){
   const data = {app:'world-geography-quiz', version:1, saved:new Date().toISOString()};
@@ -75,3 +77,36 @@ function openHelp(){
   LS.set('help-seen','1');
 }
 $('playHelp').onclick = () => openHelp();
+
+/* ---- installing the game: a card on the home screen, and a button in Settings ---- */
+// Android, and Chrome or Edge on a computer, have their own install prompt: Install opens it. iPhone and iPad have none,
+// so Install shows the Add to Home Screen steps instead. Nothing shows once the game is installed. "Not now" hides the
+// card on this device (Settings keeps an Install button for later).
+let installPrompt = null;
+const isInstalled = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPads say they're Macs
+// in the automatic tests (?test) the card stays away unless a test asks for it (WGQ_INSTALL_TEST), so it doesn't get in other tests' way
+const installTesting = () => /[?&]test\b/.test(location.search) && !window.WGQ_INSTALL_TEST;
+const canInstall = () => !installTesting() && !isInstalled() && (installPrompt !== null || isIos());
+function refreshInstall(){ $('installCard').hidden = !canInstall() || LS.get('install-later') === '1'; }
+async function installGame(){
+  if(installPrompt){
+    const p = installPrompt; installPrompt = null; // the browser's prompt can only be used once
+    p.prompt();
+    try{ await p.userChoice; }catch(e){} // closed without choosing
+    refreshInstall(); return;
+  }
+  if(isIos()){
+    const panel = openPanel({kind:'center', title:'Add to Home Screen', html:`<ol class="installsteps">
+      <li>Tap the Share button <span aria-hidden="true">⬆︎</span>. In Safari it's in the toolbar.</li>
+      <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+      <li>Tap <b>Add</b>. The game now opens from your home screen and works with no internet.</li></ol>
+      <div class="rowbtns"><button class="primary" id="installOk">OK</button></div>`});
+    panel.querySelector('#installOk').onclick = () => popLayer();
+  }
+}
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; refreshInstall(); }); // our own card instead of the browser's mini bar
+addEventListener('appinstalled', () => { installPrompt = null; refreshInstall(); });
+$('installBtn').onclick = installGame;
+$('installLater').onclick = () => { LS.set('install-later', '1'); refreshInstall(); toast('You can install the game any time from ⚙ Settings.'); };
+refreshInstall();

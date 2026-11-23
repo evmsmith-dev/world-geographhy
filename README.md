@@ -12,6 +12,9 @@ A map quiz for kids: US states, capitals, flags, regions, cities, national parks
 
 ## Install it
 
+The game offers this itself: until it's installed, the home screen has an **Install** card (and ⚙ Settings has an Install button). On Android and on computers it opens the browser's own install prompt; on iPhone and iPad it shows these steps.
+
+
 - **iPhone / iPad (Safari):** open the link, tap **Share**, then **Add to Home Screen**.
 - **Android (Chrome):** open the link, tap **⋮**, then **Install app**.
 - **Computer (Chrome or Edge):** click the install icon at the right end of the address bar.

@@ -575,9 +575,9 @@ $('raceBox').addEventListener('click', e => {
 /* ---- ways in: a card on the home screen, a button on each place's screen, and join links ---- */
 function raceCard(){
   return raceOnline() ? `<button class="passbtn racebtn" id="raceBtn"><span class="pi" aria-hidden="true">🏁</span>
-    <span class="pt">Race a friend</span><span class="pd">Who can find it first? Race a friend on another phone or tablet.</span></button>` : '';
+    <span class="pt">Race a friend</span><span class="pd">Who can find it first? Race a friend on any other phone, tablet or computer.</span></button>` : '';
 }
-const raceModeButton = t => raceOnline() && RACE_TOPIC_RE.test(t.id) ? `<button class="modebig racemode" data-race-topic="${t.id}"><span class="mn">🏁 Race a friend</span><span class="md">Who can find ${Math.min(raceTime('rounds'), t.count)} ${esc(t.flags ? 'flags' : t.nouns)} first? Race a friend on another device.</span></button>` : '';
+const raceModeButton = t => raceOnline() && RACE_TOPIC_RE.test(t.id) ? `<button class="modebig racemode" data-race-topic="${t.id}"><span class="mn">🏁 Race a friend</span><span class="md">Who can find ${Math.min(raceTime('rounds'), t.count)} ${esc(t.flags ? 'flags' : t.nouns)} first? Race a friend on any other phone, tablet or computer.</span></button>` : '';
 // every topic to race on, by place, as buttons (data-race-topic)
 function raceTopicButtons(){
   return REGIONS.map(r => ({r, ts: r.topics.filter(t => RACE_TOPIC_RE.test(t.id))})).filter(g => g.ts.length)

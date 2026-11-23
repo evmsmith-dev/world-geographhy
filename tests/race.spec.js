@@ -47,7 +47,7 @@ test('Race a friend only shows up once online play is set up', async ({page}) =>
   await expect(page.locator('.racemode')).toHaveCount(0);
 });
 
-test('two players race: same places, 3 tries, a head start, points, the end screen and a rematch', async ({page}) => {
+test('two players race: same places, 3 tries, a head start, points, the end screen, and a next race on another topic with no new code', async ({page}) => {
   await setup(page); await quick(page);
   const code = await startHosting(page);
   expect(code).toMatch(/^[A-HJKMNP-Z2-9]{6}$/);
@@ -101,13 +101,19 @@ test('two players race: same places, 3 tries, a head start, points, the end scre
   const learned = await page.evaluate(async () => (await DB.all('items')).filter(r => r.pid === player.id && r.topic === 'eu-countries' && r.last === 'right').map(r => r.item).sort());
   expect(learned).toEqual(['France', 'Italy']);
 
-  // a rematch: the guest starts it, the host joins it from the end screen
-  await guest.click('[data-race="rematch"]');
-  await expect(guest.locator('#raceBox .racecode')).toBeVisible();
-  await expect(page.locator('[data-race="rematch"]')).toContainText('wants a rematch! Join');
+  // the next race, no new code: the guest picks another topic, and the host joins it from the end screen
+  await expect(guest.locator('[data-race="rematch"]')).toHaveText('Rematch');
+  await guest.evaluate(() => { window.WGQ_TEST.raceItems = ['Texas', 'Ohio', 'Maine']; });
+  await guest.click('[data-race="again"]');
+  await guest.click('.panel [data-race-topic="us-states"]');
+  await expect(guest.locator('#raceBox')).toContainText('can join from their screen. No code needed.');
+  await expect(guest.locator('#raceBox')).toContainText('US States');
+  await expect(page.locator('[data-race="rematch"]')).toHaveText('🐼 wants to race again: US States! Join');
+  await expect(page.locator('[data-race="again"]')).toHaveCount(0);
   await page.click('[data-race="rematch"]');
   await expect(guest.locator('[data-race="start"]')).toBeEnabled();
   await expect(page.locator('#raceBox')).toContainText('to start the race');
+  await expect(page.locator('#chipText')).toContainText('US States');
   // nobody starts it: the player who didn't make it cancels, and the other one is told
   await page.click('[data-race="cancel"]');
   await expect(page.locator('#scrHome')).toBeVisible();

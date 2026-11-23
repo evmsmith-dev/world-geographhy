@@ -355,7 +355,7 @@ function raceLobby(){
   const R0 = RACE, r = R0.rec, me = R0.seat, them = raceOther(me), t = TOPIC[r.topic], av = raceAvOf;
   R0.view = 'lobby';
   $('chipText').innerHTML = `🏁 Race a friend<small>${esc(t ? t.name : '')}</small>`;
-  let html = `<h2>🏁 Race a friend</h2><p class="racetopic"><b>${esc(t ? t.name : '')}</b> · ${r.items.length} places to find</p>`;
+  let html = `<h2>🏁 Race a friend</h2><p class="racetopic"><b>${esc(t ? t.name : '')}</b> · ${r.items.length} ${r.items.length === 1 ? "place" : "places"} to find</p>`;
   const now = R0.backend.serverNow();
   if(R0.prepared === 'update') html += `<p>This race has places this version of the game doesn't know. Update the game (⚙ Settings), or ask your friend to update theirs.</p>`;
   else if(R0.prepared === 'failed') html += `<p>The map couldn't load. Check your internet connection.</p><div class="rowbtns center"><button data-race="retry">Try again</button></div>`;
@@ -365,7 +365,11 @@ function raceLobby(){
   if(r.expires < now){ // nobody can join or start it now, and it's deleted soon
     raceBox(html + `<p class="racenote">This race ran out of time before it started.</p>${raceHomeBtn}`); return;
   }
-  if(r.status === 'waiting'){
+  if(r.status === 'waiting' && R0.invite){ // the next race with the same friend: they join from their end screen
+    html += `<p class="racenote">${R0.invite} can join from their screen. No code needed.</p>
+      <p class="muted racewait">Waiting for ${R0.invite} to join…</p>
+      <p class="racehow">Not there anymore? Send them this code: <b class="racecodesmall">${esc(R0.code)}</b></p>`;
+  } else if(r.status === 'waiting'){
     html += `<p>Send your friend this code. They tap <b>🏁 Race a friend</b> on the home screen and type it in.</p>
       <p class="racecode" aria-label="Race code ${[...R0.code].join(' ')}">${esc(R0.code)}</p>
       <div class="rowbtns center"><button data-race="share">📤 Send the link</button></div>
@@ -383,7 +387,7 @@ function raceLobby(){
       html += `${given ? `<p>${given}</p>` : ''}<p class="muted racewait">${raceAway(r, 'a') ? `${av('a')} is away…` : `Waiting for ${av('a')} to start the race…`}</p>`;
     }
   }
-  html += `<p class="racehow">${r.items.length} places, one at a time. Find it first for 2 points, find it at all for 1.</p><div class="rowbtns center"><button class="danger" data-race="cancel">Cancel race</button></div>`;
+  html += `<p class="racehow">${r.items.length} ${r.items.length === 1 ? "place" : "places"}, one at a time. Find it first for 2 points, find it at all for 1.</p><div class="rowbtns center"><button class="danger" data-race="cancel">Cancel race</button></div>`;
   raceBox(html);
 }
 async function raceShare(){
@@ -511,12 +515,19 @@ function raceEndView(){
   const fast = list.filter(x => x.R[me] && x.R[me].found).sort((x, y) => x.R[me].ms - y.R[me].ms)[0];
   const cell = (x, s) => x.R[s] && x.R[s].found ? `✅ ${raceSecs(x.R[s].ms)}` : '—';
   const misses = list.filter(x => !(x.R[me] && x.R[me].found && x.R[me].tries === 0)).map(x => x.n);
+  // the other player already started the next race: show what it's on (read from the new race), and Join
   const theirRematch = r.rematch && r.rematch !== R0.madeRematch;
+  if(theirRematch && (!R0.next || R0.next.code !== r.rematch)){
+    R0.next = {code: r.rematch, topic: null};
+    R0.backend.read(r.rematch).then(x => { if(RACE === R0 && R0.next.code === r.rematch){ R0.next.topic = x && x.topic; if(R0.view === 'end') raceEndView(); } }).catch(() => {});
+  }
+  const nextName = theirRematch && R0.next && TOPIC[R0.next.topic] ? TOPIC[R0.next.topic].name : '';
   raceBox(`<h2>${esc(head)}</h2><p>${esc(sub)}</p>
     ${list.length ? `<p class="racenote">Together you found ${together} of ${list.length * 2}!${fast ? ` Your fastest: ${esc(fast.n)} in ${raceSecs(fast.R[me].ms)}.` : ''}</p>` : ''}
     ${list.length ? `<table class="racelist"><thead><tr><th scope="col">Place</th><th scope="col">${av(me)} You</th><th scope="col">${av(them)}</th></tr></thead><tbody>${list.map(x => `<tr><td>${esc(x.n)}</td><td>${cell(x, me)}</td><td>${cell(x, them)}</td></tr>`).join('')}</tbody></table>` : ''}
     <div class="rowbtns center">
-      ${r.left ? '' : `<button class="primary" data-race="rematch">${theirRematch ? `${av(them)} wants a rematch! Join` : 'Rematch'}</button>`}
+      ${r.left ? '' : theirRematch ? `<button class="primary" data-race="rematch">${nextName && R0.next.topic !== r.topic ? `${av(them)} wants to race again: ${esc(nextName)}! Join` : `${av(them)} wants a rematch! Join`}</button>`
+        : `<button class="primary" data-race="rematch">Rematch</button><button data-race="again">Race again: pick a topic</button>`}
       ${misses.length ? `<button data-race="practice">Practice these (${misses.length})</button>` : ''}
       <button data-race="home">Back home</button>
     </div>`);
@@ -524,19 +535,25 @@ function raceEndView(){
   if(first && !r.left && my > their){ confetti(); sound('done'); }
   R0.misses = misses;
 }
-async function raceRematch(){
-  const R0 = RACE, r = R0.rec, b = R0.backend;
+// The next race with the same friend, no new code: the same topic with new places (Rematch), or a topic either player
+// picks (Race again). The other player's end screen offers to join it; if both start one at once, both join the first.
+async function raceRematch(tid){
+  const R0 = RACE, r = R0.rec, b = R0.backend, topic = TOPIC[tid] ? tid : r.topic, invite = raceAvOf(raceOther(R0.seat));
   if(r.rematch){ const code = r.rematch; raceStop(true); raceJoin(code); return; }
-  const btn = $('raceBox').querySelector('[data-race="rematch"]'); if(btn) btn.disabled = true;
+  $('raceBox').querySelectorAll('[data-race="rematch"], [data-race="again"]').forEach(x => x.disabled = true);
   try{
-    const items = await racePick(r.topic, r.items);
-    const code = await b.create(() => raceNewRecord({uid: b.uid, avatar: raceMyAvatar(), topic: r.topic, items, now: b.serverNow()}));
+    const items = await racePick(topic, topic === r.topic ? r.items : []);
+    const code = await b.create(() => raceNewRecord({uid: b.uid, avatar: raceMyAvatar(), topic, items, now: b.serverNow()}));
     R0.madeRematch = code;
-    if(await b.transact(R0.code, x => raceWithRematch(x, code))){ raceStop(true); raceOpen(code, 'a'); return; }
+    if(await b.transact(R0.code, x => raceWithRematch(x, code))){ raceStop(true); RACE.invite = invite; raceOpen(code, 'a'); return; }
     // the other player started one at the same moment: join theirs
     raceDrop(b, code); const now = await b.read(R0.code);
-    if(now && now.rematch){ raceStop(true); raceJoin(now.rematch); }
-  }catch(e){ toast("Couldn't connect. Check your internet connection."); if(btn) btn.disabled = false; }
+    if(now && now.rematch){ toast(`${invite} picked first.`); raceStop(true); raceJoin(now.rematch); }
+  }catch(e){ toast("Couldn't connect. Check your internet connection."); if(RACE === R0 && R0.view === 'end') raceEndView(); }
+}
+function raceAgainPanel(){
+  const panel = openPanel({title: 'Race again', html: `<p class="muted">Pick what to race on next. Your friend gets a Join button. No new code needed.</p>${raceTopicButtons()}`});
+  panel.addEventListener('click', e => { const b = e.target.closest('[data-race-topic]'); if(b) popLayer(() => { if(RACE && RACE.view === 'end') raceRematch(b.dataset.raceTopic); }); });
 }
 
 $('raceBox').addEventListener('click', e => {
@@ -551,6 +568,7 @@ $('raceBox').addEventListener('click', e => {
   else if(what === 'retry'){ RACE.prepared = false; racePrepare(); raceLobby(); }
   else if(what === 'start'){ a.disabled = true; b.transact(RACE.code, r => raceWithStart(r, b.uid, b.serverNow())); }
   else if(what === 'rematch') raceRematch();
+  else if(what === 'again') raceAgainPanel();
   else if(what === 'practice'){ const tid = RACE.rec.topic, only = RACE.misses; popLayer(() => enterGame(tid, 'find', false, only)); }
 });
 
@@ -560,15 +578,19 @@ function raceCard(){
     <span class="pt">Race a friend</span><span class="pd">Who can find it first? Race a friend on another phone or tablet.</span></button>` : '';
 }
 const raceModeButton = t => raceOnline() && RACE_TOPIC_RE.test(t.id) ? `<button class="modebig racemode" data-race-topic="${t.id}"><span class="mn">🏁 Race a friend</span><span class="md">Who can find ${Math.min(raceTime('rounds'), t.count)} ${esc(t.flags ? 'flags' : t.nouns)} first? Race a friend on another device.</span></button>` : '';
+// every topic to race on, by place, as buttons (data-race-topic)
+function raceTopicButtons(){
+  return REGIONS.map(r => ({r, ts: r.topics.filter(t => RACE_TOPIC_RE.test(t.id))})).filter(g => g.ts.length)
+    .map(g => `<div class="racegroup"><span class="rgn">${esc(g.r.name)}</span><div class="chips pick">${g.ts.map(t => `<button data-race-topic="${t.id}">${esc(t.tab)}</button>`).join('')}</div></div>`).join('');
+}
 function openRacePanel(){
-  const groups = REGIONS.map(r => ({r, ts: r.topics.filter(t => RACE_TOPIC_RE.test(t.id))})).filter(g => g.ts.length);
   const panel = openPanel({title: 'Race a friend', html: `
     <p class="sect">Got a code from a friend?</p>
     <form class="racejoin" id="raceJoinForm"><input id="raceCodeIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="ABC234" aria-label="Race code"><button class="primary" type="submit">Join</button></form>
     <p class="racemsg" id="raceMsg" aria-live="polite"></p>
     <p class="sect">Or start a race</p>
     <p class="muted">Pick what to race on. You'll get a code to send your friend.</p>
-    ${groups.map(g => `<div class="racegroup"><span class="rgn">${esc(g.r.name)}</span><div class="chips pick">${g.ts.map(t => `<button data-race-topic="${t.id}">${esc(t.tab)}</button>`).join('')}</div></div>`).join('')}`});
+    ${raceTopicButtons()}`});
   panel.querySelector('#raceJoinForm').onsubmit = e => {
     e.preventDefault();
     const code = raceCleanCode(panel.querySelector('#raceCodeIn').value);

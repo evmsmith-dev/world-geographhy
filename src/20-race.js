@@ -8,13 +8,15 @@
 // The Firebase web app's settings. Paste them from the Firebase console (Project settings → General → Your apps → Config),
 // see docs/firebase-setup.md. They're meant to be public: they name the project, they don't open it. The database rules
 // protect it. While this is null, Race a friend doesn't show up anywhere.
-const RACE_FIREBASE = apiKey: "AIzaSyBlMVV6AeSHYOl7teunY1Ef4zMog3PH8mw",
+const RACE_FIREBASE = {
+  apiKey: "AIzaSyBlMVV6AeSHYOl7teunY1Ef4zMog3PH8mw",
   authDomain: "world-geography-quiz-3d18a.firebaseapp.com",
   databaseURL: "https://world-geography-quiz-3d18a-default-rtdb.firebaseio.com",
   projectId: "world-geography-quiz-3d18a",
   storageBucket: "world-geography-quiz-3d18a.firebasestorage.app",
   messagingSenderId: "586568693845",
-  appId: "1:586568693845:web:55e9bb8f564c076615fcdc";
+  appId: "1:586568693845:web:55e9bb8f564c076615fcdc",
+};
 // App Check (recommended): the reCAPTCHA site key, "6L…", and "enterprise" or "v3" (see docs/firebase-setup.md). null = off.
 const RACE_APP_CHECK_KEY = "6Lc-2C0uAAAAAGUPeamuRXY6qMpJVUfsUyPWKU7L";
 const RACE_APP_CHECK_PROVIDER = 'enterprise';
@@ -182,7 +184,7 @@ function raceLocalBackend(){
     async sweep(){},
   };
 }
-const raceOnline = () => window.WGQ_RACE_BACKEND === 'local' || !!RACE_FIREBASE;
+const raceOnline = () => window.WGQ_RACE_BACKEND === 'local' || (!!RACE_FIREBASE && window.WGQ_RACE_BACKEND !== 'off'); // 'off': as if not set up (for the tests)
 let raceBackendP = null;
 function raceBackend(){
   return raceBackendP || (raceBackendP = (async () => {

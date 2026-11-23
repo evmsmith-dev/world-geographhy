@@ -39,6 +39,7 @@ const setup = async page => {
 };
 
 test('Race a friend only shows up once online play is set up', async ({page}) => {
+  await page.context().addInitScript(() => { window.WGQ_RACE_BACKEND = 'off'; }); // as if RACE_FIREBASE were null
   await newPlayer(page);
   await expect(page.locator('#homeGroups .mysterybtn')).toBeVisible();
   await expect(page.locator('#raceBtn')).toHaveCount(0);

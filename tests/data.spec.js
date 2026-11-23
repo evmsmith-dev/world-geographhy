@@ -2,6 +2,7 @@
 // They catch typos (a fun fact for "Lake Titikaka"), forgotten files, and counts that no longer match a map.
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { test, expect, openGame, REGIONS } from './helpers.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -276,4 +277,15 @@ test('the facts the geography expert found wrong are corrected', () => {
   expect(f.geo['Big Bend National Park']).toContain('between Texas and Mexico');
   expect(f.country['Albania']).toContain('170,000');
   expect(topics).not.toContain('It is also called Oceania');
+});
+
+// A typo in one file (a missing bracket) stops the whole game from starting, and then every other test waits until it
+// times out. This finds it in a second, and says which file.
+test('every script the page loads is valid JavaScript, and no top-level name is used twice', () => {
+  const files = [...read('index.html').matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
+  for(const f of files){
+    try{ new vm.Script(read(f), {filename: f}); }catch(e){ throw new Error(`${f} has a mistake: ${e.message}`); }
+  }
+  // the files share one set of names (src/README.md), so they must work as one script
+  try{ new vm.Script(files.map(read).join('\n;\n')); }catch(e){ throw new Error(`a name is used twice across the files: ${e.message}`); }
 });

@@ -217,3 +217,35 @@ test('when connecting fails, a line says why, for whoever looks after the Fireba
   expect(why[3]).toContain('App Check');
   expect(why[4]).toContain('<code>something new</code>');
 });
+
+test('a tap during the wait after a wrong one says so (no red flash), and the right place counts once the wait is over', async ({page}) => {
+  await setup(page); await quick(page, {rounds: 1, lock: 2500});
+  const code = await startHosting(page);
+  const {p: guest, errors} = await secondTab(page); await quick(guest, {rounds: 1, lock: 2500});
+  await joinWith(guest, code);
+  await expect(page.locator('[data-race="start"]')).toBeEnabled();
+  await page.click('[data-race="start"]');
+  await expect(guest.locator('#findQ')).toHaveText('Find France', {timeout: 15_000});
+  await mapSettled(guest);
+  await tapPlace(guest, 'Germany');
+  await expect(guest.locator('#mapSheet')).toHaveClass(/racelocked/);
+  await tapPlace(guest, 'France'); // too soon
+  await expect(guest.locator('#feedback')).toContainText('Wait a moment, then tap again');
+  await expect(guest.locator('#feedback')).not.toContainText('Yes!');
+  await expect(guest.locator('#mapSheet')).not.toHaveClass(/racelocked/, {timeout: 5000}); // the wait is over
+  await tapPlace(guest, 'France');
+  await expect(guest.locator('#feedback')).toContainText("Yes! That's France");
+  await expect(page.locator('#sub')).toContainText('found it!');
+  expect(errors, 'errors on the second tab').toEqual([]);
+});
+
+test('a place ends a little after its time is up, so a tap made just in time still counts', async ({page}) => {
+  await openGame(page);
+  const got = await page.evaluate(() => {
+    WGQ_TEST.raceTimes = {round: 20000, catchup: 6000, grace: 1500};
+    const r = {items: ['A'], rounds: [{at: 0, a: {found: true, ms: 4000, t: 4000}}]};
+    return [raceDeadline(r, 0), raceRoundOver(r, 0, 10000), raceRoundOver(r, 0, 11400), raceRoundOver(r, 0, 11500),
+      raceRoundOver({items: ['A'], rounds: [{at: 0}]}, 0, 21000), raceRoundOver({items: ['A'], rounds: [{at: 0}]}, 0, 21500)];
+  });
+  expect(got).toEqual([10000, false, false, true, false, true]);
+});

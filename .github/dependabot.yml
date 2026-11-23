@@ -1,0 +1,14 @@
+# Opens a pull request when a GitHub Action or a test tool (Playwright) has an update, including security fixes.
+# The tests run on each one. (The game itself has no dependencies to update, except its copy of Firebase in
+# src/vendor/firebase.js, which Dependabot can't see: rebuild it with tools/build-firebase.mjs now and then.)
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /tests
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3

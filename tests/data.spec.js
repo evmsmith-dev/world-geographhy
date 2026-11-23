@@ -289,3 +289,15 @@ test('every script the page loads is valid JavaScript, and no top-level name is 
   // the files share one set of names (src/README.md), so they must work as one script
   try{ new vm.Script(files.map(read).join('\n;\n')); }catch(e){ throw new Error(`a name is used twice across the files: ${e.message}`); }
 });
+
+test('the Content Security Policy allows only the page\'s own inline script, and publishing keeps its fingerprint up to date', async () => {
+  const {inlineHashes} = await import(path.join(ROOT, 'tools/csp-hash.mjs'));
+  const html = read('index.html'), csp = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1];
+  expect(csp, 'index.html has a Content Security Policy').toBeTruthy();
+  expect(html.indexOf('Content-Security-Policy'), 'before any script').toBeLessThan(html.indexOf('<script'));
+  const scriptSrc = csp.split(';').find(d => d.trim().startsWith('script-src'));
+  expect(scriptSrc, 'no inline scripts other than the one it names').not.toContain("'unsafe-inline'");
+  for(const h of inlineHashes(html)) expect(scriptSrc, 'the inline script\'s fingerprint (run: node tools/csp-hash.mjs index.html)').toContain(h);
+  const wf = read('.github/workflows/tests.yml'), publish = wf.slice(wf.indexOf('  publish:'));
+  expect(publish.indexOf('node tools/csp-hash.mjs _site/index.html'), 'publishing updates the fingerprint after stamping the version').toBeGreaterThan(publish.indexOf(`WGQ_BUILD='$stamp'`));
+});

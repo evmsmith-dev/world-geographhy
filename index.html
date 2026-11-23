@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- What the page may load and connect to: only the game's own files, plus Firebase and reCAPTCHA for Race a friend.
+     The inline script below is allowed by its fingerprint: after changing it, run node tools/csp-hash.mjs index.html -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-VYQo6ER+akeTZI3t8nlYk/hZiA/PZbL7RD14YyxzM20=' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://*.firebaseio.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://www.google.com; frame-src https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>World Geography Quiz</title>
 <meta name="description" content="Learn US states, state capitals, continents and oceans with map quizzes and flashcards.">
 <meta name="theme-color" content="#eef1f3" media="(prefers-color-scheme: light)">

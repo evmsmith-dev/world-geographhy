@@ -79,7 +79,7 @@ jobs:
           node-version: 22
       - run: npm ci
       - name: Keep the downloaded browsers between runs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ matrix.browser }}-${{ hashFiles('tests/package-lock.json') }}

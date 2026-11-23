@@ -157,6 +157,7 @@ function zoomToItems(names){
 function select(n){
   if(EXPLORE){ exploreTap(n); return; }
   if(DAILY){ dailyTap(n); return; }
+  if(RACE){ raceTap(n); return; } // Race a friend (src/20-race.js)
   if(!G || G.mode==='flash' || !inPlay(n)) return;
   if(G.mode === 'find' && !reviewing){ findTap(n); return; }
   current = n; focusItem(n);

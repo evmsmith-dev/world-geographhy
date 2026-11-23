@@ -1,6 +1,6 @@
 # Map tools
 
-These scripts build the game's map files. The game doesn't use them; they're here so the maps can be rebuilt.
+These scripts build the game's map files (and the one Firebase file). The game doesn't use them; they're here so the files can be rebuilt.
 
 ## build-geo.mjs: Land & Water maps (the six continents and the United States)
 
@@ -87,3 +87,12 @@ continent, plus `usa.mjs` for US Landmarks, with shared pieces like clouds and a
 
 A data test checks that every landmark has a drawing, that each file matches `tools/pictures/`, and that `sw.js` lists them all.
 
+
+## build-firebase.mjs: the Firebase file for Race a friend
+
+Builds `src/vendor/firebase.js`: the parts of the Firebase SDK that Race a friend uses (anonymous sign-in, App Check
+and the Realtime Database), as one file. The game has no build step, so Firebase is kept in the repo as this file, and
+the game loads it only when someone races.
+
+1. `cd tools && npm i --no-save firebase@13.4.0 esbuild@0.25.12` (or a newer Firebase version)
+2. `node build-firebase.mjs`

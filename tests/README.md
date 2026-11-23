@@ -17,6 +17,7 @@ The game itself doesn't use anything in this folder.
 | `modes.spec.js` | Test (and its Master badge), Practice with mix-up tips, flashcards, Explore (including the National Parks), the Daily 10 (including Land & Water questions and same-kind choices), Up next, Scores, How to play, and tabs tapped quickly. |
 | `tour.spec.js` | The World Tour: its tabs, progress shared both ways with the continents, stopping and picking up later, a whole Land & Water tour tapped place by place (with its badges), and World 20 with practice of missed ones. |
 | `saved.spec.js` | Progress survives closing the game; a backup made by an older version still loads with every player, score and badge; a backup saved now loads on another device; old Central America progress moves to North America. |
+| `race.spec.js` | Race a friend, with two tabs racing each other through a stand-in for Firebase: joining by code and by link, 3 tries, head starts, points, the end screen and a rematch; canceling a race that hasn't started (before anyone joins, by either player, with the back button, and when it runs out of time); a player leaving partway. |
 | `layout.spec.js` | Tabs aren't cut off, the place screen is centered, the zoom buttons don't cover the map, and the game fits on the screen without scrolling. |
 | `offline.spec.js` | After one visit, the game opens and plays with no internet. |
 | `upgrade.spec.js` | A device with an older version (from before the files moved into folders) updates to this one when the kid presses Update, keeps its progress, and still works offline. It reads the old version from the git history. |
@@ -26,7 +27,7 @@ generation) in WebKit (the engine in Safari).
 
 ## The test hook
 
-The tests read the game's data through `window.WGQ_TEST`, which `src/20-start.js` creates only when the page is opened with
+The tests read the game's data through `window.WGQ_TEST`, which `src/21-start.js` creates only when the page is opened with
 `?test` in the address. Players never see it. When the code is reorganized, keep `WGQ_TEST` working with the same names.
 
 ## The old backup file

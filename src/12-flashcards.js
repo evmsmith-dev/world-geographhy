@@ -123,6 +123,7 @@ document.addEventListener('keydown', e => {
 // topic & mode picker (bottom sheet): place → what → how
 $('topicChip').onclick = () => {
   if(DAILY){ toast('Finish your Daily 10 first, or press ← to stop.'); return; }
+  if(RACE){ toast('Press ← to leave the race.'); return; }
   let r = regionOf(T.id), tid = T.id, part = G && G.part ? G.part : getPart(r);
   const panel = openPanel({title:'What do you want to play?', html:'<div class="pbody"></div>'});
   const body = panel.querySelector('.pbody');

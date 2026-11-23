@@ -9,6 +9,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Read-only by default: the tests only read the code. Publishing asks for what it needs below.
+permissions:
+  contents: read
+
 # only one publish at a time; a newer change on main replaces one that is still waiting
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'main' }}
@@ -112,6 +116,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -130,6 +135,8 @@ jobs:
           stamp=$(TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd -- . ':!tests' ':!tools' ':!.github' ':!*.md')
           sed -i "s/WGQ_BUILD='[^']*'/WGQ_BUILD='$stamp'/" _site/index.html
           grep -o "WGQ_BUILD='[^']*'" _site/index.html
+          # the stamp changed the page's inline script, so its fingerprint in the Content Security Policy changes too
+          node tools/csp-hash.mjs _site/index.html
           # ...and the offline copy gets a new name for each version, so every update arrives as one complete set of files
           # (old code never meets new styles), with no need to remember to change CACHE in sw.js by hand
           sed -i "s/const CACHE = '[^']*'/const CACHE = 'wgq-$stamp'/" _site/sw.js

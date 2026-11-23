@@ -200,3 +200,14 @@ test('points: 2 for the fastest find after head starts, 1 for any other find, bo
   });
   expect(got).toEqual([{a: 1, b: 2}, {a: 2, b: 2}, {a: 0, b: 0}]);
 });
+
+test('when connecting fails, a line says why, for whoever looks after the Firebase project', async ({page}) => {
+  await openGame(page);
+  const why = await page.evaluate(() => ['auth/admin-restricted-operation', 'database/permission_denied', 'Permission denied', 'auth/firebase-app-check-token-is-invalid.', 'something new']
+    .map(code => raceWhy({code})));
+  expect(why[0]).toContain('Anonymous sign-in is turned off');
+  expect(why[1]).toContain('publish database.rules.json');
+  expect(why[2]).toContain('publish database.rules.json');
+  expect(why[3]).toContain('App Check');
+  expect(why[4]).toContain('<code>something new</code>');
+});

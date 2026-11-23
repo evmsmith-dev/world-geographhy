@@ -681,3 +681,5 @@ svg.shape path.geolandmark{fill:color-mix(in srgb,#7b4fa0 50%,var(--land));strok
 .racegroup{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0}
 .racegroup .rgn{font-weight:700;min-width:7.5em}
 .passbtn.racebtn{margin-top:12px}
+.raceerr{color:var(--muted);font-size:.85rem}
+.raceerr code{font-size:.8rem;word-break:break-all}

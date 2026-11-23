@@ -20,7 +20,7 @@ export async function createRaceBackend({config, appCheckKey = null, appCheckPro
   const user = await new Promise((resolve, reject) => {
     const stop = onAuthStateChanged(auth, u => {
       if(u){ stop(); resolve(u); return; }
-      signInAnonymously(auth).catch(e => { stop(); reject(e); });
+      signInAnonymously(auth).catch(e => { stop(); reject(Object.assign(new Error('signing in: ' + (e.code || e.message)), {code: e.code || e.message})); });
     }, reject);
   });
   const raceRef = code => ref(db, `races/${code}`);
@@ -41,7 +41,9 @@ export async function createRaceBackend({config, appCheckKey = null, appCheckPro
     async create(make){
       for(let attempt = 0; attempt < 5; attempt++){
         const code = makeCode(), record = make(code);
-        const out = await runTransaction(raceRef(code), cur => cur === null ? record : undefined);
+        let out;
+        try{ out = await runTransaction(raceRef(code), cur => cur === null ? record : undefined); }
+        catch(e){ throw Object.assign(new Error('saving the race: ' + (e.code || e.message)), {code: 'database/' + (e.code || e.message)}); }
         if(out.committed) return code;
       }
       throw new Error('busy');

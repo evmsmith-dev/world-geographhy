@@ -235,6 +235,16 @@ function raceScreen(title){
   RACE = {screen: true};
 }
 function raceBox(html){ $('raceBox').innerHTML = html; }
+// When connecting fails, a line under "Couldn't connect" says why, for whoever looks after the game's Firebase project
+function raceWhy(e){
+  const code = String((e && (e.code || e.message)) || e || 'unknown').slice(0, 80);
+  const hint = /admin-restricted-operation|operation-not-allowed/.test(code) ? 'Anonymous sign-in is turned off in Firebase (Authentication → Sign-in method).'
+    : /api-key|referer|referrer/.test(code) ? "Firebase didn't accept the API key from this site (Google Cloud → Credentials)."
+    : /app-check|appCheck|recaptcha/i.test(code) ? "App Check didn't accept this device (check the reCAPTCHA key and its domain, or turn enforcement off)."
+    : /permission.denied/i.test(code) ? "The database refused it: publish database.rules.json in Firebase (Realtime Database → Rules), or check App Check enforcement."
+    : /network|offline|timeout/i.test(code) ? 'No connection to Firebase.' : '';
+  return `<p class="raceerr">For a grown-up: ${esc(hint)} <code>${esc(code)}</code></p>`;
+}
 const raceHomeBtn = '<div class="rowbtns center"><button class="primary" data-race="home">Back</button></div>';
 async function raceCreate(tid, avoid){
   if(!player || !TOPIC[tid]) return;
@@ -246,7 +256,7 @@ async function raceCreate(tid, avoid){
     const code = await b.create(() => raceNewRecord({uid: b.uid, avatar: raceMyAvatar(), topic: tid, items, now: b.serverNow()}));
     if(RACE !== here) return raceDrop(b, code); // left meanwhile
     raceOpen(code, 'a');
-  }catch(e){ if(RACE === here) raceBox(`<h2>🏁 Race a friend</h2><p>Couldn't connect. Check your internet connection, then try again.</p>${raceHomeBtn}`); }
+  }catch(e){ if(RACE === here) raceBox(`<h2>🏁 Race a friend</h2><p>Couldn't connect. Check your internet connection, then try again.</p>${raceWhy(e)}${raceHomeBtn}`); }
 }
 async function raceDrop(b, code){ try{ await b.remove(code); }catch(e){} }
 async function raceJoin(code){
@@ -266,7 +276,7 @@ async function raceJoin(code){
     if(RACE !== here) return;
     if(!ok) return fail('Someone else joined that race first. Ask your friend for a new code.');
     raceOpen(code, 'b');
-  }catch(e){ fail("Couldn't connect. Check your internet connection, then try again."); }
+  }catch(e){ fail(`Couldn't connect. Check your internet connection, then try again.</p>${raceWhy(e)}<p>`); }
 }
 async function raceOpen(code, seat){
   if(!RACE) raceScreen('');

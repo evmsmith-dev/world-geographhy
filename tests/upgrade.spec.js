@@ -48,6 +48,7 @@ test('a device with the old version updates to this one and keeps its progress',
     fs.cpSync(ROOT, newDir, {recursive: true, filter: f => !/[\\/](\.git|node_modules|test-results|playwright-report)$/.test(f)});
     const index = path.join(newDir, 'index.html');
     fs.writeFileSync(index, fs.readFileSync(index, 'utf8').replace(/WGQ_BUILD='[^']*'/, `WGQ_BUILD='${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}'`));
+    execSync(`node "${path.join(ROOT, 'tools/csp-hash.mjs')}" "${index}"`, {stdio: 'ignore'}); // and its fingerprint in the Content Security Policy, as publishing does
     fs.unlinkSync(site); fs.symlinkSync(newDir, site);
 
     // the kid opens the game again: it notices the new version; they press Update

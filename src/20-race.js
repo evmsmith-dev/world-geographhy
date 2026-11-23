@@ -29,7 +29,8 @@ const RACE_TIMES = {
   count: 3000,       // the 3-2-1 before each place
   reveal: 3000,      // showing where it was, after each place
   tries: 3,          // tries for each place
-  lock: 1500,        // a wrong tap waits this long before the next one counts
+  lock: 1000,        // a wrong tap waits this long before the next one counts (the map dims meanwhile)
+  grace: 1500,       // after the time is up, a tap made just before still has this long to reach the other device
   tie: 50,           // finds this close together both count as fastest
   away: 15000,       // between places, wait this long for a player who's away
   lobby: 30 * 60e3,  // a race that hasn't started is over after 30 minutes
@@ -99,12 +100,18 @@ function raceWithResult(r, uid, i, found, ms, tries, now){
   return {...r, rounds: raceRoundsWith(r, i, {...R, [s]: res})};
 }
 // A place is over when both players are done, its time is up, or the second player's catch-up time is up
+// When a place's time is up: its 20 seconds, or the catch-up time after the first find, whichever comes first
+function raceDeadline(r, i){
+  const R = raceRoundList(r)[i]; if(!R) return 0;
+  const found = ['a', 'b'].map(s => R[s]).filter(x => x && x.found).map(x => x.t);
+  return Math.min(R.at + raceTime('round'), found.length ? Math.min(...found) + raceTime('catchup') : Infinity);
+}
+// A place is over when both players are done, or a little after its time is up: a tap made just in time, still on
+// its way from the other device, gets there first (otherwise it showed "Yes!" and then didn't count)
 function raceRoundOver(r, i, now){
   const R = raceRoundList(r)[i]; if(!R || R.end || now < R.at) return false;
   if(R.a && R.b) return true;
-  if(now >= R.at + raceTime('round')) return true;
-  const found = ['a', 'b'].map(s => R[s]).filter(x => x && x.found).map(x => x.t);
-  return found.length > 0 && now >= Math.min(...found) + raceTime('catchup');
+  return now >= raceDeadline(r, i) + raceTime('grace');
 }
 function raceWithEnd(r, i, now){ return r && r.status === 'playing' && raceRoundOver(r, i, now) ? {...r, rounds: raceRoundsWith(r, i, {...raceRoundList(r)[i], end: Math.round(Math.max(now, raceRoundList(r)[i].at))})} : null; }
 function raceWithNext(r, i, now){
@@ -303,7 +310,7 @@ function raceClose(){
     else if(raceNotStarted(r)){ b.transact(code, x => raceWithCancel(x, b.uid)); toast('Race canceled.'); }
     else if(r.status === 'playing') b.transact(code, x => raceWithLeave(x, b.uid));
   }
-  raceRestoreBar(); $('raceBox').hidden = true; $('raceBox').innerHTML = ''; $('clock').hidden = true; $('clock').classList.remove('low');
+  raceRestoreBar(); $('mapSheet').classList.remove('racelocked'); $('raceBox').hidden = true; $('raceBox').innerHTML = ''; $('clock').hidden = true; $('clock').classList.remove('low');
   showScreen(raceFrom); itemsSaved().then(() => { if(raceFrom === 'scrRegion') renderRegion(); else renderHome(); });
 }
 // the race uses the Find it bar without its other buttons
@@ -412,7 +419,7 @@ function racePaint(mark){ NAMES.forEach(n => setPlaceClass(n, (mark && mark[n]) 
 function raceEnterRound(i){
   const R0 = RACE, R = raceRoundList(R0.rec)[i];
   Object.assign(R0, {round: i, shown: false, shownAt: 0, revealed: false, tries: 0, lastWrong: null, firstWrong: null, lockUntil: 0, mine: R[R0.seat] || null});
-  R0.drawn = {}; current = null; racePaint(); cancelAnimationFrame(anim); setVB({x: 0, y: 0, w: VW}); // every place starts from the whole map, on both devices
+  R0.drawn = {}; current = null; racePaint(); cancelAnimationFrame(anim); $('mapSheet').classList.remove('racelocked'); setVB({x: 0, y: 0, w: VW}); // every place starts from the whole map, on both devices
   feedback('');
 }
 function raceTick(){
@@ -445,8 +452,8 @@ function raceTick(){
       raceSet('findQ', T.flags ? `${flagImg(target, 'big')}<span>Find the ${T.itemWord || 'country'} with this flag</span>` : `<span>${esc(findAsk(target))}</span>`);
       R0.shownAt = performance.now(); requestAnimationFrame(() => { if(RACE === R0 && R0.round === i) R0.shownAt = performance.now(); });
     }
-    const caught = theirs && theirs.found ? theirs.t + raceTime('catchup') : Infinity, ends = Math.min(R.at + raceTime('round'), caught);
-    const left = Math.max(0, ends - now);
+    const left = Math.max(0, raceDeadline(r, i) - now);
+    if(R0.lockUntil && performance.now() >= R0.lockUntil){ R0.lockUntil = 0; $('mapSheet').classList.remove('racelocked'); }
     $('clock').textContent = fmtTime(Math.ceil(left / 1000) * 1000); $('clock').classList.toggle('low', left <= 5000);
     $('selLabel').textContent = mine ? (mine.found ? 'You found it!' : 'Watch where it is…') : theirs && theirs.found ? `Hurry! ${av(them)} found it!` : `Place ${i + 1} of ${n}`;
     raceSet('sub', status);
@@ -464,9 +471,13 @@ function raceTick(){
 }
 function raceTap(n){
   const R0 = RACE, r = R0 && R0.rec; if(!r || r.status !== 'playing' || R0.view !== 'play') return;
-  const i = R0.round, R = raceRoundList(r)[i]; if(!R || R.end || !R0.shown || R0.mine || R[R0.seat]) return;
+  const i = R0.round, R = raceRoundList(r)[i], b = R0.backend; if(!R || R.end || R0.mine || R[R0.seat]) return;
+  if(!R0.shown && b.serverNow() >= R.at) raceTick(); // the place is due but the next tick hasn't drawn it yet: draw it now
+  if(!R0.shown){ feedback('Wait for the place to show…'); return; }
   const target = r.items[i], now = performance.now();
-  if(now < R0.lockUntil){ flashWrong(n); return; } // a moment's wait after a wrong tap, so tapping everywhere doesn't pay
+  if(b.serverNow() >= raceDeadline(r, i)){ feedback("Time's up!", 'bad'); return; }
+  // a moment's wait after a wrong tap, so tapping everywhere doesn't pay; the map dims so it's clear the tap didn't count
+  if(now < R0.lockUntil){ feedback('Wait a moment, then tap again…', 'bad'); return; }
   if(n === target){
     const ms = now - R0.shownAt; R0.mine = {found: true, ms};
     sound('right'); setPlaceClass(n, 'ok');
@@ -478,16 +489,21 @@ function raceTap(n){
   sound('wrong'); flashWrong(n); noteMix(target, n);
   const left = raceTime('tries') - R0.tries;
   if(left <= 0){ R0.mine = {found: false}; feedback(`That's ${esc(the(n))}. Out of tries! Watch where it is…`, 'bad'); raceSend(i, false, 0); return; }
-  R0.lockUntil = now + raceTime('lock');
+  R0.lockUntil = now + raceTime('lock'); $('mapSheet').classList.add('racelocked');
   feedback(`That's ${esc(the(n))}. Try again! ${left} ${left === 1 ? 'try' : 'tries'} left.`, 'bad');
 }
-function raceSend(i, found, ms){
+// Saves this player's result for place i, trying again if the connection drops a save, until the place is over
+async function raceSend(i, found, ms){
   const R0 = RACE, b = R0.backend, wrong = R0.tries;
-  b.transact(R0.code, r => raceWithResult(r, b.uid, i, found, ms, wrong, b.serverNow()));
+  for(let k = 0; k < 5 && RACE === R0; k++){
+    if(await b.transact(R0.code, r => raceWithResult(r, b.uid, i, found, ms, wrong, b.serverNow()))) return;
+    const R = R0.rec && raceRoundList(R0.rec)[i]; if(!R || R.end || R[R0.seat]) return;
+    await new Promise(done => setTimeout(done, 400));
+  }
 }
 function raceReveal(i){
   const R0 = RACE, r = R0.rec, me = R0.seat, them = raceOther(me), R = raceRoundList(r)[i], target = r.items[i], av = raceAvOf;
-  R0.revealed = true;
+  R0.revealed = true; R0.lockUntil = 0; $('mapSheet').classList.remove('racelocked');
   const pts = (raceScore(r).list.find(x => x.i === i) || {pts: {a: 0, b: 0}}).pts;
   const line = (s, who) => { const x = R[s]; return x && x.found ? `${who} <b>+${pts[s]}</b> (${raceSecs(x.ms)})` : `${who} missed it`; };
   const mine = R[me];
@@ -505,7 +521,7 @@ function raceReveal(i){
 function raceEndView(){
   const R0 = RACE, r = R0.rec, me = R0.seat, them = raceOther(me), av = raceAvOf, {total, list} = raceScore(r);
   const first = R0.view !== 'end'; R0.view = 'end';
-  raceRestoreBar();
+  raceRestoreBar(); $('mapSheet').classList.remove('racelocked');
   $('mapSheet').hidden = true; $('play').hidden = true; $('raceBox').hidden = false; $('clock').hidden = true;
   $('sub').textContent = ''; $('tally').textContent = '';
   const my = total[me], their = total[them];

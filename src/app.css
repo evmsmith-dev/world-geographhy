@@ -670,6 +670,7 @@ svg.shape path.geolandmark{fill:color-mix(in srgb,#7b4fa0 50%,var(--land));strok
 .racetopic{color:var(--muted)}
 .racecode{font-family:var(--display);font-weight:800;font-size:2.6rem;letter-spacing:.18em;padding:6px 18px 6px 26px;border:2px dashed var(--line);border-radius:12px;user-select:all;-webkit-user-select:all}
 .racewait{font-style:italic}
+#mapSheet.racelocked svg{opacity:.5;transition:opacity .15s}
 .racecodesmall{letter-spacing:.12em}
 .racenote{font-weight:700}
 .racehow{color:var(--muted);font-size:.92rem}
